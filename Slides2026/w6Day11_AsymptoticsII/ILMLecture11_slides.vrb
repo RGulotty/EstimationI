@@ -1,0 +1,21 @@
+\frametitle{R: Sandwich SEs and Delta Method}
+
+\begin{lstlisting}
+# Homoskedastic vs robust SEs
+coeftest(mod0)                                  # model-based
+coeftest(mod0, vcov = vcovHC(mod0, type="HC1")) # sandwich
+
+# Confidence interval for CEF at a point
+x0 <- c(1, 5000, 12, 30)  # intercept, income, ed, women
+se_x0 <- sqrt(t(x0) %*% vcovHC(mod0) %*% x0)
+pred <- sum(x0 * coef(mod0))
+cat(pred, "+/-", 1.96 * se_x0)
+
+# Delta method for nonlinear function (car package)
+car::deltaMethod(mod0, "income / education")
+\end{lstlisting}
+
+\pause
+
+Same tools as Lectures 6, 9, 10 --- the \texttt{sandwich} and \texttt{car} packages handle the asymptotic theory automatically.
+

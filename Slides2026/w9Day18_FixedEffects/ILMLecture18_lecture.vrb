@@ -1,0 +1,21 @@
+\frametitle{Reading Arellano-Bond Output}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+summary(ab_mod)
+# Coefficients:
+#                  Estimate Std. Error z-value Pr(>|z|)
+# lag(topratep,1)   0.xxx    0.xxx     x.xx    0.xxx
+# himobpopyear2p    0.xxx    0.xxx     x.xx    0.xxx
+#
+# Sargan test: chisq(df) = xx, p-value = 0.xxx
+#   (large p -> instruments valid)
+# Autocorrelation test (2):  z = x.xx, p = 0.xxx
+#   (large p -> no AR(2) in levels)
+\end{lstlisting}
+\smallskip
+\textbf{Checklist for reporting:}
+\begin{enumerate}\itemsep=1pt
+\item $\hat{\rho}$: persistence of lagged DV (compare to FE estimate)
+\item Sargan/Hansen $J$-test $p$-value $> 0.05$
+\item AR(2) test $p$-value $> 0.05$
+\item Number of instruments $<$ number of groups
+\end{enumerate}

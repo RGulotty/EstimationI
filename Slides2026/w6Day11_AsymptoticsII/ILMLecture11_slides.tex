@@ -1,0 +1,823 @@
+
+\documentclass[aspectratio=169]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+
+%  \usetheme{Pittsburgh}
+%\usefonttheme[2]{sans}
+\renewcommand{\familydefault}{cmss}
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+%\usepackage{palatino}
+%\usepackage{cmbright}
+\usepackage{bm}
+\usepackage{listings}
+\useinnertheme{rectangles}
+}
+\usepackage{amsmath}
+\usepackage{tcolorbox}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\usepackage{array}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=red}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+\usepackage{booktabs}
+
+\lstset{%
+  language=R,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{darkgreen},
+  stringstyle=\color{red},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10}
+}
+
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+%\usepackage[all]{xy}
+
+\usetikzlibrary{decorations.pathreplacing}
+\usepackage{lipsum}
+
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models Lecture 11: Asymptotic theory for OLS}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+
+\begin{document}
+
+\begin{frame}
+\maketitle
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Consistency of OLS}
+\setcounter{subsection}{1}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Today's Claims}
+\begin{itemize}
+\item The least squares estimator $\hat{\beta}$ is \emph{consistent} for the projection coefficient $\beta$.
+\item There is an asymptotic normal approximation to the distribution of $\hat{\beta}$ (once normalized).
+\item Similarly, the error variance estimators $\hat{\sigma}^2$ and $s^2$ are consistent for $\sigma^2$.
+\item There is a consistent estimator of $\bm{V}_\beta$, either under homoskedasticity $\bm{\hat{V}}^0_\beta$, or otherwise.
+\item We can use z-statistics for asymptotic standard errors, confidence intervals, and prediction intervals.
+\end{itemize}
+
+\pause
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Strategy:} Apply the tools from Lecture 10 --- WLLN, CLT, CMT, delta method --- to derive the asymptotic properties of OLS.
+\end{tcolorbox}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Target of Estimation}
+\begin{itemize}
+\item We are after the projection coefficient $\beta=(\mathbb{E}[\bm{x}\bm{x}'])^{-1}\mathbb{E}[\bm{x}Y]$ from the projection model $Y=\bm{x}'\beta+e$
+\item We assume $(Y_i,\ \bm{x}_i)$ are i.i.d.
+\item And define $\bm{Q}_{XX}=\mathbb{E}[\bm{x}\bm{x}']$, assume is positive definite.
+\item We also need moments to exist, including 4th moments for asymptotic normality.
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Proof Outline: Two Routes to Consistency}
+\begin{itemize}
+\item \textbf{Route 1} (Method of Moments):
+\begin{itemize}
+\item WLLN: sample moments converge to population moments
+\item CMT: continuous functions of convergent sequences converge
+\item OLS is a continuous function of sample moments
+\end{itemize}
+\pause
+\item \textbf{Route 2} (Algebraic):
+\begin{itemize}
+\item Write $\hat\beta - \beta$ as a product of sample moments
+\item Apply WLLN to each piece, CMT/Slutsky to combine
+\end{itemize}
+\end{itemize}
+
+\pause
+
+Both routes use the same tools from Lecture 10. Route 1 generalizes to nonlinear estimators (MLE, GMM); Route 2 gives an explicit formula for the sampling error.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{OLS is a function of sample moments}
+\begin{itemize}
+\item $\bm{\hat{\beta}}=\left(\frac{1}{n}\sum_{i=1}^n\bm{x}_i\bm{x}'_i\right)^{-1}\left(\frac{1}{n}\sum_{i=1}^n\bm{x}_iY_i\right)=\bm{\hat{Q}}_{XX}^{-1}\bm{\hat{Q}}_{XY}$ \pause
+\item $\bm{\hat{Q}}_{XX}$, $\bm{\hat{Q}}_{XY}$ are sample moments
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Apply WLLN}
+\begin{itemize}
+\item If $(\bm{x}_i,\ Y_i)$ are iid, then $\bm{x}_i\bm{x}_i'$, $\bm{x}_iY_i'$ are iid.\pause
+\item Recall from Lecture 10: WLLN says that if $\theta_i$ are iid with finite variance, $\frac{1}{n} \sum_{i=1}^n \theta_i \overset{p}{\to} \mathbb{E}[\theta]$\pause
+\item $\bm{\hat{Q}}_{XX} \overset{p}{\to} \bm{Q}_{XX}$, \quad $\bm{\hat{Q}}_{XY} \overset{p}{\to} \bm{Q}_{XY}$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Continuous Mapping Theorem (CMT)}
+\begin{itemize}
+\item Recall from Lecture 10: if $Z_n\rightarrow_p c$ and $g(u)$ is continuous at $c$, then $g(Z_n)\rightarrow_p g(c)$.\pause
+\item CMT tells us that plims survive continuous functions.\pause
+\item $\bm{\hat{\beta}}=g(\bm{\hat{Q}}_{XX}, \bm{\hat{Q}}_{XY})$ is a continuous function (matrix inversion is continuous at nonsingular matrices).\pause
+\item $\bm{\hat{\beta}}=\bm{\hat{Q}}_{XX}^{-1}\bm{\hat{Q}}_{XY}\rightarrow_p \bm{Q}_{XX}^{-1}\bm{Q}_{XY}=\bm{\beta}$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Proof of Consistency of OLS: Route 2, Step 1}
+\begin{align*}
+\bm{\hat{\beta}}&=(\bm{X'X})^{-1}\bm{X'y} \tag{Definition}\\ \pause
+&=(\bm{X'X})^{-1}\bm{X}'(\bm{X}\bm{\beta}+\bm{e}) \tag{Assumption 1}\\  \pause
+&=\bm{\beta}+(\bm{X'X})^{-1}\bm{X'e} \tag{Inverse prop.}\\  \pause
+&=(\bm{\beta}+(1/n)n(\bm{X'X})^{-1}\bm{X'e}) \\ \pause
+&=(\bm{\beta}+(\frac{1}{n}(\frac{1}{n})^{-1}(\bm{X'X})^{-1}\bm{X'e})) \tag{trick}\\ \pause
+\bm{\hat{\beta}}&=\bm{\beta}+(\frac{1}{n}\bm{X'X})^{-1}) ( \frac{1}{n}\bm{X'e})
+\end{align*}
+ \end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Proof of Consistency of OLS: Route 2, Step 2}
+\begin{align*}
+\bm{\hat{\beta}}&=\bm{\beta}+(\frac{1}{n}\bm{X'X})^{-1}) ( \frac{1}{n}\bm{X'e}) \\ \pause
+\text{plim}\bm{\hat{\beta}}-\bm{\beta}&=((\text{plim}\frac{1}{n}\bm{X'X})^{-1}) \text{plim} \frac{1}{n}\bm{X'e} \tag{Slutsky}\\ \pause
+&=\bm{Q}_{XX}^{-1} \mathbb{E}[Xe]\\
+&=\bm{Q}_{XX}^{-1} 0
+\end{align*}
+The least squares estimator $\hat{\beta}$ is \emph{consistent} for the projection coefficient $\beta$.
+
+\pause
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Key condition:} Consistency requires $\mathbb{E}[\bm{x}e] = 0$. When this fails (endogeneity), OLS is inconsistent --- motivating instrumental variables (Lecture 13).
+\end{tcolorbox}
+
+ \end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Asymptotic Normality}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Asymptotic Normality: Algebraic Setup}
+Start from the sampling error decomposition:
+\begin{align*}
+\bm{\hat{\beta}} - \bm{\beta}
+&= \left( \frac{1}{n} \sum_{i=1}^n X_i X_i' \right)^{-1}
+    \left( \frac{1}{n} \sum_{i=1}^n X_i e_i \right)
+    \tag{1}
+\end{align*}
+
+\pause
+
+Multiply both sides by $\sqrt{n}$:
+\begin{align*}
+\sqrt{n}(\bm{\hat{\beta}} - \bm{\beta})
+&= \left( \frac{1}{n} \sum_{i=1}^n X_i X_i' \right)^{-1}
+    \left( \frac{1}{\sqrt{n}} \sum_{i=1}^n X_i e_i \right)
+    \tag{2} \\
+&= \bm{\hat{Q}}_{XX}^{-1}
+    \left( \frac{1}{\sqrt{n}} \sum_{i=1}^n X_i e_i \right)
+    \tag{3}
+\end{align*}
+
+\pause
+
+Now we need the distribution of $\frac{1}{\sqrt{n}} \sum X_i e_i$. This is a sum of mean-zero iid random vectors --- exactly the setting of the \textbf{multivariate CLT} from Lecture 10.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Asymptotic Normality: Applying CLT and Slutsky}
+\begin{align*}
+\sqrt{n}(\bm{\hat{\beta}} - \bm{\beta})
+&= \underbrace{\bm{\hat{Q}}_{XX}^{-1}}_{\overset{p}{\to}\, \bm{Q}_{XX}^{-1}}
+    \cdot \underbrace{\frac{1}{\sqrt{n}} \sum_{i=1}^n X_i e_i}_{\overset{d}{\to}\, N(0, \Omega)}
+\end{align*}
+
+\pause
+
+where $\Omega = \mathbb{E}[X_i e_i e_i' X_i'] = \mathbb{E}[X_i X_i' e_i^2]$.
+
+\pause
+
+By Slutsky's theorem (convergent in probability $\times$ convergent in distribution):
+\begin{align*}
+\sqrt{n}(\bm{\hat{\beta}} - \bm{\beta})
+&\xrightarrow{d} \bm{Q}_{XX}^{-1} \cdot N(0, \Omega)
+    \tag{4} \\
+&= N\left( 0, \bm{Q}_{XX}^{-1} \Omega \bm{Q}_{XX}^{-1} \right)
+    \equiv \bm{V}_{\beta}
+    \tag{5}
+\end{align*}
+
+\pause
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+Same structure as Probit MLE (Lecture 9): $\sqrt{n}(\hat\beta - \beta_0) \overset{d}{\to} N(0, \mathcal{I}^{-1})$. In both cases, CLT gives the numerator; WLLN/CMT stabilize the denominator; Slutsky combines them.
+\end{tcolorbox}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Covariance of coefficient estimators under homoskedasticity}
+\begin{itemize}
+\item Assume $Y=\beta_1X_1+\beta_2X_2+e$ with $E[ee']=\sigma^2\bm{I}$.
+\item Suppose $E[X_1]=0$, $E[X_2]=0$, $Var[X_1]=1$, $Var[X_2]=1$, $corr[X_1, X_2]=\rho$
+$$\bm{V}_\beta^0=\sigma^2\bm{Q}_{XX}^{-1}=\sigma^2\begin{bmatrix}1&\rho\\ \rho &1 \end{bmatrix}^{-1}=\frac{\sigma^2}{1-\rho^2}\begin{bmatrix}1&-\rho\\ -\rho &1 \end{bmatrix}$$
+\item If $X_1$ and $X_2$ are positively correlated, $\hat{\beta}_1$ and $\hat{\beta}_2$ are negatively correlated.
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Heteroskedastic Covariance Matrix Estimation}
+\begin{itemize}
+\item The asymptotic covariance matrix of $\sqrt{n}(\hat{\beta}-\beta)$ is $\bm{Q}_{XX}^{-1} \Omega \bm{Q}_{XX}^{-1}$.
+\item This is the \textbf{sandwich form} from Lecture 6 --- now with its asymptotic justification.
+\end{itemize}
+
+\pause
+
+\textbf{Estimator:}
+$$\hat{\Omega}=\frac{1}{n}\sum_{i=1}^n \bm{x}_i\bm{x}_i'\hat{e}_i^2$$
+$$\hat{\bm{Q}}_{XX}=\frac{1}{n}\sum_{i=1}^n\bm{x}_i\bm{x}_i'$$
+$$\hat{\bm{V}}_\beta^{HC0}=\hat{\bm{Q}}_{XX}^{-1} \hat{\Omega} \hat{\bm{Q}}_{XX}^{-1}$$
+
+\pause
+
+This is the HC0 estimator. Recall from Lecture 6: HC1, HC2, HC3 apply finite-sample corrections. All are asymptotically equivalent.
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Consistency of $\hat{\Omega}$}
+\begin{align*}
+\hat{\Omega}&=\frac{1}{n}\sum_{i=1}^n \bm{x}_i\bm{x}_i'\hat{e}_i^2\\
+&=\frac{1}{n}\sum_{i=1}^n \bm{x}_i\bm{x}_i'\hat{e}_i^2+\frac{1}{n}\sum_{i=1}^n \bm{x}_i\bm{x}_i'e_i^2-\frac{1}{n}\sum_{i=1}^n \bm{x}_i\bm{x}_i'e_i^2\\
+&=\frac{1}{n}\sum_{i=1}^n \bm{x}_i\bm{x}_i'e_i^2+\frac{1}{n}\sum_{i=1}^n \bm{x}_i\bm{x}_i'(\hat{e}_i^2-e_i^2)\\
+\frac{1}{n}\sum_{i=1}^n \bm{x}_i\bm{x}_i'e_i^2&\underset{p}{\to}\mathbb{E}[\bm{x}\bm{x}'e^2]=\Omega \tag{WLLN}\\
+\hat{\Omega}&\underset{p}{\to}\Omega
+\end{align*}
+
+\pause
+
+(The remainder term $\frac{1}{n}\sum \bm{x}_i\bm{x}_i'(\hat{e}_i^2-e_i^2) \overset{p}{\to} 0$ since $\hat{e}_i - e_i = X_i'(\beta - \hat\beta) \overset{p}{\to} 0$ by consistency.)
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{The Sandwich Pattern}
+
+The same ``bread--meat--bread'' structure appears throughout this course:
+
+\medskip
+
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Bread} & \textbf{Meat} ($\Omega$) & \textbf{Simplification} \\
+\midrule
+OLS & $Q_{XX}^{-1}$ & $\mathbb{E}[XX'e^2]$ & $\sigma^2 Q_{XX}^{-1}$ if homosk. \\
+Probit MLE & $\mathcal{I}^{-1}$ & $\mathbb{E}[s_i s_i']$ & $\mathcal{I}^{-1}$ if correct spec. \\
+GMM & $(G'WG)^{-1}G'W$ & $\mathbb{E}[g_i g_i']$ & --- \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1.0}
+
+\pause
+
+\bigskip
+
+\begin{itemize}
+    \item Under ``ideal'' conditions (homoskedasticity / correct specification), the sandwich simplifies.
+    \item Under misspecification, we need the full sandwich --- \textbf{robust SEs}.
+    \item Same \texttt{sandwich::vcovHC()} in R handles all cases.
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Variances: Exact vs Asymptotic}
+
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+\toprule
+\textbf{Object} & \textbf{Formula} & \textbf{When to use} \\
+\midrule
+Exact variance & $(\bm{X}'\bm{X})^{-1}(\bm{X}'\bm{D}\bm{X})(\bm{X}'\bm{X})^{-1}$ & Fixed $X$, any $n$ \\
+\quad (homosk.) & $\sigma^2(\bm{X}'\bm{X})^{-1}$ & $+ E[ee']=\sigma^2 I$ \\
+\midrule
+Asy. variance & $\bm{Q}_{XX}^{-1}\Omega\bm{Q}_{XX}^{-1}$ & Random $X$, $n$ large \\
+\quad (homosk.) & $\sigma^2 \bm{Q}_{XX}^{-1}$ & $+ E[e^2|X]=\sigma^2$ \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1.0}
+
+\pause
+
+\bigskip
+
+\begin{itemize}
+    \item The exact variance conditions on $X$; the asymptotic variance averages over $X$.
+    \item For large $n$: $\frac{1}{n}\bm{X'X} \approx Q_{XX}$, so they agree.
+    \item In practice, we always estimate using the sandwich (or its homoskedastic special case).
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Asymptotic Properties: Wald Test}
+\setcounter{subsection}{1}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{From F Tests to Wald Tests}
+\begin{itemize}
+\item We saw we can calculate an F test by forming a matrix of restrictions.
+\item The F distribution result depended on the homoskedasticity and normality of the errors.
+\item In large samples, we can instead rely on the asymptotic behavior of random variables and calculate a \textbf{Wald statistic}.
+\end{itemize}
+
+\pause
+
+\begin{itemize}
+\item Many test statistics are reflavored Wald distances. Given a null that $E[\bm{q}]=\bm{\theta}$:
+\begin{align*}
+W &= (\bm{q}-\bm{\theta})'[\widehat{Var}(\bm{q}-\bm{\theta})]^{-1}(\bm{q}-\bm{\theta})
+\end{align*}
+\item $W \sim\chi^2_J$ if $\bm{q}$ is Normal and $Var(\bm{q}-\bm{\theta})=\bm{\Sigma}$
+\item $W \overset{a}{\sim}\chi^2_J$ with CLT on $\bm{q}$ and consistency for $\bm{\hat{\Sigma}}$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Mahalanobis Distance: Intuition}
+\begin{itemize}
+\item Suppose $\bm{x} \sim \mathcal{N}(\bm{\mu}, \bm{\Sigma})$. We want to measure how unusual an observation $\bm{x}$ is.
+
+\item In the scalar case:
+\[
+D = \frac{x - \mu}{\sigma} \sim \mathcal{N}(0,1) \quad \Rightarrow \quad D^2 \sim \chi^2_1
+\]
+
+\item In the vector case: transform the data to make it standard normal:
+\[
+\bm{z} = \bm{\Sigma}^{-1/2} (\bm{x} - \bm{\mu}) \sim \mathcal{N}(0, \bm{I})
+\]
+
+\item Then the squared norm of $\bm{z}$ gives:
+\[
+\|\bm{z}\|^2 = (\bm{x} - \bm{\mu})' \bm{\Sigma}^{-1} (\bm{x} - \bm{\mu}) = D^2
+\]
+
+\item This is the Mahalanobis distance: it tells us how far $\bm{x}$ is from $\bm{\mu}$ in standardized units, accounting for correlations and scale.
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Wald Statistic as a Distance}
+\begin{itemize}
+\item The Wald test generalizes the standardized $t$-statistic to higher dimensions:
+\[
+\text{Univariate: } \frac{\hat{\beta} - \beta_0}{\text{SE}(\hat{\beta})} \sim \mathcal{N}(0,1)
+\quad \Rightarrow \quad \left( \frac{\hat{\beta} - \beta_0}{\text{SE}(\hat{\beta})} \right)^2 \sim \chi^2_1
+\]
+\item In multivariate form:
+\[
+W = (\bm{q} - \bm{\theta})' \bm{\hat{\Sigma}}^{-1} (\bm{q} - \bm{\theta})
+\]
+\item If $\bm{q}$ is consistent and asymptotically normal:
+\[
+\sqrt{n}(\bm{q} - \bm{\theta}) \overset{d}{\to} \mathcal{N}(0, \bm{\Sigma}) \Rightarrow W \overset{a}{\sim} \chi^2_J
+\]
+\item Interpretation: Wald tests ask whether the observed $\bm{q}$ is ``far'' from $\bm{\theta}$, accounting for sampling variability.
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Matrix form of Restrictions}
+\begin{itemize}
+\item Suppose we have $k$ parameters $\bm{\beta}$ and $q$ restrictions with $q\leq (k)$. (Note $q=J$ in Greene, here k includes the intercept)
+\item Let $\bm{R}$ be a $q\times(k)$ matrix.
+\item We can express our null hypothesis as $H_0:\ \bm{R\beta}=\bm{r}$.
+\item For example in the prior example where $\beta_2=0$ and $\beta_3=\beta_4$\\
+$$\bm{R}=\begin{bmatrix} 0& 0&1& 0&0\\ 0&0& 0& 1&-1\end{bmatrix},\quad \bm{r}=\begin{bmatrix} 0\\0\end{bmatrix}$$
+$$\begin{bmatrix} 0&0& 1& 0&0\\0& 0& 0& 1&-1\end{bmatrix} \begin{bmatrix} \beta_0\\\beta_1\\\beta_2\\\beta_3\\\beta_4 \end{bmatrix}=\begin{bmatrix} 0\\0\end{bmatrix}$$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Wald Test for Linear Restrictions}
+$$W=(\bm{R}\bm{\hat{\beta}}-\bm{r})'[\bm{R}\hat{\bm{V}}_{\hat\beta}\bm{R}']^{-1}(\bm{R}\bm{\hat{\beta}}-\bm{r})$$
+$$W \overset{a}{\sim} \chi^2_q$$
+\begin{itemize}
+\item If we use $\hat{\bm{V}}_{\hat\beta} = s^2(\bm{X}'\bm{X})^{-1}$ (homoskedasticity + normality), then $W/q$ is exactly the $F$ statistic distributed $F_{q,n-k}$.
+\item Without normality, the CLT tells us $W/q$ is approximately $F_{q,n-k}$.
+\item Without normality or homoskedasticity, use $\hat{\bm{V}}_{\hat\beta}^{HC}$ (sandwich) and $W \overset{a}{\sim} \chi^2_q$.
+\end{itemize}
+
+\pause
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+The Wald test nests the $F$ test as a special case. With robust SEs, it works without normality or homoskedasticity --- only requiring consistency and asymptotic normality.
+\end{tcolorbox}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Wald Tests in R}
+  \begin{lstlisting}
+library(sandwich); library(lmtest); library(car)
+
+mod0 <- lm(prestige ~ income + education + women,
+            data = Prestige)
+
+# Wald test with robust SEs (chi-squared)
+linearHypothesis(mod0,
+    c("education = 0", "women = 0"),
+    vcov = vcovHC, test = "Chisq")
+
+# Equivalent: waldtest with nested models
+mod1 <- lm(prestige ~ income, data = Prestige)
+waldtest(mod1, mod0, vcov = vcovHC, test = "Chisq")
+\end{lstlisting}
+
+\pause
+
+Both test $H_0: \beta_{ed} = \beta_{women} = 0$ using the sandwich covariance.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Asymptotic Standard Errors and the Delta Method}
+\setcounter{subsection}{1}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Asymptotic Standard Errors via the Delta Method}
+\begin{itemize}
+\item If $\bm{\hat{V}}_{\hat{\beta}}$ is an estimator of the covariance matrix of $\hat{\beta}$, then the standard errors are the square root of the diagonal elements.
+\item For a function $\theta = r(\beta)$, recall from Lecture 10 the \textbf{delta method}:
+\end{itemize}
+
+\pause
+
+\begin{tcolorbox}
+Given $\bm{R}=\frac{\partial r}{\partial\beta}\bigg|_{\hat\beta}$, the asymptotic standard error is:
+$$s(\hat{\theta})=\sqrt{\bm{R}'\bm{\hat{V}}_{\hat{\beta}}\bm{R}}$$
+This works for \textbf{any} differentiable function of $\hat\beta$ --- linear or nonlinear.
+\end{tcolorbox}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Running Example: Log Wage Regression}
+\begin{itemize}
+\item $\log(wage)=\beta_1 \cdot education+\beta_2 \cdot experience+\beta_3 \cdot experience^2/100+\beta_4+e$.
+\item We can calculate:
+\begin{itemize}
+\item Percentage return to education:
+$$\theta_1=100\beta_1$$
+\item Percentage return to experience for those with 10 years of experience:
+$$\theta_2=100\beta_2+20\beta_3$$
+\item Experience level which maximizes expected log wages:
+$$\theta_3=-50\beta_2/\beta_3$$
+\end{itemize}
+\end{itemize}
+
+\pause
+
+Each is a function $\theta = r(\beta)$. The first two are linear; the third is nonlinear. All three use the same delta method formula.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Example: Return to Education (Linear)}
+\begin{itemize}
+\item Percentage return to education:
+$$\theta_1=100\beta_1$$
+\item $\bm{R}=\begin{pmatrix}100\\ 0\\ 0\\ 0\end{pmatrix}$
+\item Asymptotic standard error:
+\[
+s(\hat{\theta}_1) = \sqrt{\bm{R}' \bm{\hat{V}}_{\hat{\beta}} \bm{R}} = 100 \cdot \sqrt{\hat{\text{Var}}(\hat{\beta}_1)}
+\]
+\end{itemize}
+
+This is just rescaling --- the SE scales linearly.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Example: Return to Experience at 10 Years (Linear)}
+\begin{itemize}
+\item Percentage return to experience at 10 years:
+\[
+\theta_2 = 100\beta_2 + 20\beta_3
+\]
+\item Gradient of $\theta_2$ with respect to $\bm{\beta}$:
+\[
+\bm{R} =
+\begin{pmatrix}
+0 \\
+100 \\
+20 \\
+0
+\end{pmatrix}
+\]
+\item Asymptotic standard error:
+\[
+s(\hat{\theta}_2) = \sqrt{\bm{R}' \bm{\hat{V}}_{\hat{\beta}} \bm{R}}
+\]
+\end{itemize}
+
+This is a linear combination of two coefficients --- the SE depends on their covariance.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Example: Maximum Return to Experience (Nonlinear)}
+\begin{itemize}
+\item Experience level which maximizes expected log wages:
+\[
+\theta_3 = -50\frac{\beta_2}{\beta_3}
+\]
+\item Gradient of $\theta_3$ with respect to $\bm{\beta}$:
+\[
+\bm{R} =
+\begin{pmatrix}
+0 \\
+-50/\beta_3 \\
+50\beta_2/\beta_3^2 \\
+0
+\end{pmatrix}
+\]
+\item Asymptotic standard error:
+\[
+s(\hat{\theta}_3) = \sqrt{\bm{R}' \bm{\hat{V}}_{\hat{\beta}} \bm{R}}
+\]
+\end{itemize}
+
+This is nonlinear --- $\bm{R}$ itself depends on $\beta$, estimated at $\hat\beta$. Same logic as the long-run elasticity from Lecture 10.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{The z-statistic}
+\begin{itemize}
+\item The t-statistic is $T(\theta)=\frac{\hat{\theta}-\theta}{s(\hat{\theta})}$
+\item When dealing with asymptotic inference, this is called the z-statistic.
+\begin{align*}
+T(\theta)&=\frac{\hat{\theta}-\theta}{s(\hat{\theta})}\\
+&=\frac{\sqrt{n}(\hat{\theta}-\theta)}{\sqrt{\hat{V}_\theta}}\\
+&\rightarrow_d \frac{N(0,V_\theta)}{\sqrt{V_\theta}}\\
+&=Z\sim N(0,1)
+\end{align*}
+\end{itemize}
+
+\pause
+
+Under $H_0: \theta = \theta_0$, reject at level $\alpha$ if $|T| > z_{\alpha/2}$. For $\alpha = 0.05$: $z_{0.025} = 1.96$.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Regression Intervals}
+\begin{itemize}
+\item Linear model: \quad \( m(x) = x' \beta \)
+\item Define target parameter: \quad \( \theta = r(\beta) = x' \beta \)
+\item Estimate: \quad \( \hat{m}(x) = \hat{\theta} = x' \hat{\beta} \)
+\item Gradient of \( r(\beta) \): \quad \( \bm{R} = \frac{\partial r}{\partial \beta} = x \)
+\item Asymptotic standard error:
+\[
+s(\hat{\theta}) = \sqrt{\bm{R}' \bm{\hat{V}}_{\hat{\beta}} \bm{R}}
+= \sqrt{\bm{x}' \bm{\hat{V}}_{\hat{\beta}} \bm{x}}
+\]
+\item 95\% confidence interval for \( \mathbb{E}[Y | X = x] \):
+\[
+x' \hat{\beta} \pm 1.96 \cdot \sqrt{\bm{x}' \bm{\hat{V}}_{\hat{\beta}} \bm{x}}
+\]
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Example: Prestige $\sim$ Education}
+
+$\beta_{ed}=5.4$, $\beta_{cons}=-10.7$,  $\bm{\hat{V}}_{\hat{\beta}}=\begin{bmatrix} 13.52&-1.18\\-1.18&.11\end{bmatrix}$\\
+at 10 years of education:
+$$x' \hat{\beta} \pm 1.96 \cdot \sqrt{\bm{x}' \bm{\hat{V}}_{\hat{\beta}} \bm{x}}$$
+$$(1\ 10) \begin{pmatrix}-10.7\\ 5.4\end{pmatrix} \pm 1.96 \cdot \sqrt{(1\ 10) \begin{bmatrix} 13.52&-1.18\\-1.18&.11\end{bmatrix}\begin{pmatrix}1\\ 10\end{pmatrix}}$$
+
+$$43.3 \pm 1.96 \cdot \sqrt{0.87}$$
+$$43.3 \pm 1.83$$
+compare to 22 years of education
+$$107 \pm 1.96 \cdot \sqrt{14.8}$$
+$$107 \pm 7.5$$
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{R: Sandwich SEs and Delta Method}
+
+\begin{lstlisting}
+# Homoskedastic vs robust SEs
+coeftest(mod0)                                  # model-based
+coeftest(mod0, vcov = vcovHC(mod0, type="HC1")) # sandwich
+
+# Confidence interval for CEF at a point
+x0 <- c(1, 5000, 12, 30)  # intercept, income, ed, women
+se_x0 <- sqrt(t(x0) %*% vcovHC(mod0) %*% x0)
+pred <- sum(x0 * coef(mod0))
+cat(pred, "+/-", 1.96 * se_x0)
+
+# Delta method for nonlinear function (car package)
+car::deltaMethod(mod0, "income / education")
+\end{lstlisting}
+
+\pause
+
+Same tools as Lectures 6, 9, 10 --- the \texttt{sandwich} and \texttt{car} packages handle the asymptotic theory automatically.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Application: Ridge Regression}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Application: Ridge Regression}
+\begin{itemize}
+\item Suppose $Y=X'\beta+e$ with $\mathbb{E}[Xe]=0$
+$$\hat{\beta}_R=\left(\sum_{i=1}^n X_iX_i'+\lambda \bm{I}_k\right)^{-1}\left(\sum_{i=1}^n X_iY_i\right)$$
+\item Where $\lambda>0$ is a constant, added to the diagonals of the covariance matrix.
+\item This is biased, shrinks $\hat{\beta}$.
+\item Arises from solving $\min_\beta (\bm{y}-\bm{X}\beta)'(\bm{y}-\bm{X}\beta)+\lambda(\beta'\beta-c)$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Application: Ridge Regression}
+\includegraphics[width=2.5 in]{ridge.png}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Ridge is Consistent (via CMT)}
+\begin{align*}
+\text{plim}\ \hat{\beta}_R
+&= \text{plim} \left( \frac{1}{n} \sum_{i=1}^n X_i X_i' + \frac{1}{n} \lambda \bm{I}_k \right)^{-1}
+\left( \frac{1}{n} \sum_{i=1}^n X_i Y_i \right) \\
+\\
+&= \left( \text{plim} \frac{1}{n} \sum_{i=1}^n X_i X_i' + \text{plim} \frac{1}{n} \lambda \bm{I}_k \right)^{-1}
+\left( \text{plim} \frac{1}{n} \sum_{i=1}^n X_i Y_i \right) \\
+\\
+&= \left( \mathbb{E}[X_i X_i'] \right)^{-1} \mathbb{E}[X_i Y_i]
+\quad \text{since } \frac{\lambda}{n} \to 0 \text{ as } n \to \infty
+\end{align*}
+
+\pause
+\begin{itemize}
+  \item As \( n \to \infty \), the Ridge estimator converges in probability to the same plim as OLS.
+  \item Biased in finite samples, consistent asymptotically --- the canonical example of a biased-but-consistent estimator (recall Lecture 10's discussion).
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Summary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{What We Proved Today}
+
+The OLS estimator $\bm{\hat{\beta}}=(\bm{X}'\bm{X})^{-1}\bm{X}'y$ is:
+
+\medskip
+
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+\toprule
+\textbf{Property} & \textbf{Tool (from Lecture 10)} & \textbf{Result} \\
+\midrule
+Consistent & WLLN + CMT & $\text{plim}\ \hat\beta = \beta$ \\
+Asy. normal & Multivariate CLT + Slutsky & $\sqrt{n}(\hat\beta - \beta) \overset{d}{\to} N(0, V_\beta)$ \\
+Testable & Wald statistic & $W \overset{a}{\sim} \chi^2_q$ \\
+Robust & Sandwich estimator & $\hat{V}_\beta^{HC} \overset{p}{\to} V_\beta$ \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1.0}
+
+\pause
+
+\bigskip
+
+These results hold \textbf{without normality} --- only requiring iid data with finite 4th moments and $\mathbb{E}[\bm{x}e] = 0$.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Looking Ahead}
+
+\textbf{What happens when $\mathbb{E}[\bm{x}e] \neq 0$?}
+
+\pause
+
+\begin{itemize}
+    \item OLS is \textbf{inconsistent}: $\text{plim}\,\hat\beta = \beta + Q_{XX}^{-1}\mathbb{E}[Xe] \neq \beta$
+    \item No amount of data can fix this --- the bias does not vanish.
+\end{itemize}
+
+\pause
+
+\bigskip
+
+\textbf{Lectures 13--14 (IV and 2SLS):} Find instruments $Z$ with $\mathbb{E}[Ze] = 0$ and $\mathbb{E}[ZX'] \neq 0$.
+\begin{itemize}
+    \item Replace the OLS moment condition $\mathbb{E}[X(Y - X'\beta)] = 0$ with $\mathbb{E}[Z(Y - X'\beta)] = 0$
+    \item Same asymptotic machinery: WLLN, CLT, Slutsky, sandwich --- applied to a different estimating equation
+    \item This is another instance of the GMM framework: $\mathbb{E}[g(W_i, \theta_0)] = 0$
+\end{itemize}
+
+\end{frame}
+
+
+\end{document}

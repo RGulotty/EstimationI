@@ -1,0 +1,122 @@
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{PLSC 30700}
+\rhead{Calculus Warm-Up: Day 7}
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{center}
+{\Large\textbf{Calculus Warm-Up Quiz --- Day 7}}\\[4pt]
+{\large Maximum Likelihood Estimation and Normal Regression}\\[4pt]
+\textit{Complete before lecture. 10 minutes.}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Name:} \hrulefill
+
+\bigskip
+
+Today we maximize likelihood functions.  This requires the product rule, the derivative of $\log x$, and the chain rule applied to exponentials.  We also compute second derivatives (the Hessian) to characterize curvature.
+
+\bigskip
+
+\begin{enumerate}[label=\textbf{\arabic*.}, itemsep=12pt]
+
+\item \textbf{Product Rule.} Compute the derivative.
+\begin{enumerate}[label=(\alph*)]
+\item $\dfrac{d}{dp}\left[p^3(1-p)^2\right] = $
+\vspace{0.8in}
+\item Set your answer equal to zero and solve for $p$. (Hint: factor out $p^2(1-p)$.)
+\vspace{0.8in}
+\end{enumerate}
+
+\item \textbf{Derivatives of $\log$ and $1/x$.} Compute:
+\begin{enumerate}[label=(\alph*)]
+\item $\dfrac{d}{d\lambda}\left[-3\log\lambda\right] = $
+\vspace{0.4in}
+\item $\dfrac{d}{d\lambda}\left[-\dfrac{5}{\lambda}\right] = $
+\vspace{0.4in}
+\item $\dfrac{d}{d\lambda}\left[-3\log\lambda - \dfrac{5}{\lambda}\right] = $ \quad Set this to zero and solve for $\lambda$.
+\vspace{0.7in}
+\end{enumerate}
+
+\item \textbf{Log-Likelihood of the Normal.}\\
+The log-density of a $N(\mu, \sigma^2)$ random variable $x$ is:
+$$\log f(x|\mu,\sigma^2) = -\frac{1}{2}\log(2\pi) - \frac{1}{2}\log(\sigma^2) - \frac{(x-\mu)^2}{2\sigma^2}$$
+\begin{enumerate}[label=(\alph*)]
+\item Treating $\sigma^2$ as known, compute $\dfrac{\partial}{\partial \mu}\log f(x|\mu,\sigma^2)$.
+\vspace{0.7in}
+\item For $n$ independent observations, the log-likelihood is $\ell(\mu) = \sum_{i=1}^n \log f(x_i|\mu,\sigma^2)$.  Set $\dfrac{d\ell}{d\mu} = 0$ and solve for $\hat\mu$.
+\vspace{0.8in}
+\end{enumerate}
+
+\item \textbf{Second Derivative (Hessian Preview).}\\
+From Question 2(c), let $\ell(\lambda) = -3\log\lambda - 5/\lambda$.
+\begin{enumerate}[label=(\alph*)]
+\item Compute $\ell'(\lambda)$ (you already did this).
+\vspace{0.3in}
+\item Compute $\ell''(\lambda)$. (Differentiate $\ell'(\lambda)$ again.)
+\vspace{0.7in}
+\item Evaluate $\ell''(\lambda)$ at $\hat\lambda$ from 2(c). Is it negative? (This confirms a maximum.)
+\vspace{0.5in}
+\end{enumerate}
+
+\item \textbf{Chain Rule with Exponentials.} Compute:
+\begin{enumerate}[label=(\alph*)]
+\item $\dfrac{d}{dx} e^{-2x} = $
+\vspace{0.4in}
+\item $\dfrac{d}{dx} e^{-x^2/2} = $
+\vspace{0.4in}
+\end{enumerate}
+
+\end{enumerate}
+
+\newpage
+\begin{center}
+{\Large\textbf{Answer Key --- Day 7}}
+\end{center}
+
+\begin{enumerate}[label=\textbf{\arabic*.}, itemsep=8pt]
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $3p^2(1-p)^2 - 2p^3(1-p) = p^2(1-p)[3(1-p)-2p] = p^2(1-p)(3-5p)$
+\item $p^2(1-p)(3-5p) = 0$. Solutions: $p=0$, $p=1$, $p=3/5$. The interior maximum is $p=3/5$.
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $-3/\lambda$
+\item $5/\lambda^2$
+\item $-3/\lambda + 5/\lambda^2 = 0 \implies 5/\lambda^2 = 3/\lambda \implies \lambda = 5/3$.
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $\dfrac{\partial}{\partial\mu}\log f = \dfrac{x-\mu}{\sigma^2}$
+\item $\dfrac{d\ell}{d\mu} = \dfrac{1}{\sigma^2}\sum_{i=1}^n(x_i - \mu) = 0 \implies n\mu = \sum x_i \implies \hat\mu = \bar{x} = \dfrac{1}{n}\sum x_i$.
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $\ell'(\lambda) = -3/\lambda + 5/\lambda^2$
+\item $\ell''(\lambda) = 3/\lambda^2 - 10/\lambda^3$
+\item At $\hat\lambda = 5/3$: $\ell''(5/3) = 3/(25/9) - 10/(125/27) = 27/25 - 270/125 = 27/25 - 54/25 = -27/25 < 0$. Confirmed: maximum.
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $-2e^{-2x}$
+\item $-x\, e^{-x^2/2}$
+\end{enumerate}
+\end{enumerate}
+
+\end{document}

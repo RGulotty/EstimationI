@@ -1,0 +1,16 @@
+\frametitle{Standard Errors in R: Connecting to the Formula}
+\begin{lstlisting}
+mod <- lm(prestige ~ education + income, data=Prestige)
+
+# The formula from the slides: s^2 (X'X)^{-1}
+sigma(mod)^2 * solve(t(X) %*% X)
+
+# What R reports:
+vcov(mod)
+
+# Standard errors = sqrt of the diagonal
+sqrt(diag(vcov(mod)))
+coef(summary(mod))[, "Std. Error"]  # identical
+\end{lstlisting}
+\vspace{1ex}
+Every standard error in \texttt{summary(lm())} comes from $\sqrt{\text{diag}(s^2_e(\bm{X'X})^{-1})}$.

@@ -1,0 +1,441 @@
+
+\documentclass[aspectratio=169]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+
+%  \usetheme{Pittsburgh}
+%\usefonttheme[2]{sans}
+\renewcommand{\familydefault}{cmss}
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+%\usepackage{palatino}
+%\usepackage{cmbright}
+\usepackage{bm}
+\usepackage{listings}
+\useinnertheme{rectangles}
+}
+\usepackage{amsmath}
+\usepackage{tcolorbox}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\usepackage{array}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=red}
+\usepackage{tcolorbox}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+%\usepackage[all]{xy}
+
+\usetikzlibrary{decorations.pathreplacing}
+\usepackage{lipsum}
+
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+ 
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models Lecture 12: Endogeneity}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+
+\begin{document}
+
+\begin{frame}
+\maketitle
+\end{frame}
+
+
+
+\section{Identification}
+
+
+\begin{frame}{General form of Endogeneity}
+\begin{itemize}
+\item Our *structural* model is $Y=\bm{x}'\beta+e$. \pause
+\item If $\mathbb{E}[\bm{x}e]\neq0$, we say $\bm{x}$ is endogenous for $\beta$.  \pause
+\item We can still define a projection equation, $Y=\bm{x}'\beta^*+e^*$, for which $\mathbb{E}[\bm{x}e^*]=0$.
+\begin{align*}
+\beta^*&=(\mathbb{E}[\bm{x}\bm{x}'])^{-1}\mathbb{E}[\bm{x}Y]\\ \pause
+&=(\mathbb{E}[\bm{x}\bm{x}'])^{-1}\mathbb{E}[\bm{x}(\bm{x}'\beta+e)]\\ \pause
+&=(\mathbb{E}[\bm{x}\bm{x}'])^{-1}(\mathbb{E}[\bm{x}\bm{x}'])\beta+(\mathbb{E}[\bm{x}\bm{x}'])^{-1}\mathbb{E}[\bm{x}\bm{x}']e]\\ \pause
+&=\beta+(\mathbb{E}[\bm{x}\bm{x}'])^{-1}\mathbb{E}[\bm{x}e])
+\end{align*}
+\item So, $\hat{\beta} \underset{p}{\to} \beta^*\neq \beta$ and the least squares estimate is inconsistent. \pause
+\item This is called endogeneity, or endogeneity bias, or bias due to endogeneity.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Motivation 1: Measurement Error}
+\begin{itemize}
+\item We think that $\mathbb{E}[Y|\bm{z}]=\bm{z}'\beta$, but we don't observe $\bm{z}$. \pause
+\item Our measured variables $\bm{x}=\bm{z}+\bm{u}$, where $\bm{u}$ is $k\times 1$ and independent of $e$ and $\bm{z}$. \pause
+\item $plim \frac{\bm{z}'\bm{u}}{n}=0$: the measurement error is uncorrelated with the truth. \pause
+\item $plim \frac{e'\bm{u}}{n}=0$: the measurement error is uncorrelated with the disturbance.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Motivation 1: Measurement Error}
+\begin{itemize}
+\item We can rewrite in terms of observed and unobserved variables. \pause
+\begin{align*}
+Y&=\bm{z}'\beta+e\\ \pause
+&=(\bm{x}-\bm{u})'\beta+e\\ \pause
+&=\bm{x}'\beta+e-\bm{u}'\beta\\ \pause
+&\equiv \bm{x}'\beta+\nu \pause
+\end{align*}
+\item However, $\mathbb{E}[\bm{x}\nu]=\mathbb{E}[(\bm{z}+\bm{u})(e-\bm{u}'\beta)]=\mathbb{E}[\bm{z}e]+\mathbb{E}[\bm{u}e]-\mathbb{E}[\bm{z}\bm{u}'\beta]-\mathbb{E}[\bm{u}\bm{u}']\beta=-\mathbb{E}[\bm{u}\bm{u}']\beta\neq 0$
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{OLS estimates}
+\begin{align*}
+\hat{\beta}&=(\bm{X}'\bm{X})^{-1}\bm{X}'y\\ \pause
+&=(\bm{X}'\bm{X})^{-1}\bm{X}'(\bm{X}\beta+e-\bm{u}\beta)\\ \pause
+&=\beta+(\bm{X}'\bm{X})^{-1}\bm{X}'e-(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{u}\beta
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{Asymptotic Bias}
+\begin{align*}
+plim \hat{\beta}&= plim [\beta+(\bm{X}'\bm{X})^{-1}\bm{X}'e-(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{u}\beta]\\ \pause
+&=  \beta+plim(\bm{X}'\bm{X})^{-1}\bm{X}'e-plim(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{u}\beta\\ \pause
+&=  \beta+(plim\frac{\bm{X}'\bm{X}}{n})^{-1}plim\frac{\bm{X}'e}{n}-(plim \frac{\bm{X}'\bm{X}}{n})^{-1}plim\frac{\bm{X}'\bm{u}}{n}\beta\\ \pause
+&=  \beta+\Sigma_X^{-1}plim\frac{(\bm{Z+\bm{u}})'e}{n}-\Sigma_X^{-1}plim\frac{(\bm{Z+\bm{u}})'\bm{u}}{n}\beta\\ \pause
+&=  \beta+\Sigma_X^{-1}0-\Sigma_X^{-1}\Sigma_{\bm{u}}\beta\\ \pause
+&= (\bm{I}-\underbrace{\Sigma_X^{-1}}_{signal}\underbrace{\Sigma_{\bm{u}}}_{noise})\beta\\
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{Examples of Measurement Error}
+\begin{itemize}
+\item Note, even if only one variable has measurement error, it affects all of the slope coefficients. \pause
+\item Survey self reports: income, hours worked, assets, occupation, schooling, age, employment status (see Bound, Brown, and Mathiowetz 2001). \pause
+\item Government reported data on GDP, trade flows, spending. \pause
+\item Blood pressure measurements with a sphygmomanometer.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Motivation 2: Selection and Endogeneity (Roy Model)}
+\begin{itemize}
+\item Let \(\bm{x}\) affect potential outcomes \quad e.g., education, experience, age \pause
+\item Let \(\bm{z}\) affect the selection decision  \quad e.g., \(\bm{z} \supseteq \bm{x}\), e.g., distance to college. \pause
+\vspace{0.3em}
+
+\item Potential outcomes:$ Y_1 = \bm{x}'\beta_1 + e_1, \quad Y_0 = \bm{x}'\beta_0 + e_0$
+\item Individuals select into treatment if:
+\[
+Y_1 - Y_0 = (\bm{x}'\beta_1 - \bm{x}'\beta_0) + (e_1 - e_0) > 0
+\]
+\item Define the unobserved selection term: \(\eta = e_1 - e_0\) \pause
+
+\item We cannot observe both $Y_1$ and $Y_0$.  We model selection as a monotonic function of a latent index:
+\[
+D = 1\{ \bm{z}'\gamma + \eta > 0 \}
+\] \pause
+
+\item If \(\bm{z}\) includes variables excluded from \(\bm{x}\), we have an \textbf{exclusion restriction}.
+
+\item If \(\eta\) and \(e_1\) are correlated, then:
+\[
+\mathbb{E}[e_1 \mid D = 1] = \mathbb{E}[e_1 \mid \bm{z}'\gamma + \eta > 0] \neq 0
+\Rightarrow \text{OLS on treated sample is biased.}
+\]
+
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Notation for Endogenous Regressors}
+\begin{itemize}
+\item $Y$ is a linear function of exogenous variables $\bm{x}_1$ and endogenous variables $\bm{x}_2$ \pause
+\item Call $\bm{y}_2=\bm{x}_2$: \pause
+$$Y_1=\bm{x}_1'\beta_1+\bm{y}_2'\beta_2+e$$ \pause
+$$\mathbb{E}[\bm{y}_2e]\neq 0$$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Notation for Instruments}
+\begin{itemize}
+\item There are $l$ instruments, $\bm{z}$, including the $k_1$ exogenous variables $\bm{x}_1$ and $l_2$ excluded exogenous variables $\bm{z}_2$,. \pause
+\begin{align*}
+\bm{E}[\bm{z}e]&=0\tag{exogeneity}\\ \pause
+\bm{E}[\bm{z}\bm{z}]&>0 \tag{non-redundant}\\ \pause
+\text{rank}(\bm{z}\bm{x}')=k \tag{relevant}
+\end{align*} \pause
+\item We can write:
+$$Y_1=\bm{z}_1'\beta_1+\bm{y}_2'\beta_2+e$$
+\item Measurement Error: The excluded endogenous variables offer an alternative measure of the true variable $\bm{z}.$
+\item Selection: The excluded exogenous variables affect selection but not potential outcomes.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Reduced Form}
+\begin{itemize}
+\item The reduced form transforms $Y_1=\bm{x}_1'\beta_1+\bm{y}_2'\beta_2+e$ to put the endogenous regressors on the left hand side. \pause
+\item We construct the fitted regressors and implied transformation using reduced-form coefficients:
+\begin{itemize}
+  \item $\lambda$ — the reduced-form coefficients from regressing $Y_1$ on instruments $\bm{z}$, \pause
+  \item $\Gamma$ — the reduced-form coefficients from regressing the endogenous regressors $\bm{y}_2$ on $\bm{z}$, \pause
+  \item $\bar{\Gamma}$ — the full projection matrix from regressing all regressors $\bm{x} = [\bm{x}_1, \bm{y}_2]$ on $\bm{z}$.
+\end{itemize}
+
+\item Note $\bm{y}_2$ is a vector of $k_2$ endogenous variables, so: \pause
+$$\bm{y}_2=\Gamma'\bm{z}+\bm{u}_2=\Gamma_{12}'\bm{z}_1+\Gamma_{22}'\bm{z}_2+\bm{u}_2$$
+where $\Gamma$ is a $l\times k_2$ matrix defined by linear projection:\pause
+$$\Gamma=\mathbb{E}[\bm{z}\bm{z}']^{-1}\mathbb{E}[\bm{z}\bm{y}_2']$$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Reduced Form}
+\begin{itemize}
+\item Plugging into the equation for $Y_1$ \pause
+\begin{align*}
+Y_1&=\bm{z}_1'\beta_1+(\Gamma_{12}'\bm{z}_1+\Gamma_{22}'\bm{z}_2+\bm{u}_2)\beta_2+e\\ \pause
+&=\bm{z}_1'(\beta_1+\Gamma_{12}'\beta_2)+\bm{z}_2'(\Gamma_{22}'\beta_2)+(\bm{u}_2'\beta_2+e)\\ \pause
+&=\bm{z}_1'\lambda_1+\bm{z}_2'\lambda_2+u_1\\ \pause
+&=\bm{z}'\lambda+u_1
+\end{align*}
+
+\item We can write $\lambda=\begin{bmatrix} \bm{I}_{k_1} & \Gamma_{12}\\0 &\Gamma_{22}\end{bmatrix}\beta=\left[ \begin{matrix}\bm{I}_{k_1} \\0 \end{matrix} \quad \Gamma \right]\beta\equiv \bar{\Gamma}\beta$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Reduced Form}
+\begin{itemize}
+\item $\beta_1$ and $\beta_2$ are the structural parameters. \pause
+\item $\Gamma$ and $\lambda$ are the reduced form parameters. \pause
+\begin{align*}
+Y_1&=\lambda'Z+u_1\\
+Y_2&=\Gamma'Z+u_2
+\end{align*}
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}{Identified and Over-identified}
+\begin{itemize}
+\item A parameter is \textbf{identified} if it is a unique function of the probability distribution of the observables, for example, population moments. \pause
+\item Recall, the linear projection model is identified if $\bm{E}[\bm{x}\bm{x}']>0$. \pause
+\item We say the Instrumental Variables model is \textbf{just-identified} if $l=k$ and \textbf{over-identified} if $l>k$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Relevance}
+\begin{itemize}
+\item Recall $\bm{x} = [\bm{x}_1, \bm{y}_2]$,
+\begin{align*}
+\bar{\Gamma} &= \left[ \begin{matrix} \bm{I}_{k_1} \\ \bm{0} \end{matrix} \quad \Gamma \right]= \left[ \begin{matrix} \bm{I}_{k_1} \\ \bm{0} \end{matrix} \quad \mathbb{E}[\bm{z}\bm{z}']^{-1} \mathbb{E}[\bm{z} \bm{y}_2'] \right]\\ \pause
+&= \mathbb{E}[\bm{z} \bm{z}']^{-1} \left( \left[ \mathbb{E}[\bm{z}\bm{z}'] \begin{matrix} \bm{I}_{k_1} \\ \bm{0} \end{matrix} \right] \quad \mathbb{E}[\bm{z} \bm{y}_2'] \right) \\
+&= \mathbb{E}[\bm{z} \bm{z}']^{-1} \mathbb{E}[\bm{z} \bm{x}']\\ \pause
+\lambda&= \mathbb{E}[\bm{z} \bm{z}']^{-1} \mathbb{E}[\bm{z} \bm{x}']\beta\\ \pause
+\mathbb{E}[\bm{z} \bm{z}']^{-1} \mathbb{E}[\bm{z} \bm{y}_1]&= \mathbb{E}[\bm{z} \bm{z}']^{-1} \mathbb{E}[\bm{z} \bm{x}']\beta\\ \pause
+ \mathbb{E}[\bm{z} \bm{y}_1]&= \mathbb{E}[\bm{z} \bm{x}']\beta
+\end{align*}
+\item To have a solution,  rank$(\mathbb{E}[\bm{z} \bm{x}'])=k$, what is called the \textbf{relevance condition}. \pause
+\item If $\bar{\Gamma}$ is rank $k$, then $\beta=(\bar{\Gamma}'\bar{\Gamma})^{-1}\bar{\Gamma}\lambda$
+\end{itemize}
+\end{frame}
+
+\section{Estimation}
+
+\begin{frame}{Estimation: Instrumental Variables Estimator}
+\begin{itemize}
+\item If $l=k$, we can write a system of $l=k$ equations and $k$ unknowns:
+\begin{align*}
+\mathbb{E}[\bm{z}e]&=0\\ \pause
+\mathbb{E}[\bm{z}(Y_1-\bm{x}'\beta]&=0\\ \pause
+\mathbb{E}[\bm{z}Y_1]-\mathbb{E}[\bm{z}\bm{x}']\beta]&=0\\ \pause
+\beta&=(\mathbb{E}[\bm{z}\bm{x}'])^{-1}\mathbb{E}[\bm{z}Y_1']\\ \pause
+\hat{\beta}_{iv}&=(\bm{Z}'\bm{X})^{-1}\bm{Z}'\bm{y}_1
+\end{align*}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Estimation: Indirect Least Squares}
+\begin{itemize}
+\item We can rewrite in reduced form:
+\begin{align*}
+\beta&=\bar{\Gamma}^{-1}\lambda\\
+\hat{\beta}_{ils}&=\hat{\bar{\Gamma}}^{-1}\hat{\lambda}\\ \pause
+&=((\bm{Z}'\bm{Z})^{-1}(\bm{Z}'\bm{X}))^{-1}(\bm{Z}'\bm{Z})^{-1}(\bm{Z}'\bm{y}_1)\\ \pause
+&=(\bm{Z}'\bm{X})^{-1}(\bm{Z}'\bm{Z})(\bm{Z}'\bm{Z})^{-1}(\bm{Z}'\bm{y}_1)\\ \pause
+&=(\bm{Z}'\bm{X})^{-1}(\bm{Z}'\bm{y}_1)\\ \pause
+&=\hat{\beta}_{iv}
+\end{align*}
+\end{itemize}
+\end{frame}
+\begin{frame}{A Simple IV Estimator: The Wald Estimator}
+\begin{itemize}
+\item Consider the scalar model: $Y = X\beta + e$, let $Z \in \{0,1\}$ be a binary instrument.
+\item The IV estimator is:
+\[
+\hat{\beta}^{IV} = \frac{\operatorname{Cov}(Z, Y)}{\operatorname{Cov}(Z, X)}
+\]
+\begin{align*}
+\operatorname{Cov}(Z, Y)&= \mathbb{E}[ZY]- Pr(Z=1)*\mathbb{E}[Y]\\ \pause
+&= p\mathbb{E}[Y|Z=1]- p*[\mathbb{E}[Y|Z=1]*p+[\mathbb{E}[Y|Z=0]*(1-p])\\ \pause
+&= p\mathbb{E}[Y|Z=1]- pp\mathbb{E}[Y|Z=1]-p[\mathbb{E}[Y|Z=0](1-p)]\\ \pause
+&= p(1- p)*([\mathbb{E}[Y|Z=1])-[\mathbb{E}[Y|Z=0]]\\ \pause
+\operatorname{Cov}(Z, X)&= p(1- p)*([\mathbb{E}[X|Z=1])-[\mathbb{E}[X|Z=0]]
+\end{align*}
+\item The ratio gives the \textbf{Wald estimator}:
+\[
+\boxed{
+\hat{\beta}^{IV} = \frac{\mathbb{E}[Y \mid Z = 1] - \mathbb{E}[Y \mid Z = 0]}{\mathbb{E}[X \mid Z = 1] - \mathbb{E}[X \mid Z = 0]}
+}
+\]
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Finite-Sample Wald Estimator}
+\begin{itemize}
+\item Suppose we observe $n$ observations $\{(Y_i, X_i, Z_i)\}_{i=1}^n$ with $Z_i \in \{0,1\}$ \pause
+\item Let:
+  \begin{align*}
+  \bar{Y}_1 &= \frac{1}{n_1} \sum_{i: Z_i = 1} Y_i \quad & \bar{Y}_0 &= \frac{1}{n_0} \sum_{i: Z_i = 0} Y_i \\
+  \bar{X}_1 &= \frac{1}{n_1} \sum_{i: Z_i = 1} X_i \quad & \bar{X}_0 &= \frac{1}{n_0} \sum_{i: Z_i = 0} X_i
+  \end{align*}
+  where $n_1 = \sum_i Z_i$ and $n_0 = \sum_i (1 -Z_i)$
+\item Then the IV estimator is:
+\[
+\boxed{
+\hat{\beta}^{IV} = \frac{\bar{Y}_1 - \bar{Y}_0}{\bar{X}_1 - \bar{X}_0}
+}
+\]
+\item This is the difference in average outcomes divided by the difference in average treatment intensity.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Standard Errors of the IV estimator (under homoskedasticity)}
+\begin{align*}
+Avar(\hat{\beta}_{IV})&=plim(\hat{\beta}_{IV}-\beta)(\hat{\beta}_{IV}-\beta)'\\ \pause
+&=plim (\bm{z}'\bm{x})^{-1}\bm{z}'ee'\bm{z}(\bm{x}'\bm{z})^{-1}\\ \pause
+&=\sigma^2_e plim (\frac{\bm{z}'\bm{x}}{n})^{-1}plim(\frac{\bm{z}'\bm{z}}{n})plim(\frac{\bm{x}'\bm{z}}{n})^{-1}\\ \pause
+&=\sigma^2_e (plim \frac{\bm{z}'\bm{x}}{n})^{-1}(plim \frac{\bm{z}'\bm{z}}{n})(plim \frac{\bm{x}'\bm{z}}{n})^{-1}\\ \pause
+&=\sigma^2_e \Sigma_{zx}^{-1}\Sigma_{z}\Sigma_{xz}^{-1}\\ \pause
+\widehat{Avar}(\hat{\beta}_{IV})&=\sigma^2(\bm{Z}'\bm{X})^{-1}\bm{Z}'\bm{Z}(\bm{X}'\bm{Z})^{-1}\\ \pause
+\hat{\sigma}^2&=n^{-1}(y-X\hat{\beta}_{iv})'(y-X\hat{\beta}_{iv})
+\end{align*}
+\end{frame}
+
+
+
+\begin{frame}{Two-Stage Least Squares}
+\begin{itemize}
+\item The logic of IV extends to cases where $l\geq k$.
+ \begin{align*}
+Y_1&=\bm{z}'\bar{\Gamma}\beta+u_1\\
+\mathbb{E}[\bm{z}u_1]&=0\\
+\hat{\beta}_{2sls}&=(\hat{\Gamma}'\bm{z}'\bm{z}\hat{\Gamma})^{-1}(\hat{\Gamma}'\bm{z}\bm{y}_1)\\ \pause
+&=(\bm{x}'\bm{z}(\bm{z}'\bm{z})^{-1}\bm{z}'\bm{z}(\bm{z}'\bm{z})^{-1}\bm{z}'\bm{x})^{-1}\bm{x}'\bm{z}(\bm{z}'\bm{z})^{-1}\bm{z}'\bm{y}_1)\\ \pause
+&=(\bm{x}'\bm{z}(\bm{z}'\bm{z})^{-1}\bm{z}'\bm{x})^{-1}\bm{x}'\bm{z}(\bm{z}'\bm{z})^{-1}\bm{z}'\bm{y}_1)\\ \pause
+&=(\bm{x}'\bm{P}_z'\bm{x})^{-1}(\bm{x}'\bm{P}_z\bm{y}_1)\\ \pause
+&=(\bm{x}'\bm{P}_z\bm{P}_z'\bm{x})^{-1})\bm{x}'\bm{P}_z\bm{y}_1)\\ \pause
+&=(\hat{\bm{x}}'\hat{\bm{x}})^{-1}(\hat{\bm{x}}'\bm{y}_1)
+\end{align*}
+\item The regression of $Y_1$ on the fitted values $\bm{x}$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Standard Errors of the 2SLS estimator}
+\begin{align*}
+y&=\bm{X}\beta+e\\ \pause
+&=\hat{\bm{X}}+\hat{u})\beta+e\\ \pause
+&=\hat{\bm{X}}\beta+(e+\hat{u}\beta)\\ \pause
+&=\hat{\bm{X}}\beta+\varepsilon\\ \pause
+\widehat{Avar}(\hat{\beta}_{2SLS})&=\sigma^2_{\varepsilon}(\hat{\bm{X}}'\hat{\bm{X}})^{-1}\\ \pause
+&=\sigma^2_{\varepsilon}(\bm{Z}'\bm{X})^{-1}\bm{Z}'\bm{Z}(\bm{X}'\bm{Z})^{-1}\\
+&=\underbrace{\sigma^2_{e}(\bm{Z}'\bm{X})^{-1}\bm{Z}'\bm{Z}(\bm{X}'\bm{Z})^{-1}}_{Avar(\hat{\beta}_{IV})}+var(\hat{u}\beta)(\bm{Z}'\bm{X})^{-1}\bm{Z}'\bm{Z}(\bm{X}'\bm{Z})^{-1}
+\end{align*}
+\end{frame}
+
+\begin{frame}{2SLS in Just-Identified Case: No Finite Moments}
+\begin{itemize}
+\item In the just-identified IV model with one instrument $Z$ and one endogenous regressor $X$,
+\[
+\hat{\beta}^{IV} = \frac{\sum_i Z_i Y_i}{\sum_i Z_i X_i}
+\]
+\item Even under standard assumptions (e.g., i.i.d. errors, homoskedasticity, valid instruments), the denominator $\sum_i Z_i X_i$ is random.
+\item The distribution of $\hat{\beta}^{IV}$ has heavy (Cauchy-like) tails.
+\item This implies:
+\[
+\boxed{
+\mathbb{E}[(\hat{\beta}^{IV})^k] = \infty \quad \text{for all integers } k \geq 1
+}
+\]
+\item Applies even with strong instruments.
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Bootstrap Fails Under Weak Identification}
+\begin{itemize}
+\item Standard bootstrap relies on the estimator having a smooth, well-behaved limiting distribution.
+\item In just-identified IV, the heavy-tailed distribution of $\hat{\beta}^{IV}$ violates these conditions.
+\item Bootstrap t-statistics and confidence intervals can be severely misleading.
+\item Instead, use the empirical quantiles of the bootstrapped replications.
+\end{itemize}
+\end{frame}
+
+
+\end{document}
+

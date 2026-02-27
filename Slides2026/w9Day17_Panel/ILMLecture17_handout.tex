@@ -1,0 +1,910 @@
+
+\documentclass[aspectratio=169]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+
+%  \usetheme{Pittsburgh}
+%\usefonttheme[2]{sans}
+\renewcommand{\familydefault}{cmss}
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+%\usepackage{palatino}
+%\usepackage{cmbright}
+\usepackage{bm}
+\usepackage{listings}
+\useinnertheme{rectangles}
+}
+\usepackage{amsmath}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\definecolor{darkpurple}{rgb}{0.4, 0, 0.6}
+\usepackage{array}
+\usepackage{booktabs}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=darkpurple}
+\usepackage{tcolorbox}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+%\usepackage[all]{xy}
+
+\usepackage{tikz}
+\usepackage{lipsum}
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+
+\lstset{%
+  language=R,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{darkgreen},
+  stringstyle=\color{darkpurple},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10}
+}
+
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+ 
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models Lecture 17: Pooled and Panel Data}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+
+\begin{document}
+
+
+
+\begin{frame}
+\maketitle
+\end{frame}
+\section{Intro}
+\setcounter{subsection}{1}
+
+
+\begin{frame}{Where We Are: From GMM to Panel Data}
+\begin{itemize}
+\item In Lectures 15--16 we developed \textbf{GMM} as a unified framework:
+\begin{itemize}
+\item Specify moment conditions $E[\bm{g}(\bm{z}_i,\bm{\theta}_0)]=\bm{0}$
+\item Estimate $\hat{\bm{\theta}}$ by minimizing $\hat{\bm{g}}'\bm{W}\hat{\bm{g}}$
+\item Test overidentifying restrictions with the $J$-statistic
+\end{itemize}\pause
+\item \textbf{Panel data} introduces new structure:
+\begin{itemize}
+\item Repeated observations create natural moment conditions
+\item Unobserved heterogeneity $\alpha_i$ must be controlled
+\item Different assumptions $\Rightarrow$ different moment conditions $\Rightarrow$ different estimators
+\end{itemize}\pause
+\item \textbf{This lecture:} pooled OLS, fixed effects, between estimators as moment-based estimators.\\
+\textbf{Next lecture:} random effects, CRE, and dynamic panel GMM (Arellano-Bond).
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Panel Estimators as Moment Conditions}
+\centering
+\small
+\begin{tabular}{@{}llp{3.8cm}@{}}
+\toprule
+\textbf{Estimator} & \textbf{Moment Condition} & \textbf{Key Assumption} \\
+\midrule
+Pooled OLS & $E[\bm{X}_{it}' e_{it}]=\bm{0}$ & $\alpha_i$ uncorrelated with $\bm{X}$ \\[4pt]
+Fixed Effects & $E[\tilde{\bm{X}}_{it}'\tilde{e}_{it}]=\bm{0}$ & Strict exogeneity (within-unit) \\[4pt]
+Random Effects & $E[\bm{X}_{it}'\nu_{it}]=\bm{0}$ & $\alpha_i$ uncorrelated with $\bm{X}$; GLS weighting \\[4pt]
+Arellano-Bond & $E[Y_{is}\cdot\Delta e_{it}]=0,\; s\leq t\!-\!2$ & Sequential exogeneity; lagged levels as instruments \\
+\bottomrule
+\end{tabular}
+\vspace{6pt}
+
+\begin{itemize}
+\item Each row is a \textbf{GMM estimator} with different instruments and assumptions.\pause
+\item More moment conditions $\Rightarrow$ overidentification $\Rightarrow$ testable with the $J$-test.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Longitudinal Data}
+\begin{itemize}
+\item Longitudinal data describes two dimensions, usually time and individuals.
+\item Examples: 
+\begin{itemize}
+\item Exit Polls/ CPS/ ANES: people are surveyed following each election.
+\item Dyadic data in peace science literature.
+\item Election forecasting.
+\end{itemize}
+\item Data can be stacked to make a data matrix with $N_1+N_2+\cdots +N_T$ rows.
+\item This structure can be incorporated into our statistical model.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Using time in our analysis}
+\begin{itemize}
+\item Time can be treated as an indicator variable (as dummy variables or cumulatively), or as a continuous variable.
+\item Time period interactions can evaluate changes in slope coefficients across time (the effect of a free fedora on employment may be different today than in 1940).
+\end{itemize}
+\end{frame}
+
+
+\section{Difference in Difference}
+\setcounter{subsection}{1}
+
+\begin{frame}{Differences in Differences}
+\begin{itemize}
+\item We might collect data over time to rule out certain confounding factors.\pause
+\item Consider a study of the effect (D) of a voter ID law on turnout (Y), observing Texas and Oklahoma before and after the law.\pause
+\begin{itemize}
+\item Comparison one:\\
+\begin{tabular}{lll}
+State&&Outcome\\
+\hline
+Texas && $Y = M+D$\\
+Oklahoma  && $Y = O$\\
+\end{tabular}\pause
+\item Comparison two:\\
+\begin{tabular}{lll}
+State&Time&Outcome\\
+\hline
+Texas& Before & $Y = M$\\
+& After & $Y = M+(T+D)$\\
+\end{tabular}
+\end{itemize}
+\item Neither comparison on its own recovers D.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Diff in Diff}
+
+\begin{tabular}{lllll}
+State&Time& Outcome& After-Before& dTexas-dOklahoma\\
+\hline
+Texas & Before&$Y = M$\\
+ & After&$Y = M+T+D$& T+D\\
+ \\
+Oklahoma  &Before& $Y = O$\\
+& After & $Y = O+T$&T\\
+&&&&D
+\end{tabular}
+$$D=dY_{T}-dY_{O}=(Y_{A,T}-Y_{B,T})-(Y_{A,O}-Y_{B,O})$$
+\end{frame}
+
+\begin{frame}{Potential Outcomes}
+\begin{itemize}
+\item Define $D$ as the binary treatment $d\in\{0,1\}$ which tells us if we will be in the treatment category once we get to the second period.
+\item Measurements happen twice, $t\in\{0,1\}$
+\item $Y_t^d$ is the outcome in period $t$ for treatment status $d$.
+\item The outcomes we can observe is $Y_t$ (no d).
+$$Y_t=dY_t^1+(1-d)Y^0_t$$
+\item Counterfactual outcomes: 
+\begin{itemize}
+\item $Y_t^1|D_t=0$  (Outcomes in a world of treatment among those who weren't)
+\item $Y_t^0|D_t=1$ (Outcomes in a world of control among those who were treated)
+\end{itemize}
+\end{itemize}
+$$\delta_{i}=Y_{t}^1-Y_{t}^0$$
+\end{frame}
+
+\begin{frame}{Parallel Trends}
+\begin{itemize}
+\item Identification assumption/Parallel Trends
+$$E[Y_{t=1}^0|D=1]-E[Y_{t=0}^0|D=1]=E[Y_{t=1}^0|D=0]-E[Y_{t=0}^0|D=0]$$
+\item In previous example, T is the same across states, state level differences $(M-O)$ don't vary over time.
+\item The differences in expected potential non-treatment outcomes are unrelated to belonging to the treated or control group in the post treatment period.
+\item If the treated had not been subjected to treatment, both subpopulations would have experienced the same time trends.
+\item The composition cannot be affected by treatment
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Example Obama Support}
+\begin{itemize}
+\item Suppose we want to study the effect of racial co-identification (non-identification) on feeling thermometers of Obama in 2008.
+$$ObamaRating_i=b_0+d_{08} Black_i+\bm{b'_x}\bm{x}_i+e_i$$\pause
+\item However, we are worried about the two kinds of omitted factors:
+\begin{itemize}\pause
+\item Time trends (T): Obama ran after a financial crisis and war that might make him popular generally.\pause
+\item Group Differences (M-O): Black and white people might differ in their preferences over any president that is a relatively liberal northern antiwar Democratic senator. \pause
+\end{itemize}
+\item Suppose Obama's appeal (repulsion) among Black (white) people depends on the economic conditions in 2008, his being a liberal Senator, and not only his race?
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Example Obama Support}
+\begin{itemize}
+\item We can use a repeated cross section to difference out similar attitudes toward another Democratic candidate.\pause
+$$Kerry_i=b_0+d_{04} Black_i+\bm{b'_x}\bm{x}_i+e_i$$
+\item If we assume that 
+\begin{itemize}
+\item All time varying factors other than the candidate's race affected Black and white people's response to Democratic nominees equally.\pause
+\item All differences in evaluations of D. nominees between Black and white people did not change between 04 and 08.\pause
+\end{itemize}
+\item Then $\delta$ is an estimate of the Average Treatment Effect of the candidate's race on attitudes.
+$$\delta=d_{08}-d_{04}=(\bar{r}_{08,B}-\bar{r}_{08,W})-(\bar{r}_{04,B}-\bar{r}_{04,W})$$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Estimating Differences in Differences}
+\begin{itemize}
+\item Stack 04 and 08 data and compare two linear models:
+\item Define $yr08_i=1$ for the 2008 survey takers and $B_i=\mathbb{I}(\text{Race="Black"})$\pause
+\begin{align*}
+DRating_i&=b_{0,08}yr08_i+b_{0,04}(1-yr08_i)+d_{08}yr08_i B_i+d_{04}(1-yr08_i) B_i+\bm{b'_x}\bm{x}_i+e_i\\
+DRating_i&=b_{0,08}yr08_i+b_{0,04}(1-yr08_i)+d B_i+\bm{b'_x}\bm{x}_i+e_i
+\end{align*}\pause
+\item Then an F test tells us the effect of racial co-identification or non-identification.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+
+\scriptsize{\begin{table}[!htbp] \centering 
+\begin{tabular}{@{\extracolsep{5pt}}lccc} 
+\\[-1.8ex]\hline 
+\\[-1.8ex] & \multicolumn{3}{c}{demft} \\
+\hline \\[-1.8ex] 
+ I(1 - y08) & 54.5$^{***}$ & 53.0$^{***}$ &  \\ 
+  & (1.4) & (1.4) &  \\ 
+  & & & \\ 
+y08 & 65.2$^{***}$ & 65.9$^{***}$ & 10.6$^{***}$ \\ 
+  & (1.3) & (1.3) & (1.0) \\ 
+  & & & \\ 
+ black &  & 21.7$^{***}$ & 12.8$^{***}$ \\ 
+  &  & (1.0) & (1.9) \\ 
+  & & & \\ 
+ I(1 - y08):black & 12.8$^{***}$ &  &  \\ 
+  & (1.9) &  &  \\ 
+  & & & \\ 
+ y08:black & 25.1$^{***}$ &  & 12.3$^{***}$ \\ 
+  & (1.2) &  & (2.3) \\ 
+  & & & \\ 
+   age & 0.02 & 0.02 & 0.02 \\ 
+  & (0.02) & (0.02) & (0.02) \\ 
+  & & & \\ 
+ Constant &  &  & 54.5$^{***}$ \\ 
+  &  &  & (1.4) \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} }
+\end{frame}
+
+
+\begin{frame}
+\begin{center}
+\includegraphics[width= 5 in]{ObamaDiD.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Policy Evaluation}
+\begin{itemize}
+\item Diff-in-diff is often used to study binary policies when we theorize that selection bias is driven by fixed group features.\pause
+\item Key assumption for causal inference: parallel trends:
+\begin{itemize}
+\item The amount of uncontrolled selection bias is not changing over time.
+\item Time trends are the same across groups.
+\end{itemize}\pause
+\item Example of violation of parallel trends: Suppose that Texas and Oklahoma are trending blue, but Texas is closer to flipping, causing both voter ID laws and more investment by Democrats.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\begin{center}
+\includegraphics[width= 4.5 in]{DIDgraph.png}
+\end{center}
+\end{frame}
+
+
+\begin{frame}{Alternative: Synthetic Control}
+\begin{itemize}
+\item When we are studying aggregates like states, we might not have parallel trends.
+\item However, in some cases we can construct a plausible counterfactual from combinations of untreated units.
+\item The synthetic control approach uses covariates to construct these counterfactual weighted combinations.
+\item Assumes that we have a long time series and the treated unit outcomes lie within the convex hull of untreated outcomes.
+\end{itemize}
+\end{frame}
+
+
+\section{Panel Data}
+\setcounter{subsection}{1}
+
+
+\begin{frame}{Panel data}
+\begin{itemize}
+\item The above analysis assumes that group compositions don't change.
+\item Suppose we can measure the same individuals.
+\item We can then account for variation within groups, across groups, and across time.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Panel Example 1: Voting behavior}
+\begin{itemize}
+\item Consider a population of families.  Choose one at random.\pause
+\item For each family member $t$, we observe voting decisions $Y_t$ and exposure to a persuasive messages $Z_t$.\pause
+\item Each family has a household wealth $W$ and a set of stories passed down from their grandparents $A$.\pause
+\item We observe $Y_t$, $Z_t$ and $W$, but not $A$. \pause
+\item We want to estimate the effect of $Z_t$ on $Y_t$, holding constant $W$ and $A$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Panel Example 2: Airline cost structure}
+\begin{itemize}
+\item Consider a population of airlines. Choose one at random.\pause
+\item In each year, $t$, each airline pays $Y_t$ dollars to fly $Z_t$ passengers.\pause
+\item Each airline uses a proprietary technology $A$ which does not vary over time.\pause
+\item We observe N randomly selected Airlines but do not measure $A$. \pause
+\item We want to estimate the way that $Y_t$ responds to $Z_t$, holding constant $A$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Panel Example 3: Candidate Electoral Performance}
+\begin{itemize}
+\item Consider a population of candidates. Choose one at random.
+\item For each year $t$, the candidate receives vote share $Y_t$.
+\item We know each candidate has an underlying charisma $A$ which does not vary over time.
+\item We observe N randomly selected candidates, but do not measure $A$. 
+\item We want to estimate the effect of $Y_{t-1}$ on $Y_t$, holding constant $A$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Panel Data}
+\begin{itemize}
+\item The voters in a family, the airlines and candidates over time are all examples of \emph{panel data}.\pause
+\item Our observations are double indexed, usually divided into $N$ units and $T$ time periods/groups. \pause
+\item If there are many $T$ but few $N$, we call the data long and narrow, (time series cross section).\pause
+\item If every unit is observed in every period/ group, the data are called balanced.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Example Long Narrow Data }
+\begin{itemize}
+\item Greene analyzes the cost structure in the airline industry from 1970-84.
+\item Research question: do airlines have positive economies of scale?
+\item library(AER); data("USAirlines"); analyzes determinants of total costs for 6 airlines.\pause
+\item The cost function follows a Cobb-Douglas specification. Taking logs yields a linear regression:
+$$\ln(\text{cost})= \beta_0+\beta_1\ln(\text{output})+\beta_2\ln(\text{fuel price})+\beta_3\text{load}+u$$
+\item \emph{cost}: total costs of labor materials etc in USD 1000.
+\item \emph{output}: revenue passenger mile index
+\item input \emph{prices}: fuel prices
+\item \emph{load}: share of seats sold on flights flown.
+\end{itemize}
+\end{frame}
+
+
+\section{Pooled Data}
+\setcounter{subsection}{1}
+
+
+
+\begin{frame}{Example Long Narrow Data: Airline cost}
+\begin{center}
+\includegraphics[width= 5 in]{airpanel.png}
+\end{center}
+\end{frame}
+
+
+
+\begin{frame}{Pooled Regression of log(costs)}
+\begin{table}
+\begin{center}
+\begin{tabular}{l c c}
+\hline
+ & Greene 2000& Greene 2003 \\
+\hline
+(Intercept)  & $9.52^{***}$  & $9.42^{***}$  \\
+             & $(0.23)$      & $(0.23)$      \\
+lnoutput     & $0.88^{***}$  & $0.94^{***}$  \\
+             & $(0.01)$      & $(0.03)$      \\
+lnpfuel      & $0.45^{***}$  & $0.46^{***}$  \\
+             & $(0.02)$      & $(0.02)$      \\
+load         & $-1.63^{***}$ & $-1.54^{***}$ \\
+             & $(0.35)$      & $(0.34)$      \\
+lnoutput$^2$ &               & $0.02^{*}$    \\
+             &               & $(0.01)$      \\
+\hline
+R$^2$        & $0.99$        & $0.99$        \\
+Num. obs.    & $90$          & $90$          \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+\end{frame}
+
+\begin{frame}{Cost and Output (Bivariate)}
+\includegraphics[width= 5 in]{airgrandmean0.png}
+\end{frame}
+
+\begin{frame}{Cost and Output (Bivariate)}
+\includegraphics[width= 5 in]{airgrandmean.png}
+\end{frame}
+
+
+\begin{frame}{Cost and price of fuel (Bivariate)}
+\includegraphics[width= 5 in]{airgrandmean2.png}
+\end{frame}
+
+\begin{frame}{Cost and Capacity Utilization (load)}
+\includegraphics[width= 5 in]{airgrandmean3.png}
+\end{frame}
+
+\begin{frame}{resid(Cost) and resid(load)}
+\includegraphics[width= 5 in]{airgrandmean4.png}
+\end{frame}
+
+
+\begin{frame}{Assumptions of Pooled Regression: Exogeneity}
+\begin{itemize}
+\item $\bm{y}=\bm{X}\bm{\beta}+\bm{e}$
+\item Strict Exogeneity: $E(e_{it}|\bm{X})=\bm{0}$ for all time periods of $\bm{X}$.
+\item That is, $\bm{X}$ must not have any long run consequences for $\bm{Y}$.
+\item Moreover, $\bm{X}$ must not itself be a function of past $\bm{Y}$ 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Autocorrelation versus Autoregression}
+\begin{align*}
+Y_t&=\alpha Y_{t-1}+\beta X_t+\nu_t\\
+\nu_t&=\rho \nu_{t-1}+e_t
+\end{align*}
+\begin{itemize}\pause
+\item $\rho\neq 0$, $\alpha = 0$ has a "common factor" problem (autocorrelation): 
+\begin{itemize}
+\item Outcomes at $t-1$ are associated with outcomes at $t$ for many unobserved reasons.
+\item OLS slope estimates are unbiased but inefficient and produces wrong standard errors.
+\item Addressed with GLS/ serial correlation robust standard errors. \pause
+\end{itemize}
+\item $\alpha \neq 0$ is associated with dynamics: 
+\begin{itemize}
+\item Outcomes at $t-1$ affect outcomes now.
+\item OLS is biased, inefficient and produces wrong standard errors. 
+\item Addressed with lagged variables and other structural time series approaches.
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Improvements on Inference}
+\begin{itemize}
+\item In panel data we likely violate of iid errors, as observations from the same group/firm are likely associated
+$$E[e_{ig}e_{jg}]=\rho\sigma^2_e>0 $$
+\item Here $\rho$ is the intra-group/firm correlation.
+\end{itemize}
+\end{frame}
+%
+%\begin{frame}{How far off are we?}
+%\begin{itemize}
+%\item Consider an additive model of the residuals.
+%$$e_{ig}=\nu_g+\eta_{ig}$$\pause
+%\item Where $v_g$ is a random shock for group g, and $\eta_{ig}$ is the remaining individual level component.\pause
+%\item Given this error structure: $\rho=\frac{\sigma^2_\nu}{\sigma^2_\nu+\sigma^2_\eta}$\pause
+%\item With the same sample sizes across time,
+%$$\frac{V(\hat{\beta}_1)}{V_{regular}(\hat{\beta}_1)}=1+(n-1)\rho$$\pause
+%\item If $\rho=1$, then $V_{regular}(\hat{\beta}_1)$ should be $n$ times larger!
+%\end{itemize}
+%\end{frame}
+
+
+\begin{frame}{Standard error problems.}
+\begin{itemize}
+\item If the number of groups is large, we can cluster standard errors using a formula similar to White standard errors.\pause
+\item If the number of groups is small, we can just inflate our standard errors by $\sqrt{1+(n-1)\rho}$ (the Moulton factor)\pause
+\item There is a bootstrap solution that has good performance
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{White vs Cluster Robust}
+\begin{table}
+\begin{center}
+\begin{tabular}{l c c}
+\hline
+ & (white) & (cluster by airline) \\
+\hline
+(Intercept) & $9.52^{***}$  & $9.52^{***}$ \\
+            & $(0.22)$      & $(0.38)$     \\
+lnoutput    & $0.88^{***}$  & $0.88^{***}$ \\
+            & $(0.01)$      & $(0.02)$     \\
+lnpfuel     & $0.45^{***}$  & $0.45^{***}$ \\
+            & $(0.02)$      & $(0.03)$     \\
+load        & $-1.63^{***}$ & $-1.63^{*}$  \\
+            & $(0.32)$      & $(0.44)$     \\
+\hline
+R$^2$       & $0.99$        & $0.99$       \\
+N Clusters  & $$            & $6$          \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+\end{frame}
+
+\section{Between and Within Estimators}
+\setcounter{subsection}{1}
+
+\begin{frame}{Within-group estimators}
+\begin{itemize}
+\item Consider the typical panel model: $y_{it}=\gamma x_{it}+f_i+e_{it}$\pause
+\item Assume that $E[e_i|f_i, \bm{x}_{i1},\bm{x}_{i2},\ldots \bm{x}_{iT}]=0\ \quad \forall i$ \pause
+\item But suppose that $E(f_i|x_{it})\neq 0$.  We can dummy for "fixed effects" $f$, producing
+$$\bm{y}=\bm{X\beta}+\bm{Df}+\bm{e}$$\pause
+\item We know from Frisch Waugh Lovell that:
+\begin{align*}
+\hat{\bm{\beta}}&=(\bm{X}'\bm{M}_D\bm{X})^{-1}\bm{X}'\bm{M}_D\bm{y}\\
+\hat{\bm{f}}&=(\bm{X}'\bm{M}_X\bm{X})^{-1}\bm{X}'\bm{M}_X\bm{y}
+\end{align*}\pause
+\item Where $\bm{M}_X=\bm{I}-\bm{X}'(\bm{X}'\bm{X})^{-1}\bm{X}'$ and $\bm{M}_D=I-\bm{D}'(\bm{D}'\bm{D})^{-1}\bm{D}'$  are the idempotent residual makers.
+\item $\hat{\beta}$ and $\hat{f}$ are the "within-group" estimators.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\begin{itemize}
+\item Suppose N=2: $\bm{D}=\begin{pmatrix} \bm{i}&\bm{0}\\\bm{0}&\bm{i}\end{pmatrix}$ where $\bm{i}$ is a ($T\times 1$) vector of 1s\pause
+\begin{align*}
+\bm{M}_D&=\bm{I}-\bm{D}(\bm{D}'\bm{D})^{-1}\bm{D}'\\\pause
+&=\begin{pmatrix} \bm{I}&\bm{0}\\\bm{0}&\bm{I}\end{pmatrix}-\begin{pmatrix} \bm{i}&\bm{0}\\\bm{0}&\bm{i}\end{pmatrix}\left[\begin{pmatrix} \bm{i}'&\bm{0}\\\bm{0}&\bm{i}'\end{pmatrix}'\begin{pmatrix} \bm{i}&\bm{0}\\\bm{0}&\bm{i}\end{pmatrix}\right]^{-1}\begin{pmatrix} \bm{i}'&\bm{0}\\\bm{0}&\bm{i}'\end{pmatrix}\\\pause
+&=\begin{pmatrix} \bm{I}&\bm{0}\\\bm{0}&\bm{I}\end{pmatrix}-\begin{pmatrix} \bm{i}&\bm{0}\\\bm{0}&\bm{i}\end{pmatrix}\begin{pmatrix}T&\bm{0}\\\bm{0}&T\end{pmatrix}^{-1}\begin{pmatrix} \bm{i}'&\bm{0}\\\bm{0}&\bm{i}'\end{pmatrix}\\\pause
+&=\begin{pmatrix} \bm{I}&\bm{0}\\\bm{0}&\bm{I}\end{pmatrix}-\begin{pmatrix} \bm{i}&\bm{0}\\\bm{0}&\bm{i}\end{pmatrix}\begin{pmatrix} 1/T&\bm{0}\\\bm{0}&1/T\end{pmatrix}\begin{pmatrix} \bm{i}'&\bm{0}\\\bm{0}&\bm{i}'\end{pmatrix}\\\pause
+&=\begin{pmatrix} \bm{I}-\frac{1}{T}\bm{i}\bm{i}'&\bm{0}\\\bm{0}&\bm{I}-\frac{1}{T}\bm{i}\bm{i}'\end{pmatrix}
+\end{align*}\pause 
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}
+\begin{align*}
+\bm{M}_D\bm{y}&=\begin{pmatrix} \bm{I}-\frac{1}{T}\bm{i}\bm{i}'&\bm{0}\\\bm{0}&\bm{I}-\frac{1}{T}\bm{i}\bm{i}'\end{pmatrix}\bm{y}\\\pause
+&=\begin{pmatrix} \bm{I}-\frac{1}{T}\bm{i}\bm{i}'&\bm{0}\\\bm{0}&\bm{I}-\frac{1}{T}\bm{i}\bm{i}'\end{pmatrix}\begin{pmatrix}\bm{y}_1\\ \bm{y}_2 \end{pmatrix}\\
+&=\begin{pmatrix} y_{11}-\frac{\sum_{t=1}^T Y{_1t}}{T}\\
+ y_{12}-\frac{\sum_{t=1}^T Y{_1t}}{T}\\
+ \ldots\\
+  y_{1T}-\frac{\sum_{t=1}^T Y{_1t}}{T}\\
+    y_{21}-\frac{\sum_{t=1}^T Y{_2t}}{T}\\
+        y_{22}-\frac{\sum_{t=1}^T Y{_2t}}{T}\\
+         \ldots\\
+            y_{2T}-\frac{\sum_{t=1}^T Y{_2t}}{T}
+            \end{pmatrix}
+\end{align*}
+\end{frame}
+
+\begin{frame}{Within Estimator}
+Two equivalent ways to estimate:
+\begin{enumerate}
+\item Explicitly controlling for fixed effects $\bm{f}$ and estimating $\hat{\bm{\beta}}=(\bm{X}'\bm{M}_D\bm{X})^{-1}\bm{X}'\bm{M}_D\bm{y}$.\pause
+\item Differencing out the group means:\\
+\end{enumerate}
+$$y_{it}-\bar{y}_i=\bm{\beta}'(\bm{x}_{it}-\bar{\bm{x}}_i)+e_{it}-\bar{e}_i$$
+$$\bm{b}_W=(\bm{S}_{xx}^W)^{-1}\bm{S}_{xy}^W$$
+$$\bm{S}_{xx}^W= \sum_{i=1}^N\sum_{t=1}^T(\bm{x}_{it}-\bar{\bm{x}}_i)(\bm{x}_{it}-\bar{\bm{x}}_i)'$$
+$$\bm{S}_{xy}^W= \sum_{i=1}^N\sum_{t=1}^T(\bm{x}_{it}-\bar{\bm{x}}_i)(y_{it}-\bar{y}_i)'$$
+\end{frame}
+
+
+
+
+\begin{frame}{Aside on Stacked Matrix Notation}
+$\bm{y}_i$: $T\times 1$, $\bm{X}_i$:  $T\times k$, $\bm{e}_i$: $T\times 1$, $\bm{\beta}:$ $k\times 1$
+\pause
+\begin{align*}
+\begin{bmatrix}\bm{y}_1\\\bm{y}_2\\ \vdots \\ \bm{y}_N \end{bmatrix}&=\begin{bmatrix}\bm{X}_1\\\bm{X}_2\\ \vdots \\ \bm{X}_N \end{bmatrix} \bm{\beta}+\begin{bmatrix}\alpha_1 \bm{1}\\\alpha_2 \bm{1}\\ \vdots \\ \alpha_N \bm{1} \end{bmatrix}+\begin{bmatrix}\bm{e}_1\\\bm{e}_2\\ \vdots \\ \bm{e}_N \end{bmatrix}\\\pause
+y&= \bm{X}\bm{\beta}+\bm{\alpha}\otimes \bm{1}_T+\bm{e}
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{Software Implementations}
+\begin{itemize}
+\item lm(y$\sim x+f_1+f_2+\ldots +f_n)$
+\item plm(y$\sim x$, c("unit", "time")
+\item fixest::feols(y$\sim$ x$|$ fe)
+\item You can also demean by time averages, but you need to correct the standard errors.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Fixed Effects and unobserved factors}
+Just as with difference in difference, fixed effects address unobserved effects ($\alpha_i$).
+$$y_{it}=\gamma x_{it}+f_i+\alpha_i+e_{it}$$
+The fixed effects transformation again mean deviates the variables, giving us:
+$$y_{it}-\bar{y}_i=\bm{\beta}'(\bm{x}_{it}-\bar{\bm{x}}_i)+\alpha_i-\bar{\alpha}_i+e_{it}-\bar{e}_i$$
+\end{frame}
+
+
+
+\begin{frame}{Cost and Output}
+\includegraphics[width= 5 in]{airgrandmean.png}
+\end{frame}
+
+\begin{frame}{Cost and Output (within estimator)}
+\includegraphics[width= 5 in]{airgrandmeanFe.png}
+\end{frame}
+
+\begin{frame}{Small note on estimation}
+$$\bm{b}_{fe}=\bm{\beta}+(\bm{X}'\bm{M}_D\bm{X})^{-1}\bm{X}'\bm{M}_D\bm{e}$$
+Under iid errors, we have:
+$var(\bm{b}_{fe})=\sigma_{e}^2(\bm{X}'\bm{M}_D\bm{X})^{-1}$.
+But we need to correct our estimator for the $N$ estimated means:
+$$s_e^2=\frac{\sum_{i=1}^N\sum_{t=1}^T e^2_{it}}{NT-N-K}$$
+\end{frame}
+
+\begin{frame}{Fixed Effects as GMM Moment Conditions}
+\begin{itemize}
+\item Define the within-transformed variables $\tilde{Y}_{it}=Y_{it}-\bar{Y}_i$ and $\tilde{\bm{X}}_{it}=\bm{X}_{it}-\bar{\bm{X}}_i$.
+\item The FE (within) estimator solves the moment conditions:
+$$E[\tilde{\bm{X}}_{it}'\tilde{e}_{it}]=\bm{0}$$\pause
+\item This is a \textbf{just-identified} GMM problem: $k$ moment conditions for $k$ parameters.
+\begin{itemize}
+\item No overidentifying restrictions $\Rightarrow$ no $J$-test with FE alone.
+\end{itemize}\pause
+\item \textbf{Preview:}
+\begin{itemize}
+\item Random effects adds between-group moments $\Rightarrow$ more efficient under stronger assumptions.
+\item Arellano-Bond (next lecture) creates \emph{many} moment conditions from lagged levels $\Rightarrow$ overidentification $\Rightarrow$ testable with $J$-statistic.
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Pooled Regression Anatomy}
+\begin{itemize}
+\item Call $\bm{x}_{it}$ the k by 1 vector of right hand side variables. \pause
+\item Grand means:
+\item $\bm{\bar{\bar{x}}}\equiv \sum_{i=1}^N\sum_{t=1}^T \bm{x}_{it}$
+\item $\bar{\bar{y}}\equiv \sum_{i=1}^N\sum_{t=1}^T y_{it}$\pause
+\item We can write the pooled estimator as:
+$$\bm{b_P}=(\bm{S}^P_{xx})^{-1}\bm{S}_{xy}^P$$
+Where 
+$$\bm{S}^P_{xx}= \sum_{i=1}^N\sum_{t=1}^T(\bm{x}_{it}-\bar{\bar{\bm{x}}})(\bm{x}_{it}-\bar{\bar{\bm{x}}})'$$
+$$\bm{S}^P_{xy}= \sum_{i=1}^N\sum_{t=1}^T(\bm{x}_{it}-\bar{\bar{\bm{x}}})(y_{it}-\bar{\bar{y}})'$$
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+airlines<-airlines%>% mutate(
+  mlnoutput = mean(lnoutput),
+  mlnpfuel = mean(lnpfuel),
+  mload = mean(load))
+    
+Xp<-airlines%>%transmute(
+		lnoutputdm = lnoutput-mlnoutput, 
+		lnpfueldm = lnpfuel-mlnpfuel,
+		loaddm = load-mload)%>%
+		as.matrix()
+
+Sp_xx = t(Xp)%*%Xp
+  \end{lstlisting}
+\end{frame}
+
+
+
+\begin{frame}{Between Regression}
+\begin{itemize}
+\item Part of the variation in $y_{it}$ and $\bm{x}_{it}$ is variation across units and part across time.\pause
+\item The cross sectional part is just:
+\begin{align*}
+\frac{1}{T}(y_{i1}+y_{i2}+\ldots +y_{iT})&=\bm{\beta}'(\frac{1}{T}(\bm{x}_{i1}+\bm{x}_{i2}+\ldots +\bm{x}_{iT}))+\frac{1}{T}(e_{i1}+e_{i2}+\ldots+e_{iT})\\
+\bar{y}_i&=\bm{\beta}'\bar{\bm{x}}_i+\bar{e}_i
+\end{align*}
+Define $\bm{b_B}=(\bm{S}^B_{xx})^{-1}\bm{S}_{xy}^B$.
+$$\bm{S}^B_{xx}= \sum_{i=1}^N\sum_{t=1}^T(\bm{\bar{x}}_{i}-\bar{\bar{\bm{x}}})(\bm{\bar{x}}_{i}-\bar{\bar{\bm{x}}})'=\sum_{i=1}^N T(\bm{\bar{x}}_{i}-\bar{\bar{\bm{x}}})(\bm{\bar{x}}_{i}-\bar{\bar{\bm{x}}})'$$
+$$\bm{S}^B_{xy}= \sum_{i=1}^N\sum_{t=1}^T(\bm{\bar{x}}_{i}-\bar{\bar{\bm{x}}})(\bar{y}_{i}-\bar{\bar{y}})=\sum_{i=1}^N T(\bm{\bar{x}}_{i}-\bar{\bar{\bm{x}}})(\bar{y}_{i}-\bar{\bar{y}})$$
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+airlines<-airlines%>%
+  group_by(airline)%>%
+  mutate(
+  gmlnoutput=mean(lnoutput),
+  gmlnpfuel=mean(lnpfuel),
+  gmload=mean(load))
+  
+Xb<-airlines%>%transmute(
+		blnoutputdm = gmlnoutput-mlnoutput, 
+                 blnpfueldm = gmlnpfuel-mlnpfuel,
+                 bloaddm = gmload-mload) %>%
+                 as.matrix()
+                     
+  Sb_xx = t(Xb)%*%Xb
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+airlines<-airlines%>%
+  group_by(airline)%>%
+  mutate(
+  gmlnoutput=mean(lnoutput),
+  gmlnpfuel=mean(lnpfuel),
+  gmload=mean(load))
+  
+  Xw<-airlines%>%transmute(
+  		plnoutputdm = lnoutput-gmlnoutput, 
+                 plnpfueldm = lnpfuel-gmlnpfuel,
+                 ploaddm = load-gmload)%>%
+                 as.matrix()
+                     
+  Sw_xx = t(Xw)%*%Xw
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}{Decomposition of Variance}
+\begin{align*}
+y_{it}&=\bar{y}_i+(y_{it}-\bar{y}_i)\\\pause
+\bm{S}^P_{xx}&=\bm{S}^B_{xx}+\bm{S}^W_{xx}\\
+\bm{S}^P_{xy}&=\bm{S}^B_{xy}+\bm{S}^W_{xy}
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{Relationship between Pooled, Between and Within}\begin{align*}
+\bm{b}_P&=(\bm{S}^P_{xx})^{-1}\bm{S}^P_{xy}\\\pause
+&=(\bm{S}^B_{xx}+\bm{S}^W_{xx})^{-1}(\bm{S}^B_{xy}+\bm{S}^W_{xy})\\\pause
+&=(\bm{S}^B_{xx}+\bm{S}^W_{xx})^{-1}\bm{S}^W_{xy}+(\bm{S}^B_{xx}+\bm{S}^W_{xx})^{-1}\bm{S}^B_{xy}\\\pause
+&=(\bm{S}^B_{xx}+\bm{S}^W_{xx})^{-1}\bm{S}^W_{xx}\bm{b}_W+(\bm{S}^B_{xx}+\bm{S}^W_{xx})^{-1}\bm{S}^B_{xx}\bm{b}_B\\\pause
+&=(\bm{S}^B_{xx}+\bm{S}^W_{xx})^{-1}\bm{S}^W_{xx}\bm{b}_W+(\bm{S}^B_{xx}+\bm{S}^W_{xx})^{-1}(\bm{S}^B_{xx}+\bm{S}^W_{xx}-\bm{S}^W_{xx})\bm{b}_B\\\pause
+&=(\bm{S}^B_{xx}+\bm{S}^W_{xx})^{-1}\bm{S}^W_{xx}\bm{b}_W+(\bm{I}-(\bm{S}^B_{xx}+\bm{S}^W_{xx})^{-1}\bm{S}^{W}_{xx})\bm{b}_B\\\pause
+&=\bm{\lambda}\bm{b}_W+(\bm{I}-\bm{\lambda})\bm{b}_B\\
+\end{align*}
+\end{frame}
+
+\begin{frame}{Relationship between Pooled, Between and Within}
+\scriptsize{
+\begin{table}[!htbp] \centering 
+\begin{tabular}{@{\extracolsep{5pt}}lccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+\cline{2-4} 
+\\[-1.8ex] & \multicolumn{3}{c}{lncost} \\ 
+\\[-1.8ex] & Pooled & Between & Within\\ 
+\hline \\[-1.8ex] 
+ lnoutput & 0.883$^{***}$ & 0.782$^{**}$ & 0.919$^{***}$ \\ 
+  & (0.013) & (0.109) & (0.030) \\ 
+  & & & \\ 
+ lnpfuel & 0.454$^{***}$ & $-$5.524 & 0.417$^{***}$ \\ 
+  & (0.020) & (4.479) & (0.015) \\ 
+  & & & \\ 
+ load & $-$1.628$^{***}$ & $-$1.751 & $-$1.070$^{***}$ \\ 
+  & (0.345) & (2.743) & (0.202) \\ 
+  & & & \\ 
+ Constant & 9.517$^{***}$ & 85.809 &  \\ 
+  & (0.229) & (56.483) &  \\ 
+  & & & \\ 
+\hline \\[-1.8ex] 
+Observations & 90 & 6 & 90 \\ 
+R$^{2}$ & 0.988 & 0.994 & 0.993 \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} }
+\end{frame}
+%---------------------------------------------------------------
+% Frame 11 — Substantive interpretation of the estimates
+\begin{frame}{What the estimates tell us}
+  \begin{itemize}
+    \item \textbf{Output elasticity}  
+      \[
+        \hat\beta_1 = 0.883\;(\text{pooled}) \;\;\Longrightarrow\;\;
+        \hat r = \frac{1}{\hat\beta_1} \approx 1.13.
+      \] 
+      The industry exhibits \emph{mild increasing returns to scale} (costs rise
+      less than proportionally with output).
+
+    \item \textbf{Fuel price elasticity}  
+      \[
+        \hat\beta_2 = 0.454 \;\;\Longrightarrow\;\;
+        \hat\alpha_F = \hat r\,\hat\beta_2 \approx 1.13 \times 0.454 \approx 0.51.
+      \]
+      Roughly half of total variable cost is attributable to fuel.
+
+    \item \textbf{Load factor effect}  
+      The coefficient on \textit{load} ($-1.63$) means that a
+      1-percentage-point increase in capacity utilisation lowers total cost
+      by about 1.6 \%, consistent with spreading fixed operating expenses over
+      more output.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Danger}
+\includegraphics[width=3 in]{Danger.jpeg}\\
+The left panel displays the distribution of media congruence from Snyder and Str\"{o}mberg (2010) before and after the incumbent and year fixed effects.
+\end{frame}
+
+\begin{frame}{Political Science Application: Tax Progressivity and War}
+\begin{itemize}
+\item \textbf{Scheve \& Stasavage (2010, 2012):} Why did top tax rates rise dramatically in the 20th century?
+\item \textbf{Hypothesis:} Mass military mobilization during WWI/WWII created political pressure for progressive taxation as a ``conscription of wealth.''
+\item \textbf{Data:} Country-year panel, 20 countries, 1850--1970.
+\begin{itemize}
+\item $Y_{it}$: Top marginal income tax rate
+\item $X_{it}$: War mobilization $\times$ high-mobility indicator
+\item $\alpha_i$: Country fixed effects (e.g.\ institutional differences, colonial legacies)
+\end{itemize}\pause
+\item \textbf{Why fixed effects?} Countries differ systematically in fiscal institutions, political systems, and economic structure. Pooled OLS would confound these with the mobilization effect.
+\item Strict exogeneity plausible: war mobilization driven by geopolitics, not anticipated tax policy.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Scheve \& Stasavage: R Implementation}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+library(plm); library(haven); library(fixest)
+dta <- read_dta("progressTax.dta")
+pdta <- subset(dta, year >= 1900 & year <= 1930)
+
+# Fixed effects with plm
+fe_mod <- plm(topratep ~ wwihighmobaft,
+              data = pdta,
+              index = c("ccode", "year"),
+              model = "within")
+summary(fe_mod)
+
+# Equivalent with fixest (+ Newey-West SEs)
+fe_mod2 <- feols(topratep ~ wwihighmobaft +
+    gdppcp + leftseatshp + munsuff + ratiop
+    | country,
+    data = pdta, panel.id = ~country + year,
+    vcov = NW(1) ~ country + year)
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{Summary}
+\begin{itemize}
+\item Difference in difference cancels out group-invariant trends and time invariant group differences (whether of interest or not).
+\item Fixed effects give the same estimates as demeaning $\bm{X}$ and $\bm{y}$ by their over time means, the ``within'' estimator (so long as you correct the residual variance estimator).
+\item The within estimator corresponds to the GMM moment condition $E[\tilde{\bm{X}}_{it}'\tilde{e}_{it}]=\bm{0}$, and is just-identified.
+\item A ``between'' estimator only uses variation across units, averaged over time.
+\item Pooled Regression is a weighted average of the between and within estimates, with weights $(\bm{S}^B_{xx}+\bm{S}^W_{xx})^{-1}\bm{S}^{W}_{xx}$.
+\item \textbf{Next time:} Random effects adds between-group moments (GLS); Arellano-Bond uses lagged levels as instruments for dynamic panels --- both fit into our GMM framework from Lectures 15--16.
+\end{itemize}
+\end{frame}
+
+\end{document}

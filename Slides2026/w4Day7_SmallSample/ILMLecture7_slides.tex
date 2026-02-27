@@ -1,0 +1,904 @@
+
+\documentclass[aspectratio=169]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+
+%  \usetheme{Pittsburgh}
+%\usefonttheme[2]{sans}
+\renewcommand{\familydefault}{cmss}
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+%\usepackage{palatino}
+%\usepackage{cmbright}
+\usepackage{bm}
+\usepackage{stackrel}
+\usepackage{array}
+\usepackage{listings}
+\useinnertheme{rectangles}
+}
+\usepackage{dutchcal}
+\usepackage{xcolor} % for colors, optio
+\usepackage{amsmath}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\definecolor{darkpurple}{rgb}{0.4, 0, 0.6}
+\usepackage{array}
+\usepackage{booktabs}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=darkpurple}
+\usepackage{tcolorbox}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+\lstdefinestyle{Rstyle}{
+  language=R,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{darkgreen},
+  stringstyle=\color{darkpurple},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10}
+}
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+%\usepackage[all]{xy}
+
+\usepackage{tikz}
+\usepackage{lipsum}
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+ 
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models Lecture 7: Classic Normal Regression (small sample)}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+\pgfmathdeclarefunction{normalpdf}{3}{%
+  \pgfmathparse{1/(#3*sqrt(2*pi))*exp(-((#1)-(#2))^2/(2*(#3)^2))}%
+}
+\begin{document}
+
+\begin{frame}
+\maketitle
+\end{frame}
+
+\section{Likelihood Methods}
+
+\setcounter{subsection}{1}
+
+
+\begin{frame}{Using Distributional assumptions}
+\begin{itemize}
+\item Statistical inference aims to make statements about unobserved parameters $\beta$, $\sigma$ etc.
+\item In this lecture, we do so by imposing distributional assumptions on our population with a \emph{parametric model}
+\item In particular, we will be using Maximum Likelihood Estimation (MLE)
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Parametric Model}
+\begin{itemize}
+\item A parametric model for $X$ is a complete probability function that depends on an unknown parameter vector $\theta$.\pause
+\item In the continuous case, we can write it as a probability density function $f(x|\theta)$.\pause
+\item E.g. If $X\sim N(\mu,\sigma^2)$, $f(x|\mu,\sigma^2)=\sigma^{-1}\phi((x-\mu)/\sigma)$, the parameters are $\mu\in \mathbb{R}$ and $\sigma^2>0$.
+\item Recall, $\phi(z)$ is the density for the standard normal, $N(0,1)=\frac{1}{\sqrt{2\pi}}\exp(-\frac{z^2}{2})$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Specified Parametric Models}
+\begin{itemize}
+\item A model is called \textbf{correctly specified} when there is a unique parameter value $\theta_0$ such that $f(x|\theta_0)=f(x)$, the true data distribution.\pause
+\item For example, if the true density is $$f(x)=2\exp(-2x)$$
+\begin{itemize}
+\item the exponential model $f(x|\lambda)=\lambda^{-1}\exp(-x/\lambda)$ is a correctly specific model with $\lambda_0=1/2$\pause
+\item the lognormal model $f(x|\mu,\ \sigma^2)=\frac{1}{x\sigma\sqrt{2\pi}}\exp(-\frac{(\ln x-\mu)^2}{2\sigma^2})$ is mispecified, cannot equal $2 \exp(-2x)$ under any parameter value.
+\end{itemize}
+\end{itemize}
+
+\end{frame}
+
+
+
+\begin{frame}{Likelihoods}
+\begin{itemize}
+\item Call $f(\theta|\bm{X})$ the \textbf{probability density function} of some model and parameters $\theta$, given the data $\bm{X}$.\pause
+\item If we reverse the order $f(\bm{X}|\theta)$ we have a \emph{likelihood}, how probable is the data given the $\theta$.\pause
+\item Example: Binomial model of term lengths of candidates, $P(x,p)={n\choose x}p^{x}(1-p)^{n-x}$.\pause
+\item Suppose we have data $\bm{x}= \{1,\ 0,\ 1,\ 2,\ 0\}$.\pause
+\item The Joint Likelihood of the data is:
+\begin{align*}
+P(\bm{x}|\ p)&={2\choose 1}p^{1}(1-p)^{1} {2\choose 0}p^{0}(1-p)^{2} {2\choose 1}p^{1}(1-p)^{1}  {2\choose 2}p^{2}(1-p)^{0} {2 \choose 0}p^{0}(1-p)^{2}\\\pause
+&=4p^{4}(1-p)^{6}
+\end{align*}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Likelihood for Binomial $\bm{x}$}
+\begin{center}
+\includegraphics[width=2.7 in]{Likelihood.pdf}
+\end{center}
+\end{frame}
+
+
+\begin{frame}{Maximum Likelihood Estimator (from Hansen Probability)}
+\begin{definition}
+The \textbf{maximum likelihood estimator} $\hat{\theta}$ of $\theta$ is the value that maximizes the likelihood: $$\mathcal{L}_n(\theta)\equiv f(X_1, X_2, \ldots X_n|\theta)$$
+\end{definition}
+Call $\mathcal{l}_n=\sum_{i=1}^n \log f(X_i|\theta)$ the log-likelihood.\\
+\end{frame}
+
+\begin{frame}{Maximizing the likelihood}
+\begin{align*}
+P(\bm{x}|\ p)&=4p^{4}(1-p)^{6}\\\pause
+\frac{\partial}{\partial p}P(\bm{x}|\ p)&=16p^3(1-p)^6-24p^4(1-p)^5\\\pause
+&=0\\\pause
+3p^4(1-p)^5&=2p^3(1-p)^6\\\pause
+3p&=2(1-p)\\\pause
+5p&=2\\\pause
+p^*&=\frac{2}{5}
+\end{align*}
+\end{frame}
+
+\begin{frame}{Invariance (Useful result)}
+
+\begin{itemize}
+\item Recall that usually, $E[g(x)]\neq g(E[x])$, that is, functions of unbiased estimators will not be unbiased.
+\item If $\hat{\theta}$ is the MLE of $\theta$, then for any transformation $\beta=h(\theta)$, the MLE of $\beta$ is $\hat{\beta}=h(\hat{\theta})$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Invariance Example  $f(X|\lambda)=\lambda^{-1}\exp(-X/\lambda)$.}
+\begin{align*}
+\mathcal{L}_n(\lambda)&=\prod_{i=1}^n \lambda^{-1}\exp(-X_i/\lambda)=\lambda^{-n}\exp(\frac{1}{\lambda}\sum_{i=1}^n X_i)\\\pause
+\log \mathcal{L}_n(\lambda)&=-n\log\lambda - \frac{1}{\lambda}\sum_{i=1}^n X_i\\\pause
+\frac{d\mathcal{l}_n(\lambda)}{d\lambda}&=-\frac{n}{\lambda}+\frac{1}{\lambda^2}\sum_{i=1}^n X_i\\\pause
+\sum_{i=1}^n X_i&=n\lambda\pause
+\end{align*}
+The MLE is $\hat{\lambda}=\bar{X}_n$
+\end{frame}
+
+\begin{frame}{Invariance Example $\beta=1/\lambda$}
+\begin{itemize}
+\item Set $\beta=1/\lambda$, so $h(\lambda)=1/\lambda$.\pause
+\item The log density of this model is $\log f(x|\lambda)=\log [\beta\exp(-x\beta)]=\log \beta-x\beta$.\pause
+\item The log likelihood is $n\log\beta-\beta n \bar{X}_n$\pause
+\item Take the derivative with respect to $\beta$:\pause
+$$n/\hat{\beta}-n\bar{X}_n=0$$\pause
+$$\hat{\beta}=1/\bar{X}_n$$
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Score: the slope of the log likelihood}
+
+\begin{itemize}
+
+\item The \textbf{likelihood score} is the derivative of the log-likelihood function:
+$$S_n(\theta)=\frac{\partial}{\partial \theta} \mathcal{l}_n(\theta)$$\pause
+\item The score is a function of $\theta$ and tells us how sensitive the log-likelihood is to the parameter, and equals zero at the optimum.\pause
+\item The \textbf{efficient score} is the derivative of the log likelihood for a single observation, evaluated at $\bm{x}=X_1, X_2,\ldots X_n$ and the true parameter vector
+$$S=\frac{\partial}{\partial \theta}\log f(\bm{x}|\theta_0)$$\pause
+\item The efficient score fixes $\theta$ at the true value $\theta_0$.
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Hessian: the curvature of the log likelihood}
+\begin{itemize}
+\item The \textbf{likelihood Hessian} is the negative second derivative:
+$$\mathcal{H}_n(\theta)=-\frac{\partial^2}{\partial \theta \partial \theta'}\mathcal{l}_n(\theta)$$
+\item The Hessian matrix is used to calculate the variance.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Fisher Information}
+
+\begin{itemize}
+\item The \textbf{Fisher information} is the variance of the efficient score (score evaluated at true $\theta_0$).
+$$\mathcal{I}_\theta=\mathbb{E}[SS']$$\pause
+\item The \textbf{expected Hessian} is the expectation of the Hessian for a single observation:
+$$\mathcal{H}_\theta=-\mathbb{E}[\frac{\partial^2}{\partial \theta \partial \theta'}\log f(X|\theta)]$$\pause
+\item If the model is correctly specified:
+$$\mathcal{I}_\theta=\mathcal{H}_\theta$$
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Cram\'{e}r-Rao Lower Bound}
+
+\begin{itemize}
+\item The term efficient refers to an estimator which has minimum variance.
+\item If $\tilde{\theta}$ is an unbiased estimator of $\theta$, then $var[\tilde{\theta}]\geq (n\mathcal{I}_\theta)^{-1}$
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Variance Estimators}
+
+\begin{itemize}
+\item The sample Hessian Estimator depends on calculating the second derivatives of the log-likelihood:
+$$\hat{\mathcal{H}}_\theta=\frac{1}{n}\sum_{i=1}^n - \frac{\partial}{\partial \theta\partial \theta'} \log f(X_i|\hat{\theta})$$
+$$\hat{\mathbf{V}}_1=\hat{\mathcal{H}}_\theta^{-1}$$\pause
+ \item The Outer Product Estimator is based on the Fisher Information:
+ $$\hat{\mathcal{I}}_\theta=\frac{1}{n}\sum_{i=1}^n(\frac{\partial}{\partial \theta} \log f(X_i|\hat{\theta}))(\frac{\partial}{\partial \theta} \log f(X_i|\hat{\theta}))'$$
+$$\hat{\mathbf{V}}_2=\hat{\mathcal{I}}_\theta^{-1}$$
+
+ \end{itemize}
+\end{frame}
+
+
+
+
+\begin{frame}{Example: Normal with known mean, unknown variance}
+$X\sim N(0, \theta)$, where $\theta\equiv \sigma^2$. $\mathbb{E}[X]=0$, $\mathbb{E}[X^2]=\theta_0$, $\mathbb{E}[X^4]=3\theta_0^2$.\\
+The density is:
+ $$f(x|\theta)=\frac{1}{(2\pi\theta)^{1/2}}\exp(-\frac{x^2}{2\theta})$$
+The log density is:
+$$\log f(x|\theta)=-\frac{1}{2}\log(2\pi)-\frac{1}{2}\log(\theta)-\frac{x^2}{2\theta}$$
+the first and second derivatives are:
+$$\frac{d}{d\theta}\log f(x|\theta)=-\frac{1}{2\theta}+\frac{x^2}{2\theta^2}=\frac{x^2-\theta}{2\theta^2}$$
+$$\frac{d^2}{d\theta^2}\log f(x|\theta)=\frac{1}{2\theta^2}-\frac{x^2}{\theta^3}$$
+
+\end{frame}
+
+
+\begin{frame}{Example: Normal log likelihood}
+$$\mathcal{l}_n(\theta)=\sum_{i=1}^n \log f(X_i|\theta)=-\frac{n}{2}\log(2\pi)-\frac{n}{2}\log(\theta)-\frac{1}{2\theta}\sum_{i=1}^n X_i^2$$
+$$\frac{d}{d\theta}\mathcal{l}_n(\theta)=-\frac{n}{2\theta}+\frac{1}{2\theta^2}\sum_{i=1}^n X_i^2$$
+The MLE is $\hat{\theta}=\frac{1}{n}\sum_{i=1}^n X_i^2$
+\end{frame}
+
+
+\begin{frame}{Example: Normal with known mean, unknown variance}
+$$\frac{d}{d\theta}\log f(x|\theta)=\frac{x^2-\theta}{2\theta^2}$$
+The efficient score $S=\frac{x^2-\theta_0}{2\theta_0^2}$
+$$var[S]=\frac{\mathbb{E}[(X^2-\theta_0)^2]}{4\theta_0^4}=\frac{\mathbb{E}[X^4-2X^2\theta_0+\theta_0^2]}{4\theta_0^4}=\frac{3\theta_0^2-2\theta_0^2+\theta^2_0}{4\theta_0^4}=\frac{1}{2\theta_0^2}$$
+\end{frame}
+
+
+
+
+
+\begin{frame}{expected Hessian}
+
+$$\mathcal{H}_\theta=\mathbb{E}[-\frac{d}{d\theta^2} \log f(X|\theta_0)]=\mathbb{E}[-\frac{d}{d\theta}\frac{x^2-\theta_0}{2\theta_0^2}]=\mathbb{E}[\frac{2x^2-\theta_0}{2\theta_0^3}]=\frac{1}{2\theta_0^2}$$
+
+$$\mathcal{I}_\theta=var[S]=\frac{1}{2\theta_0^2}=\mathcal{H}_\theta$$
+The total Fisher information for $n$ observations is $I_n(\theta_0)=n\times \mathcal{I}_\theta=\frac{n}{2\theta^2_0}$\\
+The variance of $\hat{\theta}$ is $\frac{1}{I_n(\theta_0)}=2\theta^2_0/n$\\
+So we can get the plug in estimator for the standard error as $\sqrt{2\hat{\theta}^2_0/n}$.
+\end{frame}
+
+\begin{frame}[fragile]{expected Hessian}
+\begin{lstlisting}[style=Rstyle]
+for(i in 1:100000){
+ x <- rnorm(100, sd=sqrt(5))
+thetahat[i] <- sum(x^2)/100 
+diff[i] <- thetahat[i]-5 
+se[i] <- sqrt(2*thetahat[i]^2/100) }
+mean(thetahat)
+5.002307 
+sqrt(var(diff))
+0.7102136
+mean(se)
+0.707433
+\end{lstlisting}
+\end{frame}
+
+
+\begin{frame}{Robust Variance Estimator}
+
+\begin{itemize}
+\item Under misspecification, $\mathcal{I}_\theta\neq \mathcal{H}(\theta)$
+\item A consistent estimator for the variance is:
+$$\bm{\hat{V}}=\hat{\mathcal{H}}^{-1}\hat{\mathcal{I}}\hat{\mathcal{H}}^{-1}$$
+\item This is calculated by the sandwich package.
+ \end{itemize}
+\end{frame}
+
+\begin{frame}{Summary: The MLE Toolkit}
+We now have four key ingredients:\pause
+\begin{enumerate}\setlength{\itemsep}{4pt}
+\item \textbf{Likelihood} $\to$ a model-based measure of how well parameters fit data.\pause
+\item \textbf{Score} $\to$ first derivative of $\ell$; equals zero at the MLE.\pause
+\item \textbf{Fisher Information} $\to$ curvature of $\ell$; determines how precisely we can estimate $\theta$.\pause
+\item \textbf{Cram\'{e}r-Rao bound} $\to$ no unbiased estimator can beat $(n\mathcal{I}_\theta)^{-1}$.
+\end{enumerate}\pause
+\medskip
+\textbf{Next}: apply this machinery to the normal linear regression model and see that OLS \emph{is} the MLE.
+\end{frame}
+
+\section{Normal Linear Model}
+
+\begin{frame}{Likelihood methods for linear model}
+\begin{itemize}
+\item The Normal Regression model assumes that $y\sim N(\mu_Y, \sigma^2)$, or that $e\sim N(0, \sigma^2)$.
+\begin{align*}
+f(y|\bm{x})&=\frac{1}{(2\pi \sigma^2)^{1/2}}exp\left(-\frac{1}{2\sigma^2}(y-\bm{x}'\bm{\beta})^2\right)\\
+f(y_1,\ldots y_n|\bm{x}_1,\ldots \bm{x}_n)&=\prod_{i=1}^n f(y_i|x_i)\\
+&=\prod_{i=1}^n\frac{1}{(2\pi \sigma^2)^{1/2}}exp\left(-\frac{1}{2\sigma^2}(y_i-\bm{x}_i'\bm{\beta})^2\right)\\
+&=\frac{1}{(2\pi \sigma^2)^{n/2}}\exp\left(-\frac{1}{2\sigma^2}\sum_{i=1}^n(y_i-\bm{x}_i'\bm{\beta})^2\right)\\
+&\equiv \mathcal{L}_n(\beta, \sigma^2)
+\end{align*}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Log Likelihood of the normal linear model}
+$$log \mathcal{L}_n(\beta, \sigma^2) = -\frac{n}{2}log(2\pi \sigma^2)-\frac{1}{2\sigma^2}\sum_{i=1}^n (Y_i-\bm{x}_i'\beta)^2\equiv \mathcal{l}_n(\beta,\sigma^2)$$
+\end{frame}
+
+
+
+\begin{frame}{Classic Normal Regression Model}
+\begin{itemize}
+\item The Classic Normal Regression Model consists of the following assumptions:
+\begin{enumerate}
+\item $\bm{y}=\bm{X'\beta}+\bm{e}$
+\item $\bm{e}|\bm{X} \sim N(\bm{0},\ \sigma^2\bm{I})$
+\begin{itemize}
+\item or equivalently: $\bm{y}\sim N(\bm{X\beta},\ \sigma^2\bm{I})$
+\end{itemize}
+\item rank($\bm{X})=K$.
+\end{enumerate}
+In this model, $N(\bm{\mu},\ \bm{\Sigma})$ is the multivariate normal density function whose pdf is:
+$$f(\bm{e})=(2\pi)^{-n/2}(\sigma^2)^{-n/2}\exp(-\frac{1}{2\sigma^2}\bm{e}'\bm{e})$$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Background on Multivariate Normal}
+\begin{itemize}
+\item A multivariate normal's parameters are a vector of means and a variance covariance matrix.
+\item  Linear functions of a multinormal vector $\bm{y}$ are also normal.\\
+\item If $\bm{z}=\bm{g}+\bm{H}\bm{y}$, where $\bm{g}$ and $\bm{H}$ are non-random, and $\bm{H}$ has full row rank, then 
+$$\bm{z}\sim N(\bm{g}+\bm{H\mu},\ \bm{H\Sigma H'})$$
+\item In the case of MVN, independence is the same as uncorrelated.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Bivariate Normal CEF}
+\begin{itemize}
+\item Given two random variables, they are distributed bivariate normal if $\begin{bmatrix} X\\Y \end{bmatrix} \sim N\left( \begin{bmatrix} \mu_X\\\mu_Y \end{bmatrix},  \begin{bmatrix} \sigma^2_X & \rho \sigma_X \sigma_Y \\ \rho\sigma_X\sigma_Y & \sigma_Y^2\end{bmatrix}\right)$
+\item Call $X^*=\frac{X-\mu_X}{\sigma_X}$, $Y^*=\frac{Y-\mu_Y}{\sigma_Y}$ \pause
+\begin{align*}
+f_{Y|X}(y|x)&=\frac{f_{X,Y}(x,y)}{f_X(x)}\\\pause
+f_X(x)&=\frac{1}{\sqrt{2\pi}\sigma_X} exp\left(-\frac{1}{2}\left(X^*\right)^2\right)\\\pause
+f_{X,Y}(x,y)&=\frac{1}{\sqrt{2\pi}\sigma_X\sqrt{2\pi}\sigma_Y}\sqrt{1-\rho^2}  exp\left( -\frac{1}{2[1-\rho^2]}\left[ \left( X^* \right)^2-2\rho \left( X^* \right) \left(  Y^* \right)+ \left( Y^* \right)^2\right]\right)
+\end{align*}
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Bivariate Normal CEF: Derivation}
+Dividing the joint by the marginal and completing the square:
+\begin{align*}
+f_{Y|X}(y|x)&\propto \exp\left( -\frac{1}{2(1 - \rho^2)} \left( Y^* - \rho X^* \right)^2 \right)\\\pause
+&= \exp\left( -\frac{1}{2} \left( \frac{Y - \mu_Y - \rho \frac{\sigma_Y}{\sigma_X}(X - \mu_X)}{\sigma_Y \sqrt{1 - \rho^2}} \right)^2 \right)
+\end{align*}\pause
+This is the kernel of a normal density with:
+\begin{itemize}
+\item Conditional mean: $\mathbb{E}[Y|X=x]=\mu_Y+\rho\frac{\sigma_Y}{\sigma_X}(x-\mu_X)=\mu_Y+\frac{\text{Cov}(Y,X)}{\text{Var}(X)}(x-\mu_X)$
+\item Conditional variance: $\sigma_Y^2(1-\rho^2)$
+\end{itemize}\pause
+\medskip
+\textbf{Key insight}: Under joint normality, the CEF is \alert{linear} and the regression coefficient is $\beta = \text{Cov}(Y,X)/\text{Var}(X)$.  This is a classical motivation for linear regression.
+\end{frame}
+
+\section{MLE estimator}
+
+\begin{frame}{Roadmap: From Likelihood to Inference}
+\begin{itemize}\setlength{\itemsep}{6pt}
+\item We have the normal linear model: $\bm{y}|\bm{X}\sim N(\bm{X\beta},\ \sigma^2\bm{I})$.\pause
+\item Now we solve for the MLE and show it equals OLS.\pause
+\item Then we connect the \alert{score} of the normal model to moment conditions --- the bridge to GMM.\pause
+\item Finally, the distributional results ($t$, $\chi^2$, $F$) that make exact small-sample inference possible.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Solving for the MLE}
+\begin{itemize}
+\item Given the likelihood, we can solve for the MLE $(\hat{\beta}_{MLE},\ \hat{\sigma}^2_{MLE})$
+\begin{align*}
+\frac{\partial}{\partial \beta}[-\frac{n}{2}\log(2\pi\sigma^2)-\frac{1}{2\sigma^2}\sum_{i=1}^n(Y_i-\bm{x}_i'\beta)^2]\\\pause
+\frac{2}{2\hat{\sigma}_{MLE}^2}\sum_{i=1}^nX_i(Y_i-\bm{x}_i'\hat{\beta}_{MLE})=0\\\pause
+\frac{\partial}{\partial \sigma^2}[-\frac{n}{2}\log(2\pi\sigma^2)-\frac{1}{2\sigma^2}\sum_{i=1}^n(Y_i-\bm{x}_i'\beta)^2]\\\pause
+-\frac{n}{2}\frac{1}{\hat{\sigma}_{mle}^2}+\frac{1}{2\hat{\sigma}_{mle}^4}\sum_{i=1}^n(Y_i-\bm{x}_i'\hat{\beta}_{MLE})^2=0
+\end{align*}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Overall Likelihood}
+\begin{itemize}
+\item $\hat{\beta}_{MLE}=(\sum_{i=1}^n\bm{x}_i\bm{x}'_i)^{-1}(\sum_{i=1}^n\bm{x}_iY_i)=\hat{\beta}_{ols}$.\pause
+\item $\hat{\sigma}^2_{MLE}=\frac{1}{n}\sum_{i=1}^n(Y_i-\bm{x}'_i\hat{\beta}_{mle})^{2}=\hat{\sigma}_{ols}$.\pause
+\item $\log\mathcal{L}(\hat{\beta}_{MLE},\ \hat{\sigma}^2_{MLE})=-\frac{n}{2}\log(2\pi \hat{\sigma}^2_{mle})-n/2$\pause
+\item You will see the "log likelihood" reported as a measure of fit, logLik$()$\pause
+\item The Akaike's AIC is $-2$log-likehood$+2n_{par}$, weighing model performance versus complexity.\pause
+\item AIC gives an asymptotically unbiased estimator of the expected relative Kullback-Leibler divergence when approximating an unknown distribution and a given model.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{R Example: Log-Likelihood and AIC}
+\begin{lstlisting}[style=Rstyle]
+data(swiss)
+mod1 <- lm(Fertility ~ Education, data = swiss)
+mod2 <- lm(Fertility ~ Education + Agriculture,
+           data = swiss)
+mod3 <- lm(Fertility ~ Education + Agriculture
+           + Catholic + Infant.Mortality, data=swiss)
+# Log-likelihoods (higher = better fit)
+sapply(list(mod1, mod2, mod3), logLik)
+#  -168.3   -166.0   -155.3
+# AIC = -2*logLik + 2*k (lower = better)
+sapply(list(mod1, mod2, mod3), AIC)
+#   342.5    340.0    322.6
+\end{lstlisting}
+\smallskip
+AIC penalizes complexity: mod3 wins because the likelihood improvement outweighs the $2k$ penalty.
+\end{frame}
+
+\begin{frame}{Score of the Normal Regression Model (Hansen 5.14)}
+The likelihood scores are the derivatives of the log-likelihood:
+\begin{align*}
+\frac{\partial}{\partial \beta}\ell_n(\beta,\sigma^2)&=\frac{1}{\sigma^2}\sum_{i=1}^n X_i(Y_i-X_i'\beta)=\frac{1}{\sigma^2}\bm{X'e}\\\pause
+\frac{\partial}{\partial \sigma^2}\ell_n(\beta,\sigma^2)&=-\frac{n}{2\sigma^2}+\frac{1}{2\sigma^4}\sum_{i=1}^n(Y_i-X_i'\beta)^2
+\end{align*}\pause
+Setting the score for $\beta$ to zero:
+$$\frac{1}{\sigma^2}\bm{X'e}=0 \quad\Longleftrightarrow\quad \bm{X'e}=0 \quad\Longleftrightarrow\quad \bm{X'(Y-X\beta)}=0$$\pause
+\medskip
+These are exactly the \alert{OLS normal equations}!  The MLE for $\beta$ equals the OLS estimator because the score FOC is proportional to the least squares FOC.
+\end{frame}
+
+\begin{frame}{Scores as Moment Conditions}
+The score for $\beta$ evaluated at the true parameter is:
+$$S_i(\beta_0)=\frac{\partial}{\partial \beta}\log f(Y_i|X_i,\beta_0,\sigma^2)=\frac{1}{\sigma^2}X_i e_i$$\pause
+The population moment condition from the CEF is:
+$$\mathbb{E}[X_i e_i]=0$$\pause
+\medskip
+\textbf{Key observation}: Setting the score to zero in the sample,
+$$\frac{1}{n}\sum_{i=1}^n S_i(\hat{\beta})=0 \quad\Longleftrightarrow\quad \frac{1}{n}\sum_{i=1}^n X_i\hat{e}_i=0$$
+is the \alert{same} as solving the sample moment condition $\frac{1}{n}\sum X_i(Y_i - X_i'\hat{\beta})=0$.\\\pause
+\medskip
+MLE, OLS, and method of moments all give the \emph{same} estimator for $\beta$ in the normal linear model.
+\end{frame}
+
+\begin{frame}{Information Matrix of Normal Regression (Hansen 5.14)}
+The Fisher information matrix for the normal regression model is:
+$$\mathcal{J}=\text{var}\begin{bmatrix}\frac{\partial}{\partial \beta}\ell(\beta,\sigma^2)\\\frac{\partial}{\partial \sigma^2}\ell(\beta,\sigma^2)\end{bmatrix}=\begin{pmatrix}\frac{1}{\sigma^2}\bm{X'X} & \bm{0}\\\bm{0} & \frac{n}{2\sigma^4}\end{pmatrix}$$\pause
+\begin{itemize}
+\item The matrix is \alert{block diagonal}: estimation of $\beta$ and $\sigma^2$ are independent.
+\item The Cram\'{e}r-Rao lower bound for $\beta$ is:
+$$\mathcal{J}_\beta^{-1}=\sigma^2(\bm{X'X})^{-1}$$
+which is exactly the variance of $\hat{\beta}_{OLS}$.\pause
+\item OLS \alert{achieves the Cram\'{e}r-Rao bound} --- it is efficient among all unbiased estimators under normality.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{From Scores to the Sandwich (connecting to Lecture 6)}
+Under \textbf{correct specification} ($e\sim N(0,\sigma^2)$):
+$$\mathcal{I}_\theta=\mathcal{H}_\theta \quad\Longrightarrow\quad V=\mathcal{H}^{-1}=\mathcal{I}^{-1}=\sigma^2(\bm{X'X})^{-1}$$
+One formula suffices.  This is the classical OLS variance.\\\pause
+\medskip
+Under \textbf{misspecification} (heteroskedasticity, non-normality):
+$$\mathcal{I}_\theta\neq\mathcal{H}_\theta \quad\Longrightarrow\quad V=\mathcal{H}^{-1}\mathcal{I}\mathcal{H}^{-1}$$\pause
+\begin{itemize}
+\item The ``bread'' $\mathcal{H}^{-1}$ $\to$ $(\bm{X'X})^{-1}$
+\item The ``meat'' $\mathcal{I}$ $\to$ $\bm{X'DX}$ where $D=\text{diag}(\sigma_1^2,\ldots,\sigma_n^2)$
+\item The sandwich: $(\bm{X'X})^{-1}(\bm{X'DX})(\bm{X'X})^{-1}$
+\end{itemize}\pause
+This is the \alert{heteroskedasticity-robust variance} from Lecture 6 (HC0--HC3)!\\
+The ``sandwich'' estimator is the likelihood-based variance under misspecification.
+\end{frame}
+
+\begin{frame}{Preview: From MLE Scores to GMM}
+\textbf{Maximum likelihood} solves $k$ score equations in $k$ unknowns:
+$\frac{1}{n}\sum_{i=1}^n \frac{\partial}{\partial \theta}\log f(Y_i|X_i,\theta)=0$\pause\\[4pt]
+\textbf{Method of moments} solves $m$ moment conditions in $k$ unknowns:
+$\frac{1}{n}\sum_{i=1}^n g(Y_i, X_i, \theta)=0$\pause
+\begin{itemize}\setlength{\itemsep}{2pt}
+\item When $m=k$ and $g=$ score: \alert{GMM $=$ MLE}.\pause
+\item When $m>k$: GMM uses an \emph{optimal weighting matrix} to combine them.
+\item IV example: $\mathbb{E}[Z_i e_i]=0$ gives more moment conditions than parameters.\pause
+\end{itemize}
+\smallskip
+\textbf{Takeaway}: MLE $\subset$ GMM.  Score equations are one set of moment conditions.  Robust SEs arise when the likelihood is misspecified.
+\end{frame}
+
+\begin{frame}{Summary: The Score-Based View}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Concept} & \textbf{Formula} & \textbf{Role}\\
+\midrule
+Score & $S_i=\frac{1}{\sigma^2}X_i e_i$ & FOC $\to$ OLS normal eqns\\\pause
+Information & $\mathcal{J}_\beta=\frac{1}{\sigma^2}\bm{X'X}$ & Precision of $\hat{\beta}$\\\pause
+CR Bound & $\sigma^2(\bm{X'X})^{-1}$ & OLS achieves it\\\pause
+Sandwich & $(\bm{X'X})^{-1}\bm{X'DX}(\bm{X'X})^{-1}$ & Robust to misspec.\\\pause
+GMM link & Score $=$ moment cond. & MLE $\subset$ GMM\\
+\bottomrule
+\end{tabular}
+\end{center}\pause
+\medskip
+\textbf{Next}: exact finite-sample distributions under normality --- $\hat{\beta}$, $s^2$, $t$, and $F$.
+\end{frame}
+
+\begin{frame}{Proof of normality of $\bm{\hat{\beta}}$ in CNRM}
+We can show that $\bm{\hat{\beta}}\sim N(\bm{\beta},\ \sigma^2\bm{(X'X)}^{-1})$
+\begin{align*}
+\bm{\hat{\beta}}&=\bm{(X'X)}^{-1}\bm{X'}\bm{y}\\\pause
+\bm{\hat{\beta}}&=\bm{(X'X)}^{-1}\bm{X'}(\bm{X}\bm{\beta}+\bm{e})\\\pause
+\bm{\hat{\beta}}&=\bm{(X'X)}^{-1}\bm{X'}\bm{X}\bm{\beta}+\bm{(X'X)}^{-1}\bm{X'}\bm{e}\\\pause
+\bm{\hat{\beta}}&=\bm{\beta}+\bm{(X'X)}^{-1}\bm{X'}\bm{e}\\\pause
+\bm{\hat{\beta}}-\bm{\beta}&=\bm{(X'X)}^{-1}\bm{X'}\bm{e}
+\end{align*}
+
+$$\text{Rank}\bm{((X'X)}^{-1}\bm{X'})=\text{Rank}(\bm{X})=K$$
+So $\bm{\hat{\beta}}-\bm{\beta}$ is a full-row-rank linear transformation of the multinormal vector $\bm{e}$
+$$\bm{\hat{\beta}}-\bm{\beta} \sim N(\bm{0},\ \sigma^2\bm{(X'X)}^{-1}\bm{X'}\bm{X}\bm{(X'X)}^{-1})$$
+\end{frame}
+
+
+
+\begin{frame}{Distribution of Residuals (Hansen 5.7)}
+Recall $\bm{\hat{e}}=\bm{Me}$ where $\bm{M}=\bm{I}_n-\bm{X}(\bm{X'X})^{-1}\bm{X'}$.\\\medskip
+Since $\bm{e}|\bm{X}\sim N(\bm{0},\sigma^2\bm{I}_n)$ and $\bm{\hat{e}}$ is a linear function of $\bm{e}$:
+$$\bm{\hat{e}}|\bm{X}\sim N(\bm{0},\ \sigma^2\bm{M})$$\pause
+\medskip
+\textbf{Key fact}: $\hat{\bm{\beta}}$ and $\hat{\bm{e}}$ are \alert{independent} (conditional on $\bm{X}$).\\[4pt]
+\emph{Proof}: Their joint covariance is
+$$\text{Cov}(\hat{\bm{\beta}}-\bm{\beta},\ \hat{\bm{e}})=(\bm{X'X})^{-1}\bm{X'}\cdot\sigma^2\bm{I}\cdot\bm{M}=\sigma^2(\bm{X'X})^{-1}\underbrace{\bm{X'M}}_{=\bm{0}}=\bm{0}$$
+Since they are jointly normal and uncorrelated, they are independent.\\\pause
+\medskip
+\textbf{Why this matters}: It means $s^2=\hat{\bm{e}}'\hat{\bm{e}}/(n-k)$ is independent of $\hat{\bm{\beta}}$.  This is what allows us to form the $t$-statistic as a ratio of independent normal and $\chi^2$ components.
+\end{frame}
+
+\begin{frame}{Distribution of residual sum of squares $s_{\hat{e}}^2=\frac{\bm{\hat{e}'\hat{e}}}{(N-K)}$  in CNRM}
+Thm: Let $\bm{z}\sim N(\bm{0},\ \bm{I})$, let $\bm{A}$ be idempotent.  Then $\bm{z}'\bm{A}\bm{z}\sim \chi^2(\nu)$ where $\nu=\text{Rank}(\bm{A})$.
+\begin{align*}\pause
+\bm{\hat{e}}|\bm{X} &\sim N(\bm{0},\ \sigma^2\bm{I})\\
+\bm{\hat{e}}/\sigma|\bm{X} &\sim N(\bm{0},\ \bm{I}) \pause
+\end{align*}
+Recall
+\begin{align*}
+(N-K)s_{\hat{e}}^2&=\bm{\hat{e}}'\bm{\hat{e}}\\
+&=\bm{\hat{e}}\bm{M}\bm{\hat{e}}\\
+\frac{\bm{\hat{e}}'}{\sigma}\bm{M}\frac{\bm{\hat{e}}}{\sigma}&\sim \chi^2(N-K) \tag{$\bm{M}$ is idempotent}
+\end{align*}
+That is, in a linear regression model, $\frac{(N-K)s_{\hat{e}}^2}{\sigma^2}\sim \chi^2_{n-k}$
+\end{frame}
+
+\begin{frame}[fragile]{R Example: $\chi^2$ Distribution of $s^2$}
+\begin{lstlisting}[style=Rstyle]
+set.seed(1); n <- 50; k <- 3; sigma2 <- 4
+X <- cbind(1, matrix(rnorm(n*(k-1)), n, k-1))
+beta <- c(2, -1, 0.5)
+scaled_s2 <- replicate(10000, {
+  y <- X %*% beta + rnorm(n, sd = sqrt(sigma2))
+  ehat <- resid(lm(y ~ X - 1))
+  sum(ehat^2) / sigma2   # (n-k)*s^2 / sigma^2
+})
+\end{lstlisting}\pause
+\begin{columns}
+\begin{column}{0.55\textwidth}
+\begin{lstlisting}[style=Rstyle]
+# Compare to chi-squared(n-k)
+mean(scaled_s2)    # ~47 (= n-k)
+var(scaled_s2)     # ~94 (= 2*(n-k))
+\end{lstlisting}
+\end{column}
+\begin{column}{0.42\textwidth}
+Theory: $\mathbb{E}[\chi^2_{47}]=47$,\\ $\text{Var}[\chi^2_{47}]=94$.\\[4pt]
+The simulation matches.
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Distribution of OLS Estimates}
+Under the classical linear model assumptions, the OLS estimator is normally distributed:
+\[
+\hat{\bm{\beta}} \sim N(\bm{\beta},\ \sigma^2 (\bm{X'X})^{-1})
+\]
+
+Focus on the \( j \)-th coefficient:
+\[
+\hat{\beta}_j \sim N\left(\beta_j,\ \sigma^2 \left[(\bm{X'X})^{-1}\right]_{jj}\right)
+\]
+
+Therefore, the standardized version is:
+\[
+\frac{\hat{\beta}_j - \beta_j}{\sqrt{\sigma^2 \left[(\bm{X'X})^{-1}\right]_{jj}}} \sim N(0, 1)
+\]
+\end{frame}
+
+
+\begin{frame}{From Normal to $t$: Estimated Variance}
+In practice, we do not know the true error variance \( \sigma^2 \).  
+The unbiased estimator is:
+\[
+s_{\hat{e}}^2 = \frac{1}{n - k} \sum_{i=1}^n \hat{e}_i^2 = \frac{\hat{\bm{e}}' \hat{\bm{e}}}{n - k}
+\]
+
+We plug in this estimate to standardize:
+\[
+T = \frac{\hat{\beta}_j - \beta_j}{\sqrt{s_{\hat{e}}^2 \left[(\bm{X'X})^{-1}\right]_{jj}}}
+\]
+
+This is no longer standard normal, but it has a **t-distribution**.
+\end{frame}
+
+\begin{frame}{The $t$ Statistic and its Distribution}
+Recall from probability theory:
+\[
+\frac{Z}{\sqrt{W/(n - k)}} \sim t(n - k)
+\quad \text{where} \quad Z \sim N(0, 1),\ W \sim \chi^2(n - k),\ Z \perp W
+\]
+
+In our case:
+\[
+\frac{\hat{\beta}_j - \beta_j}{\sqrt{\sigma^2 \left[(\bm{X'X})^{-1}\right]_{jj}}} \sim N(0, 1)
+\]
+\[
+\frac{(n - k) s_{\hat{e}}^2}{\sigma^2} \sim \chi^2(n - k)
+\]
+
+So the statistic:
+\[
+T = \frac{\hat{\beta}_j - \beta_j}{\sqrt{s_{\hat{e}}^2 \left[(\bm{X'X})^{-1}\right]_{jj}}}= \frac{\hat{\beta}_j - \beta_j}{\sqrt{\frac{(n-k)s_{\hat{e}}^2}{\sigma^2} \sigma^2\left[(\bm{X'X})^{-1}\right]_{jj}/(n-k)}}
+\sim t(n - k)
+\]
+\end{frame}
+
+
+\begin{frame}{Limits of t-statistic}
+\begin{itemize}
+\item The T statistic follows the t distribution under homoskedasticity (by using $s^2$) and i.i.d. normality of $e$.
+\item Without normality, we can still say the OLS estimators are unbiased, but our exact distributions will not apply.
+\item The generic T statistic is $\frac{\hat{\beta}-\beta_0}{SE(\hat{\beta})}$.
+\item We will not have an exact finite-sample distribution of T when we use HC0-HC3 errors.
+\item Instead, we will use large sample approximations.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The $F$-test as a Likelihood Ratio Test (Hansen 5.13)}
+Consider testing $\mathbb{H}_0: \beta_2=0$ in $Y=X_1'\beta_1+X_2'\beta_2+e$.\\
+The likelihood ratio statistic compares the maximized log-likelihoods:
+$$\text{LR}=2\left(\ell_n(\hat{\beta},\hat{\sigma}^2)-\ell_n(\tilde{\beta}_1,\tilde{\sigma}^2)\right)=n\log\!\left(\frac{\tilde{\sigma}^2}{\hat{\sigma}^2}\right)$$\pause
+where $\tilde{\sigma}^2$ is from the restricted (null) model.  This is equivalent to the $F$-statistic:
+$$F=\frac{(\tilde{\sigma}^2-\hat{\sigma}^2)/q}{\hat{\sigma}^2/(n-k)}\sim F_{q,\, n-k}\quad\text{under }\mathbb{H}_0$$\pause
+\begin{itemize}
+\item $q=\dim(\beta_2)$ is the number of restrictions.
+\item Under the null, $F$ has an \emph{exact} $F$-distribution in the normal model.
+\item This justifies the $F$-test reported by \texttt{anova()} and regression output.\pause
+\item The $t$-test is a special case: when $q=1$, $F=T^2$ and $F_{1,n-k}=t_{n-k}^2$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Summary: Small-Sample Distributions}
+Under the classical normal regression model:\pause
+\begin{itemize}\setlength{\itemsep}{4pt}
+\item $\hat{\bm{\beta}}|\bm{X}\sim N(\bm{\beta},\ \sigma^2(\bm{X'X})^{-1})$ \hfill \emph{(linear fn of normal)}\pause
+\item $\hat{\bm{e}}|\bm{X}\sim N(\bm{0},\ \sigma^2\bm{M})$, \quad $\hat{\bm{\beta}}\perp\hat{\bm{e}}$ \hfill \emph{(projection)}\pause
+\item $\frac{(n-k)s^2}{\sigma^2}\sim \chi^2_{n-k}$ \hfill \emph{(idempotent quadratic form)}\pause
+\item $T=\frac{\hat{\beta}_j-\beta_j}{s(\hat{\beta}_j)}\sim t_{n-k}$ \hfill \emph{(normal / $\sqrt{\chi^2/\text{df}}$)}\pause
+\item $F=\frac{(\tilde{\sigma}^2-\hat{\sigma}^2)/q}{\hat{\sigma}^2/(n-k)}\sim F_{q,n-k}$ \hfill \emph{(likelihood ratio)}\pause
+\end{itemize}
+\medskip
+These \alert{exact} results hold in finite samples.  Without normality, we rely on asymptotic approximations.
+\end{frame}
+
+\section{Hypothesis Testing under Normality}
+
+\begin{frame}{Confidence Intervals}
+\begin{itemize}
+\item $\hat{\beta}$ is a \textbf{point estimate} for a coefficient $\beta$.  \pause
+\item We can instead estimate an interval, $\hat{C}=[\hat{L},\ \hat{U}]$ which contains the true value with high probability. \pause
+\item An interval estimate $\hat{C}$ is called a $1-\alpha$ confidence interval when $Pr(\beta \in \hat{C})=1-\alpha$.  The value $1-\alpha$ is called the \textbf{coverage probability}. \pause
+\item The key mistake is in thinking that the above statement treats $\beta$ is random and $\hat{C}$ is fixed, (the probability that $\beta$ is in $\hat{C}$).   \pause
+\item $Pr(\beta \in \hat{C})$ is the probability that the random set $\hat{C}$ covers or contains $\beta$.  \pause
+$$\hat{C}=[\hat{\beta}-c*s(\hat{\beta}),\ \hat{\beta}+c*s(\hat{\beta})]$$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Confidence Intervals in Practice}
+\begin{align*}
+Pr(\beta\in \hat{C})&=Pr(-c\leq T(\beta)\leq c)\\
+Pr(\beta\in \hat{C})&=2F(c)-1
+\end{align*}
+Our goal is to set this coverage probablity equal to $1-\alpha$, or $F(c)=1-\alpha/2$.\\
+If $\alpha=.05$, we solve $c=F^{-1}(1-.05/2)$.  In case of a normal, c=$1.96\approx 2$
+$$\hat{C}=[\hat{\beta}-2*s(\hat{\beta}),\ \hat{\beta}+2*s(\hat{\beta})]$$
+\end{frame}
+
+\begin{frame}{t test and p-values}
+\begin{itemize}
+\item  A theory is said to have \emph{testable implications} if it can be falsified. \pause
+\item For example, a theory may be false if $\beta=\beta_0$.  This is called a "null hypothesis" $\mathbb{H}_0$. \pause
+\item We further specify the complement of $\mathbb{H}_0$ as $\mathbb{H}_1$. \pause
+\item A statistic can be informative, some realizations may be unlikely if $\mathbb{H}_0$ is true. \pause
+\item Define a test statistic: $|T|=\left| \frac{\hat{\beta}-\beta_0}{s(\hat{\beta})}\right|$ and set a critical value $c$.
+$$\text{Reject }\mathbb{H}_0\text{ if } |T|>c$$ 
+\item A p-value indexes a test's strength of rejection of the null. \pause
+\item In a normal regression model, $p=2(1-F_{n-k}(|T|))$ 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Example}
+\begin{columns}
+\begin{column}{0.4\textwidth}
+\tiny{
+\begin{table}[!htbp] \centering 
+
+\begin{tabular}{@{\extracolsep{5pt}}lc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{1}{c}{\textit{Dependent variable: Fertility}} \\ 
+\cline{2-2} 
+\\[-1.8ex] 
+ Education (\%) & $-$0.98$^{***}$ \\ 
+  & (0.15) \\ 
+  & \\ 
+ Agriculture  (\%) & $-$0.15$^{**}$ \\ 
+  & (0.07) \\ 
+  & \\ 
+ Catholic (\%) & 0.12$^{***}$ \\ 
+  & (0.03) \\ 
+  & \\ 
+ Infant.Mortality  (\%) & 1.08$^{***}$ \\ 
+  & (0.38) \\ 
+  & \\ 
+ Constant & 62.10$^{***}$ \\ 
+  & (9.60) \\ 
+  & \\ 
+\hline \\[-1.8ex] 
+Observations & 47 \\ 
+R$^{2}$ & 0.70 \\ 
+Adjusted R$^{2}$ & 0.67 \\ 
+Residual Std. Error & 7.17 (df = 42) \\ 
+F Statistic & 24.42$^{***}$ (df = 4; 42) \\ 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{1}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} }
+    \end{column}
+    \begin{column}{0.58\textwidth}
+ Did education share predict the average fertility across Swiss districts in 1888?\pause
+\begin{align*}
+\hat{\beta}&=-.98, \pause\quad \beta_0=0, \pause\quad se(\hat{\beta})=0.15, \quad Df=47-5\\\pause
+t&=\frac{\hat{\beta}-\beta_0}{se(\hat{\beta})}=\frac{-.98-0}{0.15}=-6.61\\\pause
+ c&=F^{-1}(1-.05/2)=\texttt{qt}(1-.025,41)=2.02\\\pause
+  |t|&>2.02\\\pause
+  p&=2(1-F_{n-k}(|T|))=2*(1-\texttt{pt}(6.61, 42))=5.2\times 10^{-8}\pause
+  \end{align*}
+  For each 1 percentage point of post-primary attendance, fertility rate is (.7, 1.3) percentage points lower
+        \end{column}
+\end{columns}
+\end{frame}
+
+\end{document}
+
+\begin{frame}{Bayesian Statistics}
+Given some data, we can use Bayes Theorem to generate a probability distribution for our parameters:
+\begin{align*}
+P(\theta |\bm{X})&=\frac{P(\bm{X}|\theta)*P(\theta)}{P(\bm{X})}\\
+&\propto P(\bm{X}|\theta)*P(\theta)
+\end{align*}\pause
+Example with Bernoulli ($P(\bm{x}|\ p)=4p^{4}(1-p)^{6}$).  Assume $p\sim B(\alpha=1,\ \beta = 2)$, then 
+$$P(p |\bm{X})\propto 4p^{4}(1-p)^{6}*2*(1-p)$$
+\end{frame}
+
+
+\begin{frame}{Beta(1,2) prior for $p$}
+\begin{center}
+\includegraphics[width=2.7 in]{Prior.pdf}
+\end{center}
+\end{frame}
+
+\begin{frame}{Likelihood and Posterior}
+\begin{center}
+\includegraphics[width=2.7 in]{Posterior.pdf}
+\end{center}
+\end{frame}
+
+\begin{frame}{Bayesian Methods for Models}
+Bayes's Theorem lets us describe the probability of a model $\mathcal{M}_m$ and parameters of that model $\bm{\beta}_m$ given data.
+\begin{align*}
+p(\mathcal{M}_m|\bm{X},\ \bm{y})&=\frac{p(\mathcal{M}_m)*p(\bm{X},\ \bm{y}|\mathcal{M}_m)}{p(\bm{X},\ \bm{y})}\\
+p(\mathcal{M}_m|\bm{X},\ \bm{y})&\propto p(\mathcal{M}_m)*p(\bm{X},\ \bm{y}|\mathcal{M}_m)
+\end{align*}
+Note, we can further decompose
+\begin{align*}
+p(\bm{X},\ \bm{y}|\mathcal{M}_m)&=\int p(\bm{X},\ \bm{y}|\bm{\beta}_m, \mathcal{M}_m)*p(\bm{\beta}_m|\mathcal{M}_m)d\bm{\beta}_m
+\end{align*}
+
+\end{frame}
+
+
+\begin{frame}{Model Selection with Bayes}
+\begin{itemize}
+\item  2 models $\mathcal{M}_m$, $m=a,\ b$ and with coefficients $\bm{\beta}_m$, data $\bm{X}$ and $\bm{y}$.
+\item Then we can compare two models $\mathcal{M}_a$ and $\mathcal{M}_b$ with the Bayes factor:
+\begin{align*}
+\frac{p(\mathcal{M}_a|\bm{X},\ \bm{y})}{p(\mathcal{M}_b|\bm{X},\ \bm{y})}&=\frac{p(\mathcal{M}_a)}{p(\mathcal{M}_b)}\cdot \frac{p(\bm{X},\ \bm{y}|\mathcal{M}_a)}{p(\bm{X},\ \bm{y}|\mathcal{M}_b)}\\
+&=\frac{p(\mathcal{M}_a)}{p(\mathcal{M}_b)}\cdot BF(\bm{X},\ \bm{y})
+\end{align*}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Bayesian Information Criterion BIC}
+\begin{itemize}
+\item We might assume the models are ex ante equally probable.
+\begin{align*}
+\frac{p(\mathcal{M}_a|\bm{X},\ \bm{y})}{p(\mathcal{M}_b|\bm{X},\ \bm{y})}&=\frac{p(\mathcal{M}_a)}{p(\mathcal{M}_b)}\cdot BF(\bm{X},\ \bm{y})=1\cdot BF(\bm{X},\ \bm{y})\\
+log(\frac{p(\mathcal{M}_a|\bm{X},\ \bm{y})}{p(\mathcal{M}_b|\bm{X},\ \bm{y})})&=log(\frac{p(\bm{X},\ \bm{y}|\mathcal{M}_a)}{p(\bm{X},\ \bm{y}|\mathcal{M}_b)})\\
+\end{align*}
+\item The BIC is defined to be -2 times an approximation of the log likelihood:
+\begin{align*}
+&=\log(p(\bm{X},\ \bm{y}|\mathcal{M}_a))\\
+&\approx \log(p(\bm{X},\ \bm{y}|\bm{\hat{\beta}}_a, \mathcal{M}_a)) - \frac{k_a}{2}\cdot \log(N)\\
+BIC&\equiv -2 \log(p(\bm{X},\ \bm{y}|\bm{\hat{\beta}}_a, \mathcal{M}_a)) +k_a \log(N)\\
+\end{align*}
+\item Model Selection: pick the model with the most negative BIC (don't do this).
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Bayesian mixture posterior coefficients}
+\begin{itemize}
+\item Given J models, we can find the probability of the jth model $\mathcal{M}_j$:
+$$\pi_j=\frac{e^{-2BIC_j}}{\sum_{l=1}^J e^{-2BIC_l}}$$ 
+\item Using these model probabilities, we can estimate the posterior distribution for $\beta_k$.
+$$\hat{E}(\beta_k|\bm{X},\ \bm{y})\equiv \bar{b}_k=\sum_{j=1}^J \pi_j b_kj$$
+$$Var(\beta_k|\bm{X},\ \bm{y})=\sum_{j=1}^J \pi_j Var(b_{kj})+\sum_{j=1}^J \pi_j(b_{kj}- \bar{b}_k)^2$$
+\end{itemize}
+\end{frame}
+

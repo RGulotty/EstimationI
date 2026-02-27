@@ -1,0 +1,25 @@
+\frametitle{Robust Standard Errors for Probit}
+
+Same \texttt{sandwich} tools from Lecture 6:
+
+\begin{lstlisting}
+library(sandwich)
+library(lmtest)
+
+# Default (model-based) SEs
+coeftest(probit)
+
+# Robust (sandwich) SEs
+coeftest(probit, vcov = vcovHC(probit, type = "HC1"))
+\end{lstlisting}
+
+\pause
+
+\bigskip
+
+\begin{itemize}
+    \item Model-based SEs rely on the information matrix equality (correct specification)
+    \item Sandwich SEs are valid even under misspecification (QMLE)
+    \item If model-based and robust SEs differ substantially, this signals possible misspecification
+\end{itemize}
+

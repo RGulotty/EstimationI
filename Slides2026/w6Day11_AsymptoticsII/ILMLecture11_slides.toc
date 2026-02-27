@@ -1,0 +1,6 @@
+\beamer@sectionintoc {1}{Consistency of OLS}{2}{0}{1}
+\beamer@sectionintoc {2}{Asymptotic Normality}{27}{0}{2}
+\beamer@sectionintoc {3}{Asymptotic Properties: Wald Test}{44}{0}{3}
+\beamer@sectionintoc {4}{Asymptotic Standard Errors and the Delta Method}{53}{0}{4}
+\beamer@sectionintoc {5}{Application: Ridge Regression}{66}{0}{5}
+\beamer@sectionintoc {6}{Summary}{70}{0}{6}

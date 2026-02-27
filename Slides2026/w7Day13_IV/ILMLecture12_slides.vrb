@@ -1,0 +1,10 @@
+\begin{lstlisting}
+pacman::p_load(sandwich, lmtest, car, tidyverse)
+
+mod0 <- lm(prestige ~ income + education + women, data=Prestige)
+mod1 <- lm(prestige ~ income, data=Prestige)
+
+lmtest::waldtest(mod1, mod0, vcov = vcovHC,  test ="Chisq")
+car::linearHypothesis(mod0, c("education = 0", "women= 0"),
+		vcov = vcovHC,test="Chisq")
+\end{lstlisting}

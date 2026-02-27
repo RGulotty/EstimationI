@@ -1,0 +1,20 @@
+\frametitle{Power Calculation in R}
+\begin{lstlisting}
+# Approximate power for a two-sided t-test in OLS
+# Inputs: effect size, residual SD, regressor SD, n, alpha
+power_ols <- function(effect, sigma_e, sd_x, n, alpha=0.05) {
+  se <- sigma_e / (sd_x * sqrt(n))
+  delta <- effect / se
+  z <- qnorm(1 - alpha/2)
+  power <- pnorm(delta - z) + pnorm(-delta - z)
+  return(power)
+}
+
+# Example: detect beta = 0.1 with sigma_e = 1, sd(x) = 2
+sapply(c(50, 100, 200, 500, 1000), function(n)
+  round(power_ols(0.1, 1, 2, n), 3))
+# [1] 0.080 0.117 0.198 0.463 0.803
+\end{lstlisting}
+
+\vspace{-0.2cm}
+With $\beta = 0.1$, $\sigma_e = 1$, $\text{sd}(X) = 2$: you need $n \approx 1000$ for 80\% power!

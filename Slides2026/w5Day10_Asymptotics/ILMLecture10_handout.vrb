@@ -1,0 +1,11 @@
+\begin{lstlisting}
+Canned Package Methods
+
+In R:
+> car :: deltaMethod(fm, "logGASP/(1-logGlag)")
+                      Estimate       SE    2.5 %  97.5 %
+logGASP/(1 - logGlag) -0.41136  0.15230 -0.70985 -0.1129
+
+In STATA:
+nlcom (_b[x2]/(1-_b[x6]))
+ \end{lstlisting}

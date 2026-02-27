@@ -1,0 +1,992 @@
+
+\documentclass[aspectratio=169, handout]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+
+%  \usetheme{Pittsburgh}
+%\usefonttheme[2]{sans}
+\renewcommand{\familydefault}{cmss}
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+%\usepackage{palatino}
+%\usepackage{cmbright}
+\usepackage{bm}
+\usepackage{listings}
+\useinnertheme{rectangles}
+}
+\usepackage{amsmath}
+\usepackage{tcolorbox}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\definecolor{darkpurple}{rgb}{0.4, 0, 0.6}
+\usepackage{array}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=darkpurple}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+%\usepackage[all]{xy}
+
+\usepackage{tikz}
+\usepackage{lipsum}
+\usepackage{booktabs}
+
+\lstset{%
+  language=R,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{darkgreen},
+  stringstyle=\color{red},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10}
+}
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+\usetikzlibrary{arrows.meta}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models Lecture 10: Asymptotics}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+
+\begin{document}
+
+\begin{frame}
+\maketitle
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Review}
+\setcounter{subsection}{1}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Big Picture}
+\begin{itemize}
+\item We began with a model in which $Y=\bm{x}'\bm{\beta}+e$
+\item OLS finds the projection of $\bm{y}$ in the vector space spanned by $\bm{x}$:
+\begin{align*}
+\bm{\hat{y}}&=\bm{X\hat{\beta}}=\bm{X(X'X)^{-1}X'y}=\bm{Py}\\
+\bm{\hat{e}}&=\bm{y}-\bm{\hat{y}}=\bm{y}-\bm{X\hat{\beta}}=\bm{y}-\bm{Py}=(\bm{I}-\bm{P})\bm{y}=\bm{My}
+\end{align*}
+\item We showed that the projection coefficient $\bm{\hat{\beta}}$ is an unbiased estimator of $\bm{\beta}$.
+\item With the additional assumption of normality, we derived $t$ and $F$ distributions (Lecture 7).
+\end{itemize}
+
+\pause
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+In Lecture 9, we used asymptotic arguments \textbf{informally}: Taylor expansion of the score, LLN for the Hessian, CLT for the score. Today we develop these tools rigorously.
+\end{tcolorbox}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Standards for Inference}
+\begin{itemize}
+\item Unbiased estimators ($E[\hat{\theta}]=\theta$) are ``correct on average'' even in small samples.
+\begin{itemize}
+\item Unbiasedness tells us that we are not better off with a different guess (we would lose money in expectation).
+\item A biased estimator is biased even with infinite data.
+\end{itemize}
+\pause
+\item Unbiasedness is not always what we want.
+\begin{itemize}
+\item Unbiasedness doesn't rule out pathological behavior: the ``first impression'' estimator is unbiased.
+\item Many popular estimators are biased: Probit MLE (Lecture 9), 2SLS, ridge regression.\pause
+\end{itemize}
+\item A biased estimator may be a good approximation if it gets \textbf{closer to the truth with more data}.
+\item What is a ``good'' approximation?
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Why Consistency Matters: A Concrete Example}
+U.S.\ hourly wages: $\mu = 24$, $\sigma^2 = 430$.
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{``First Impression'' estimator}\\
+$\hat{\mu} = X_1$ (use only the first observation)
+\begin{itemize}
+\item Unbiased: $\mathbb{E}[X_1] = \mu = 24$
+\item $\text{Var}(\hat{\mu}) = 430$ for \emph{any} $n$
+\item 95\% interval: $24 \pm 40.7$
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\textbf{Sample mean} $\bar{X}_n$
+\begin{itemize}
+\item Unbiased: $\mathbb{E}[\bar{X}_n] = \mu = 24$
+\item $\text{Var}(\bar{X}_n) = 430/n \to 0$
+\item 95\% interval at $n=100$: $24 \pm 4.1$
+\end{itemize}
+\end{column}
+\end{columns}
+
+\pause
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+Both estimators are unbiased. Only $\bar{X}_n$ is \textbf{consistent}: its distribution collapses onto $\mu$. When forced to choose, \textbf{consistency $>$ unbiasedness}.
+\end{tcolorbox}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}
+
+It has been customary to assume (somewhat loosely) that when a quantity is calculated from a random sample to estimate a parameter of a hypothetical frequency distribution, the accuracy of the determination will increase without limit as the number in the sample increases. A *consistent statistic* is a function of the observations actually possessing this property. \\
+\hfill - Hotelling 1930
+
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Consistency}
+\begin{itemize}
+\item Consistent estimators are ``more likely correct with more data''.
+\item The analog to expectations in large samples is called the probability limit: $\text{plim}$.
+\item Claim of Consistency: $\text{plim}\hat{\beta}=\beta$, or $\hat{\beta}_j$ is *consistent* for $\beta_j$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Convergence}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Convergence of Random Variables}
+
+Consider the sample mean $\bar{X}_n$ as a sequence indexed by sample size $n$. Its distribution changes with $n$---how do we describe its limit?
+
+\pause
+\vspace{0.5em}
+
+There is a hierarchy of convergence concepts for random variables:
+\[
+X_n \overset{\text{a.s.}}{\longrightarrow} X
+\quad \Rightarrow \quad
+X_n \overset{p}{\longrightarrow} X
+\quad \Rightarrow \quad
+X_n \overset{d}{\longrightarrow} X
+\]
+
+\pause
+
+\begin{itemize}
+  \item \textbf{Almost sure (a.s.) convergence} is the strongest form---pathwise convergence except on a probability-zero set. We won't need it operationally.
+
+  \item \textbf{Convergence in probability} ($\overset{p}{\to}$): for all $\varepsilon > 0$, $\mathbb{P}(|X_n - X| > \varepsilon) \to 0$.
+  \begin{itemize}
+    \item This is the concept behind \textbf{consistency} (WLLN, plim, CMT).
+  \end{itemize}
+
+  \item \textbf{Convergence in distribution} ($\overset{d}{\to}$): $F_{X_n}(t) \to F_X(t)$ at all continuity points.
+  \begin{itemize}
+    \item This is the concept behind the \textbf{CLT} and asymptotic normality.
+  \end{itemize}
+\end{itemize}
+
+\pause
+\vspace{0.3em}
+Today we develop each in turn: $\overset{p}{\to}$ (next), then $\overset{d}{\to}$ (CLT section).
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Convergence in Probability}
+A sequence of random variables $X_n$ converges *in probability* to $c$ if, for all $\delta>0$,
+$$\lim_{n\rightarrow \infty} Pr(|X_n-c|\leq \delta)=1$$
+
+This is written as $X_n\underset{p}{\to} c$ or $\text{plim}X_n=c$\\
+We can also say
+$$\lim_{n\rightarrow \infty} Pr(|X_n-c|> \delta)=0$$
+That is, the random variable concentrates about a point in a certain interval.
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Plim example}
+\begin{itemize}
+\item Define a random variable $Z_n$ that takes on values 0 and $a_n$ with probability $1-p_n$ and $p_n$ respectively, \pause
+\item Intuitively $Z_n$ should converge to 0 if either $p_n\rightarrow 0$ or $a_n\rightarrow 0$.\pause
+\item Consider any $\delta>0$.  If $a_n\rightarrow 0$, then for $n$ large enough, $a_n<\delta$. If so $Pr(|Z_n|\leq \delta)=1$.\pause
+\item If $p_n\rightarrow 0$ then $1-p_n\rightarrow 1$.\pause
+\item  $1-p_n$ of the time $Z_n=0<\delta$, so $Pr(|Z_n|\leq \delta) \geq 1-p_n$\pause
+\item Therefore $Pr(|Z_n|\leq \delta)\rightarrow 1$ as $p_n\rightarrow 0$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Consistency in Practice: OLS with Increasing $n$}
+
+DGP: $Y_i = 2 + 3\,X_i + \varepsilon_i$, \quad $X_i \sim N(0,1)$, \quad $\varepsilon_i \sim \text{Exp}(1)-1$ (skewed, non-normal errors).
+
+\begin{lstlisting}
+set.seed(42)
+par(mfrow = c(2, 2))
+for (n in c(20, 50, 200, 2000)) {
+  betas <- replicate(5000, {
+    x <- rnorm(n); y <- 2 + 3*x + (rexp(n)-1)
+    coef(lm(y ~ x))[2]
+  })
+  hist(betas, breaks = 40, prob = TRUE,
+       main = paste("n =", n), xlim = c(2, 4),
+       xlab = expression(hat(beta)[1]))
+  abline(v = 3, col = "blue", lwd = 2)
+}
+\end{lstlisting}
+
+\pause
+
+Errors are \textbf{skewed and non-normal}, yet $\hat{\beta}_1$ concentrates around the true value $\beta_1 = 3$ as $n$ grows. This is consistency in action.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Why Useful : The continuous mapping theorem}
+\begin{itemize}
+\item Unlike expectations, plim survives continuous functions (like division!).  \pause
+\end{itemize}
+\begin{tcolorbox}
+\textbf{The continuity theorem, the first of Slutsky's theorems, the continuous mapping theorem.}\\
+Given a random variable $x_n$ that converges in probability to $x$ and a continuous function $g(x_n)$, we have that:
+$$\text{plim}  g(x_n)=g(\text{plim} x_n)$$ \pause
+If $\text{plim} x_n=c$ and $\text{plim} y_n=d$, then
+\begin{align*}
+\text{plim} (x_n y_n)&=(\text{plim} x_n)(\text{plim} y_n)=cd\\
+\text{plim} (x_n/y_n)&=(\text{plim} x_n)/(\text{plim} y_n)=c/d\\
+\text{plim} (x_n+y_n)&=(\text{plim} x_n)+(\text{plim} y_n)=c+d
+\end{align*}
+\end{tcolorbox}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{CMT in Action: Why Division Works}
+
+The $t$-statistic divides one random quantity by another. Why is this valid?
+
+\begin{itemize}
+\item WLLN: $\bar{X}_n \overset{p}{\to} \mu$ \quad and \quad $s_n^2 \overset{p}{\to} \sigma^2$
+\item CMT (continuous function $g(a,b) = a/\sqrt{b}$):
+\[
+\frac{\bar{X}_n}{s_n} \overset{p}{\to} \frac{\mu}{\sigma}
+\]
+\item More generally, any smooth function of consistent estimators is itself consistent.
+\end{itemize}
+
+\pause
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+Every time you divide an estimate by its standard error, you rely on CMT. Without it, ratios of random variables have no guarantee of converging to the right thing.
+\end{tcolorbox}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Law of Large Numbers}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}
+\frametitle{Weak Law of Large Numbers}
+
+Proof plan:
+\begin{itemize}
+\item[-] Markov's Inequality
+\item[-] Chebyshev's Inequality
+\item[-] Weak Law of Large Numbers
+\end{itemize}
+
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}
+\frametitle{Markov's Inequality}
+
+\begin{prop}
+Suppose $X$ is a random variable that takes on non-negative values.  Then, for all $a>0$,
+\begin{eqnarray}
+P(X\geq a) & \leq & \frac{E[X]}{a} \nonumber
+\end{eqnarray}
+\end{prop}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}
+\frametitle{Markov's Inequality}
+
+
+\begin{proof}
+For $a>0$,  \pause
+\begin{align*}
+E[X] & =  \int_{0}^{\infty} x f(x) dx \\ \pause
+& =  \int_{0}^{a} x f(x) dx + \int_{a}^{\infty} x f(x) dx \\\pause
+E[X] &\geq \int_{a}^{\infty} x f(x) dx  \geq \int_{a}^{\infty} a f(x)dx = a P(X \geq a ) \tag{$X\geq0$}\\ \pause
+\frac{E[X]}{a} &\geq P(X \geq a )
+\end{align*}
+
+
+\end{proof}
+
+
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}
+\frametitle{Chebyshev's Inequality}
+
+\begin{prop}
+If $X$ is a random variable with mean $\mu$ and variance $\sigma^2$, then, for any value $k>0$,
+\begin{eqnarray}
+P(|X - \mu| \geq k) & \leq & \frac{\sigma^2}{k^2} \nonumber
+\end{eqnarray}
+
+\end{prop}
+
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}
+\frametitle{Chebyshev's Inequality}
+
+
+\begin{proof}
+Define the random variable
+\begin{eqnarray}
+ Y & = & (X - \mu)^2 \nonumber
+\end{eqnarray}
+
+Where $\mu = E[X]$.
+
+\pause
+
+Then we know $Y$ is a non-negative random variable.  Set $a = k^2$ in Markov's inequality \pause
+\begin{align*}
+P(Y \geq k^2) &\leq \frac{E[Y]}{k^2} \\ \pause
+P( (X- \mu)^2 \geq k^2) &\leq \frac{E[(X - \mu)^2]}{k^2} = \frac{\sigma^2}{k^2} \\ \pause
+P( |X - \mu| \geq k) &\leq \frac{\sigma^2}{k^2}
+\end{align*}
+\end{proof}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Example of Markov and Chebyshev}
+Suppose that we know that the number of items produced in a factory is a random variable with mean 500.
+\begin{itemize}
+\item How likely are we to see a production of 1000?
+\item If the variance is 50, how likely is the production to be between 400 and 600?
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Solution}
+\begin{itemize}
+\item \textbf{How likely are we to see a production of 1000?}
+
+\textbf{Markov's Inequality:}
+\[
+\mathbb{P}(X \geq 1000) \leq \frac{\mathbb{E}[X]}{1000} = \frac{500}{1000} = 0.5
+\]
+
+\pause
+
+\item \textbf{How likely is production between 400 and 600, given variance = 50?}
+
+\textbf{Chebyshev's Inequality:}
+\[
+\mathbb{P}(|X - 500| \geq 100) \leq \frac{50}{100^2} = \frac{1}{200}
+\]
+\[
+\mathbb{P}(400 \leq X \leq 600) = \mathbb{P}(|X - 500| < 100) \geq 1 - \frac{1}{200} = \frac{199}{200}
+\]
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Chebyshev Sample Size Calculation}
+\begin{itemize}
+\item U.S. hourly wages are distributed $\mu=24$ and $\sigma^2=430$,
+\item How large does $n$ have to be so that $\bar{X}_n$ is within \$1 of the true mean with probability 99\%?
+\begin{align*}
+\mathbb{P}\left[|\bar{X}_n-\mu|\geq 1\right]&=\mathbb{P}\left[|\bar{X}_n-\mathbb{E}\left[\bar{X}_n\right]|\geq 1\right]\leq var\left[\bar{X}_n\right]=430/n\\
+\frac{430}{n}&\leq .01\\
+\mathbb{P}\left[|\bar{X}_n-\mu|\geq 1\right]&\leq .01 \text{ if }n=43{,}000
+\end{align*}
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}
+\frametitle{Weak Law of Large Numbers}
+
+\begin{prop}
+Suppose $X_{1}, X_{2}, \hdots, X_{n}$ is iid random sample from a distribution with expectation $\mu$ and $Var(X_{i})= \sigma^2$.  Then, for all $\varepsilon >0$,
+\begin{eqnarray}
+P\left\{ \left| \frac{X_{1} + X_{2} + \hdots + X_{n} }{n} -\mu \right| \geq \varepsilon \right\} \rightarrow 0 \text{ as } n \rightarrow \infty \nonumber
+\end{eqnarray}
+or  $$\bar{X}_n\underset{p}{\to} \mathbb{E}[X]$$
+\end{prop}
+
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}
+\frametitle{Weak Law of Large Numbers}
+
+\begin{proof}
+\begin{align*}
+\frac{\text{E}[X_{1} + X_{2} + \cdots + X_{n} ]}{n}
+&= \frac{\sum_{i=1}^{n} \text{E}[X_{i}] }{n} = \mu
+\pause \\
+\text{E}\left[ \left( \frac{\sum_{i=1}^{n} X_{i} - \mu}{n} \right)^2 \right]
+&= \frac{\text{Var}(X_{1} + X_{2} + \cdots + X_{n} )}{n^2}
+= \frac{ \sum_{i=1}^{n} \text{Var}(X_{i}) }{n^2}
+= \frac{\sigma^2}{n}
+\pause \\
+\mathbb{P}\left( \left| \frac{X_{1} + X_{2} + \cdots + X_{n} }{n} - \mu \right| \geq \varepsilon \right)
+&\leq \frac{\sigma^2}{n \varepsilon^2} \rightarrow 0 \quad \text{as } n \to \infty
+\end{align*}
+\end{proof}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{WLLN interpretation}
+\begin{itemize}
+\item The sample mean approaches the population mean as $n\rightarrow \infty$\pause
+\item General version only assumes $\mathbb{E}[X]<\infty$\pause
+\item This notion that a sequence of the same sample quantity approaches a constant is called consistency.
+\end{itemize}
+
+\pause
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=Immediate Consequence]
+Any sample moment converges to its population counterpart:
+\[
+\frac{1}{n}\sum_{i=1}^n X_i X_i' \overset{p}{\to} \mathbb{E}[X_i X_i'], \qquad \frac{1}{n}\sum_{i=1}^n X_i Y_i \overset{p}{\to} \mathbb{E}[X_i Y_i]
+\]
+This is the foundation for OLS consistency (Lecture 11) and for the Probit Hessian convergence (Lecture 9).
+\end{tcolorbox}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{WLLN Counterexample}
+\begin{itemize}
+\item WLLN needs to have independent observations:\pause
+\item For example, assume $X_i=Z+U_i$, like in the random effects model.\pause
+\item Suppose $Z$ and $U_i$ are random and independent, $\mathbb{E}(U_i)=0$.\pause
+\item $\bar{X}_n=Z+\bar{U}_n\underset{p}{\to}Z$ not a constant.
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Central Limit Theory}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Convergence in Distribution}
+\begin{itemize}
+\item We want the sampling distribution of the sample mean $\bar{X}_n$.
+\item The sampling distribution is a function of the distribution of observations $F$ and the sample size $n$.
+\item We will get an \emph{asymptotic approximation} by standardizing $\bar{X}_n$ and taking the limit as $n\to \infty$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Definition: Convergence in Distribution}
+\begin{itemize}
+  \item Let \( X_n \) be a sequence of random variables, and \( X \) a target random variable.
+  \item We say that \( X_n \) \textbf{converges in distribution} to \( X \) if:
+  \[
+  \lim_{n \to \infty} \mathbb{P}(X_n \leq t) = \mathbb{P}(X \leq t) \quad \text{for all } t \text{ where } F_X(t) \text{ is continuous}
+  \]
+
+  \item \textbf{Implications}
+  \begin{itemize}
+    \item The cumulative distribution functions converge: \( F_{X_n}(t) \to F_X(t) \)
+    \item If the target distribution is a constant, then this is just convergence in probability
+  \end{itemize}
+  \item \textbf{Notation:} \quad \( X_n \underset{d}{\to} X \)
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Standardizing the Sample Mean}
+\begin{itemize}
+\item The WLLN tells us that $\bar{X}_n\underset{p}{\to} \mu$, so $\bar{X}_n\underset{d}{\to} \mu$.
+\item But the distribution of $\mu$ is degenerate,  not useful.
+\item So rescale by the variance: $var[\bar{X}_n-\mu]=\frac{\sigma^2}{n}$, so $var[\sqrt{n}(\bar{X}_n-\mu)]=\sigma^2$
+$$Z_n=\sqrt{n}(\bar{X}_n-\mu)$$
+\item As $n\to \infty$, $\mathbb{E}[Z_n]\rightarrow0$, $\mathbb{E}[Z_n^2]\rightarrow\sigma^2$, $\mathbb{E}[Z_n^3]\rightarrow0$, $\mathbb{E}[Z_n^4]\rightarrow 3\sigma^4$
+\item The Central Limit Theorem states that $Z_n\underset{d}{\to}Z$ where $Z\sim N(0, \sigma^2)$.
+\item This means that $\bar{X}_n\underset{a}{\sim}N(\mu,\ \frac{\sigma^2}{n})$.
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{The Central Limit Theorem}
+
+\begin{thm}[Lindeberg--L\'evy CLT]
+Let $X_1, X_2, \ldots$ be iid with $\mathbb{E}[X_i] = \mu$ and $\operatorname{Var}(X_i) = \sigma^2 < \infty$. Then:
+\[
+\sqrt{n}(\bar{X}_n - \mu) \overset{d}{\to} N(0, \sigma^2)
+\]
+Equivalently: $\frac{\bar{X}_n - \mu}{\sigma/\sqrt{n}} \overset{d}{\to} N(0, 1)$.
+\end{thm}
+
+\pause
+
+\textbf{Key conditions:}
+\begin{itemize}
+    \item \textbf{iid} --- can be relaxed (Lindeberg--Feller allows heterogeneity)
+    \item \textbf{Finite variance} --- essential; without it, convergence may fail or be to a non-normal limit
+\end{itemize}
+
+\pause
+
+\textbf{Remarkable fact:} The limit distribution is $N(0,\sigma^2)$ \textbf{regardless} of the distribution of $X_i$. Whether the data are Bernoulli, exponential, or uniform, the sample mean is approximately normal for large $n$.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{CLT Sample Size Calculation}
+\begin{itemize}
+\item U.S. wages are distributed $\mu=24$ and $\sigma^2=430$, so $\bar{X}_n\underset{a}{\to} N(24, .43)$ for n=1000.
+\item How large does $n$ have to be so that $\bar{X}_n$ is within \$1 of the true mean with 99\% probability?
+\begin{align*}
+\mathbb{P}\left[ |\bar{X}_n-\mu|\geq 1\right] &\underset{a}{\sim} \mathbb{P}\left[ |N(0,1)|\geq 1/\sqrt{var(\bar{X}_n)}\right]=\mathbb{P}\left[ |N(0,1)|\geq 1/\sqrt{\frac{430}{n}}\right]=.01\\
+\mathbb{P}(|Z| \geq z)&=.01\rightarrow qnorm(.005)= -2.576\\
+\frac{1}{\sqrt{430/n}}&=2.576\\
+n&=\frac{430}{(1/2.576)^2}\\
+n&\geq 2{,}862
+\end{align*}
+\end{itemize}
+
+\pause
+
+Compare with Chebyshev: $n = 43{,}000$. The CLT is far more efficient because it uses the shape of the distribution, not just the variance.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{CLT in Action: R Simulation}
+
+\begin{lstlisting}
+# CLT: sample means of Exponential(1) converge to Normal
+set.seed(42)
+par(mfrow = c(2, 2))
+for (n in c(5, 30, 100, 1000)) {
+  xbar <- replicate(10000, mean(rexp(n, rate = 1)))
+  hist(xbar, breaks = 40, prob = TRUE,
+       main = paste("n =", n),
+       xlab = expression(bar(X)[n]))
+  curve(dnorm(x, 1, 1/sqrt(n)), add = TRUE,
+        col = "red", lwd = 2)
+}
+\end{lstlisting}
+
+\pause
+
+The red curve is the normal approximation $N(\mu, \sigma^2/n)$. Even for \textbf{skewed} distributions (Exponential), the normal approximation is excellent by $n = 30$.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{When Do Asymptotics Kick In?}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{>{\raggedright}p{3.5cm} l l}
+\toprule
+\textbf{Data shape} & \textbf{Rule of thumb} & \textbf{Example} \\
+\midrule
+Symmetric, light tails & $n \geq 30$ & Heights, test scores \\
+Moderate skew & $n \geq 100$ & Wages, income \\
+Heavy tails / outliers & $n \geq 500{+}$ & Financial returns, conflict \\
+Rare binary outcome & Events $\geq 10$/covariate & Coups, wars \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1.0}
+\end{center}
+
+\pause
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+There is no universal rule. The CLT convergence rate depends on the \textbf{shape} of the underlying distribution. When in doubt, \textbf{simulate}.
+\end{tcolorbox}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Multivariate CLT}
+
+The CLT generalizes to vectors. If $\bm{W}_1, \ldots, \bm{W}_n$ are iid $k$-vectors with $\mathbb{E}[\bm{W}_i] = \bm{\mu}$ and $\operatorname{Var}(\bm{W}_i) = \bm{\Sigma}$, then:
+\[
+\sqrt{n}(\bar{\bm{W}}_n - \bm{\mu}) \overset{d}{\to} N(\bm{0}, \bm{\Sigma})
+\]
+
+\pause
+
+\textbf{Applications:}
+\begin{itemize}
+    \item \textbf{OLS} (Lecture 11): $\frac{1}{\sqrt{n}} \sum_{i=1}^n X_i e_i \overset{d}{\to} N(\bm{0},\, \sigma^2 Q_{XX})$
+
+    \item \textbf{Probit MLE} (Lecture 9): $\frac{1}{\sqrt{n}} S_n(\beta_0) \overset{d}{\to} N(\bm{0},\, \mathcal{I}(\beta_0))$
+
+    \item \textbf{GMM} (coming later): $\frac{1}{\sqrt{n}} \sum_{i=1}^n g(W_i, \theta_0) \overset{d}{\to} N(\bm{0},\, \Omega)$
+\end{itemize}
+
+\pause
+
+In each case, a sum of mean-zero random vectors converges to a multivariate normal. The covariance matrix differs, but the \textbf{structure} is identical.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Asymptotic Properties: Delta Method}
+\setcounter{subsection}{1}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Math Aside: Linear Approximation.}
+
+\begin{itemize}
+\item We want to know $f(b)$, we know $f(a)$, $f'(a)$ \pause
+\item Math fact: linear Taylor series lets us approximate a value of a function $f(b)\approx f(a)+\frac{\partial f(a)}{\partial a}(b-a)+\ldots$.\pause
+\item With the slope and the distance between a and b we can calculate the position of $f(b)$:
+$$f(b)\approx f(a)+f'(a)(b-a)$$
+\includegraphics[width=4.5 in]{approx.png}
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Big Picture Example}
+\begin{itemize}
+\item Suppose we want to estimate some function of parameters $f(b_1, b_2)=b_1/b_2$.\pause
+\item What is the distribution of $\bm{f(b)}$?\pause
+\item We can use the Delta Method (Asymptotic Normality + Taylor's Expansion) to approximate it.
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Asymptotic Normality}
+If the errors are independently distributed with mean zero and finite variance and $\bm{X}$ is of full rank and well behaved, then the central limit theorem gives us that\\
+$$\bm{b}\overset{a}{\sim} N[\bm{\beta},\ \frac{\sigma^2}{n}  [\text{plim}\frac{\bm{X'X}}{n}]^{-1}]$$
+That is:
+$$\text{Asy. Var}(\bm{b}-\bm{\beta})=\sigma^2 \frac{[\text{plim}\frac{\bm{X'X}}{n}]^{-1}}{n}$$
+Which we will estimate with:
+$$s^2(\bm{X}'\bm{X})^{-1}=\frac{\bm{e'e}}{n-K}(\bm{X}'\bm{X})^{-1}$$
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{The Delta Method}
+\begin{itemize}
+\item Define a $J\times K$ matrix of partial derivatives across $J$ functions and $K$ variables.
+\begin{align*}
+\bm{C}(\bm{b})&=\frac{\partial \bm{f(b)}}{\partial \bm{b}'}\\
+\text{plim}\bm{C}(\bm{b})&=\text{plim}\frac{\partial \bm{f(b)}}{\partial \bm{b}'}\\
+&=\frac{\partial \bm{f(\beta)}}{\partial \bm{\beta}'}\equiv \bm{\Gamma} \tag{Slutsky}
+\end{align*}
+\item The Taylor approximation from $\bm{\beta}$ to $\bm{b}$ is then
+$$\bm{f(b)}=\bm{f}(\bm{\beta})+\bm{\Gamma}\times(\bm{b}-\bm{\beta})+\text{ Higher Order things}$$\pause
+\item The asymptotic distribution is: $\bm{f(b)}\overset{a}{\sim} N(\bm{f}(\bm{\beta}),\ \bm{\Gamma}[\text{Asy. Var}(\bm{b}-\bm{\beta})]\bm{\Gamma}')$\pause
+\item We can estimate this approximation with: $\bm{C}[s^2(\bm{X}'\bm{X})^{-1}]\bm{C}'$
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Application: Greene Example 4.4}
+\begin{itemize}
+\item Suppose we think effects persist through time:
+$$y_{it}=\beta_0+\beta_1 x_{it}+\gamma y_{it-1}+\epsilon_{it}$$\pause
+\item In the long run we expect stability:
+\begin{align*}
+\bar{y}&=\beta_0+\beta_1 \bar{x}+\gamma \bar{y}\\\pause
+\bar{y}-\gamma \bar{y}&=\beta_0+\beta_1 \bar{x}\\\pause
+\bar{y}(1-\gamma)&=\beta_0+\beta_1 \bar{x}\\\pause
+\bar{y}&=\frac{\beta_0}{(1-\gamma)}+\frac{\beta_1}{(1-\gamma)} \bar{x}
+\end{align*}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Long run effects with Lagged DV}
+\begin{itemize}
+\item Suppose we raise $x_{it}$ by 1:
+\begin{align*}
+y^{*}_{it}&=\beta_0+\beta_1 (\bar{x}+1)+\gamma \bar{y}&=\bar{y}+\beta_1\\\pause
+y^{*}_{it+1}&=\beta_0+\beta_1\bar{x}+\gamma (\bar{y}+\beta_1)&=\bar{y}+\gamma \beta_1\\\pause
+y^{*}_{it+2}&=\beta_0+\beta_1\bar{x}+\gamma (\bar{y}+\gamma (\beta_1))&=\bar{y}+\gamma^2\beta_1
+\end{align*}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Long run effects with Lagged DV}
+\begin{itemize}
+\item The long run effect of a temporary one unit increase in x is thereby:
+\begin{align*}
+&=\beta_1+\gamma \beta_1+\gamma^2\beta_1+\gamma^3\beta_1+\ldots\\
+&=\beta_1(1+\gamma +\gamma^2+\gamma^3+\ldots)\\
+&=\beta_1\frac{1}{1-\gamma}
+\end{align*}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Example: Gas Consumption}
+\begin{itemize}
+\item Demand for gasoline is based on the kind of vehicle consumers choose to buy and how much they drive.
+\item We can model consumer demand for gas (G=gas expenditures/gas price) as a function of gas prices, income (Y) and past car purchasing decisions, which are themselves a function of gas prices and income.
+\end{itemize}
+\begin{align*}
+ln(G/pop)_t&=\hat{\beta}_1 + \hat{\beta}_2ln P_{G,t} +\hat{\beta}_3 ln(Y/pop)_t+ \hat{\beta}_4 ln(G/Pop)_{t-1}+e_t
+\end{align*}
+\begin{itemize}
+\item $\hat{\beta}_2$ is the short run price elasticity. $\hat{\beta}_3$ is the short run income elasticity.
+\item $\frac{\hat{\beta}_2}{1-\hat{\beta}_4 }$ is the long run price elasticity, $\frac{\hat{\beta}_3}{1-\hat{\beta}_4 }$ is the long run income elasticity.
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Delta Method}
+\begin{itemize}
+\item The Delta Method tells us that we can estimate the variance of a function $f$ of our parameters by calculating the matrix of derivatives.
+\item Going back to gas consumption, call $\bm{b}=(\hat{\beta}_1,\ \hat{\beta}_2,\  \hat{\beta}_3,\ \hat{\beta}_4)$, $\bm{f(b)}=\begin{bmatrix} \frac{\hat{\beta}_2}{1-\hat{\beta}_4 }\\ \frac{\hat{\beta}_3}{1-\hat{\beta}_4 }\end{bmatrix}$
+\begin{align*}\pause
+\bm{C}(\bm{b})&=\frac{\partial \bm{f(b)}}{\partial \bm{b}'}=\begin{bmatrix} \frac{\partial \frac{\hat{\beta}_2}{1-\hat{\beta}_4 }}{\partial \hat{\beta}_1} & \frac{\partial \frac{\hat{\beta}_2}{1-\hat{\beta}_4 }}{\partial \hat{\beta}_2} & \frac{\partial \frac{\hat{\beta}_2}{1-\hat{\beta}_4 }}{\partial \hat{\beta}_3} & \frac{\partial \frac{\hat{\beta}_2}{1-\hat{\beta}_4 }}{\partial \hat{\beta}_4} \\ \frac{\partial  \frac{\hat{\beta}_3}{1-\hat{\beta}_4 }}{\partial \hat{\beta}_1} &\frac{\partial  \frac{\hat{\beta}_3}{1-\hat{\beta}_4 }}{\partial \hat{\beta}_2}&\frac{\partial  \frac{\hat{\beta}_3}{1-\hat{\beta}_4 }}{\partial \hat{\beta}_3}&\frac{\partial  \frac{\hat{\beta}_3}{1-\hat{\beta}_4 }}{\partial \hat{\beta}_4}   \end{bmatrix}=\begin{bmatrix} 0 & \frac{1}{1-\hat{\beta}_4}&0&\frac{\hat{\beta}_2}{(1-\hat{\beta}_4)^2} \\0&0& \frac{1}{1-\hat{\beta}_4}&\frac{\hat{\beta}_3}{(1-\hat{\beta}_4)^2} \end{bmatrix}
+\end{align*}
+\item The rows of this matrix are called gradient vectors.
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+USGasG <- read_csv("http://people.stern.nyu.edu/wgreene/Text/
+		Edition7/TableF2-2.csv")
+USGasG <- USGasG %>%
+	mutate(	logG 	= log(GASEXP/(GASP*POP)),
+		logGlag = lag(logG),
+		logGASP	= log(GASP))
+fm <- lm(logG ~ logGASP+log(INCOME)+log(PNC)+log(PUC)+logGlag,
+	      data= USGasG )
+xprimex <- vcov(fm)
+sigmasq <- sigma(fm)^2
+bs <- coef(fm)
+ggas <- 	c(0, 1/(1-bs[6]), 0, 0, 0, bs[2]/(1-bs[6])^2)
+gincome <- 	c(0, 0, 1/(1-bs[6]), 0, 0, bs[3]/(1-bs[6])^2)
+seGpricelongrun <- sqrt(t(ggas)%*%(xprimex)%*%ggas)
+seIncomelongrun <- sqrt(t(gincome)%*%(xprimex)%*%gincome)
+   \end{lstlisting}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+> cat("Long run elasticity to Gas prices (95% conf. int.):",
+	round(bs[2]/(1-bs[6]), 2), "+/-",
+	round(seGpricelongrun*qnorm(.975),2))
+Long run elasticity to Gas prices (95% conf. int.): -0.41 +/- 0.3
+
+> cat("Long run elasticity to Income (95% conf. intervals):",
+	round(bs[3]/(1-bs[6]), 2),"+/-",
+	round( seIncomelongrun*qnorm(.975),2))
+Long run elasticity to Income (95% conf. int.): 0.97 +/- 0.32
+   \end{lstlisting}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+Canned Package Methods
+
+In R:
+> car :: deltaMethod(fm, "logGASP/(1-logGlag)")
+                      Estimate       SE    2.5 %  97.5 %
+logGASP/(1 - logGlag) -0.41136  0.15230 -0.70985 -0.1129
+
+In STATA:
+nlcom (_b[x2]/(1-_b[x6]))
+ \end{lstlisting}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Delta Method for Probit: Average Marginal Effects}
+
+Recall from Lecture 9: the Probit average marginal effect is a \textbf{nonlinear function} of $\hat\beta$:
+\[
+\widehat{\text{AME}}_j = \frac{1}{n}\sum_{i=1}^n \phi(X_i'\hat\beta)\,\hat\beta_j
+\]
+
+\pause
+
+This is exactly the kind of problem the delta method solves. Define $h(\beta) = \text{AME}_j(\beta)$. Then:
+\[
+\operatorname{Asy.Var}(\widehat{\text{AME}}_j) = \nabla h(\hat\beta)' \cdot \widehat{\operatorname{Var}}(\hat\beta) \cdot \nabla h(\hat\beta)
+\]
+
+\pause
+
+where $\nabla h$ accounts for both the direct effect ($\hat\beta_j$) and the indirect effect through $\phi(X_i'\hat\beta)$.
+
+\pause
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Common pattern:} Estimate $\hat\theta$ by MLE or OLS $\to$ compute a nonlinear function $h(\hat\theta)$ $\to$ use the delta method for its standard error. Same logic for long-run elasticities, marginal effects, or any transformation of coefficients.
+\end{tcolorbox}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Summary and Looking Ahead}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{What We Proved Today}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+\toprule
+\textbf{Tool} & \textbf{Statement} & \textbf{Application} \\
+\midrule
+WLLN & $\bar{X}_n \overset{p}{\to} \mu$ & Consistency \\
+CLT & $\sqrt{n}(\bar{X}_n - \mu) \overset{d}{\to} N(0,\sigma^2)$ & Asymptotic normality \\
+CMT & $\text{plim}\, g(X_n) = g(\text{plim}\, X_n)$ & Functions of estimators \\
+Delta Method & $h(\hat\beta) \overset{a}{\sim} N(h(\beta),\, \Gamma V \Gamma')$ & SEs for transformations \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1.0}
+\end{center}
+
+\pause
+
+\bigskip
+
+These four tools, combined with the convergence hierarchy
+\[
+X_n \overset{\text{a.s.}}{\to} X \quad \Rightarrow \quad X_n \overset{p}{\to} X \quad \Rightarrow \quad X_n \overset{d}{\to} X,
+\]
+form the complete asymptotic toolkit for this course.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Looking Ahead}
+
+\textbf{Lecture 11} applies today's tools to OLS:
+\begin{itemize}
+    \item \textbf{Consistency}: WLLN $\Rightarrow$ $\frac{1}{n}\bm{X'X} \overset{p}{\to} Q_{XX}$, CMT $\Rightarrow$ $\hat\beta \overset{p}{\to} \beta$
+    \item \textbf{Asymptotic normality}: Multivariate CLT $\Rightarrow$ $\sqrt{n}(\hat\beta - \beta) \overset{d}{\to} N(0, Q_{XX}^{-1}\Omega Q_{XX}^{-1})$
+    \item \textbf{Wald tests}: Delta method $\Rightarrow$ test nonlinear hypotheses about $\beta$
+\end{itemize}
+
+\pause
+
+\bigskip
+
+\textbf{These tools also justify what we did informally in Lecture 9 (Probit):}
+\begin{itemize}
+    \item Score CLT: $\frac{1}{\sqrt{n}} S_n(\beta_0) \overset{d}{\to} N(0, \mathcal{I}(\beta_0))$ \quad (multivariate CLT)
+    \item Hessian convergence: $\frac{1}{n}H_n(\beta_0) \overset{p}{\to} -\mathcal{I}(\beta_0)$ \quad (WLLN)
+    \item Combining via Slutsky: $\sqrt{n}(\hat\beta - \beta_0) \overset{d}{\to} N(0, \mathcal{I}^{-1})$
+\end{itemize}
+
+\end{frame}
+
+
+\end{document}

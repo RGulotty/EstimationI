@@ -1,0 +1,8 @@
+\begin{lstlisting}
+probitmodel <- glm( y ~ x,
+	family= binomial(link = "probit") ,
+	data = df)
+summary(probitmodel)
+predict(probitmodel)
+\end{lstlisting}
+The probit slope estimates can be divided by 2.5 to make them comparable to the linear probability model estimates. \\

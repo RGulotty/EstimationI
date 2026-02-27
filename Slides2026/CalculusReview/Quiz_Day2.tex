@@ -1,0 +1,101 @@
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{PLSC 30700}
+\rhead{Calculus Warm-Up: Day 2}
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{center}
+{\Large\textbf{Calculus Warm-Up Quiz --- Day 2}}\\[4pt]
+{\large CEF and Best Linear Predictor}\\[4pt]
+\textit{Complete before lecture. 10 minutes.}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Name:} \hrulefill
+
+\bigskip
+
+Today we derive the Best Linear Predictor by minimizing $\mathbb{E}[(Y - a - bX)^2]$ with respect to two parameters $a$ and $b$. We also interpret regression coefficients as partial derivatives. This quiz reviews those skills.
+
+\bigskip
+
+\begin{enumerate}[label=\textbf{\arabic*.}, itemsep=12pt]
+
+\item \textbf{Expanding a Squared Expression.} Expand $(Y - a - bX)^2$ into individual terms.
+\vspace{0.8in}
+
+\item \textbf{Multi-Parameter Optimization.} Let $g(a,b) = a^2 + b^2 + 2ab - 4a - 6b$.
+\begin{enumerate}[label=(\alph*)]
+\item Find $\dfrac{\partial g}{\partial a}$ and set it to zero.
+\vspace{0.5in}
+\item Find $\dfrac{\partial g}{\partial b}$ and set it to zero.
+\vspace{0.5in}
+\item Solve the two equations simultaneously for $a$ and $b$.
+\vspace{0.8in}
+\end{enumerate}
+
+\item \textbf{Differentiating Through a Sum/Expectation.}\\
+Suppose $\mathbb{E}[Y] = 3$, $\mathbb{E}[X] = 2$, $\mathbb{E}[X^2] = 5$, $\mathbb{E}[XY] = 8$.\\[4pt]
+Consider $M(a,b) = \mathbb{E}[(Y-a-bX)^2] = \mathbb{E}[Y^2] - 2a\mathbb{E}[Y] - 2b\mathbb{E}[XY] + a^2 + 2ab\mathbb{E}[X] + b^2\mathbb{E}[X^2]$.
+\begin{enumerate}[label=(\alph*)]
+\item Compute $\dfrac{\partial M}{\partial a}$ and set it to zero. Express $a$ in terms of $b$.
+\vspace{0.8in}
+\item Compute $\dfrac{\partial M}{\partial b}$ and set it to zero. Substitute part (a) and solve for $b$.
+\vspace{1in}
+\end{enumerate}
+
+\item \textbf{Marginal Effects as Partial Derivatives.}\\
+Consider the regression model $\mathbb{E}[Y|X, Z] = 5 + 3X - 2Z + 0.5\,XZ$.
+\begin{enumerate}[label=(\alph*)]
+\item What is $\dfrac{\partial\, \mathbb{E}[Y|X,Z]}{\partial X}$? (This is the marginal effect of $X$.)
+\vspace{0.5in}
+\item What is the marginal effect of $X$ when $Z = 4$?
+\vspace{0.5in}
+\item What is the marginal effect of $X$ when $Z = 0$?
+\vspace{0.5in}
+\end{enumerate}
+
+\end{enumerate}
+
+\newpage
+\begin{center}
+{\Large\textbf{Answer Key --- Day 2}}
+\end{center}
+
+\begin{enumerate}[label=\textbf{\arabic*.}, itemsep=8pt]
+\item $Y^2 - 2aY - 2bXY + a^2 + 2abX + b^2X^2$
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $\frac{\partial g}{\partial a} = 2a + 2b - 4 = 0$
+\item $\frac{\partial g}{\partial b} = 2b + 2a - 6 = 0$
+\item From (a): $a + b = 2$. From (b): $a + b = 3$. These are inconsistent, so the system has no finite critical point. (This signals the function has no interior minimum---it is unbounded below along certain directions. In lecture, the positive definiteness of $\mathbb{E}[XX']$ rules this out for the BLP problem.)
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $\frac{\partial M}{\partial a} = -2\mathbb{E}[Y] + 2a + 2b\mathbb{E}[X] = -6 + 2a + 4b = 0$, so $a = 3 - 2b$.
+\item $\frac{\partial M}{\partial b} = -2\mathbb{E}[XY] + 2a\mathbb{E}[X] + 2b\mathbb{E}[X^2] = -16 + 4a + 10b = 0$.\\
+Substitute $a = 3-2b$: $-16 + 4(3-2b)+10b = -16+12-8b+10b = -4+2b = 0$, so $b = 2$.\\
+Then $a = 3 - 2(2) = -1$.
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $\frac{\partial \mathbb{E}[Y|X,Z]}{\partial X} = 3 + 0.5Z$
+\item $3 + 0.5(4) = 5$
+\item $3 + 0.5(0) = 3$
+\end{enumerate}
+\end{enumerate}
+
+\end{document}

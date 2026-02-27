@@ -1,0 +1,14 @@
+\frametitle{R Implementation}
+\begin{lstlisting}
+library(estimatr)
+
+# 2SLS estimation
+# Y ~ endogenous + exogenous | excluded_instruments + exogenous
+fit_iv <- iv_robust(Y ~ D + X | Z + X, data = dat)
+summary(fit_iv)
+\end{lstlisting}
+\begin{itemize}
+\item Variables before ``\textbar'' are the structural equation regressors.
+\item Variables after ``\textbar'' are the instruments (excluded + included).
+\item \texttt{iv\_robust} uses heteroskedasticity-robust standard errors by default.
+\end{itemize}

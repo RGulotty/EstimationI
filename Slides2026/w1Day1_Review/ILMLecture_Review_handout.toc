@@ -1,0 +1,8 @@
+\beamer@sectionintoc {1}{Expectation and Variance}{5}{0}{1}
+\beamer@sectionintoc {2}{Joint, Marginal, and Conditional Distributions}{17}{0}{2}
+\beamer@sectionintoc {3}{Matrix Algebra for Regression}{27}{0}{3}
+\beamer@sectionintoc {4}{Positive Definiteness and Quadratic Forms}{32}{0}{4}
+\beamer@sectionintoc {5}{Vector Spaces and Projection}{37}{0}{5}
+\beamer@sectionintoc {6}{Eigenvalues, Idempotent Matrices, and Degrees of Freedom}{43}{0}{6}
+\beamer@sectionintoc {7}{Calculus with Vectors and Matrices}{50}{0}{7}
+\beamer@sectionintoc {8}{Looking Ahead}{55}{0}{8}

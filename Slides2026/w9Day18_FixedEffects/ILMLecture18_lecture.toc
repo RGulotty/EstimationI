@@ -1,0 +1,4 @@
+\beamer@sectionintoc {1}{Random effects}{3}{0}{1}
+\beamer@sectionintoc {2}{Testing Random effects}{17}{0}{2}
+\beamer@sectionintoc {3}{Correlated Random Effects}{22}{0}{3}
+\beamer@sectionintoc {4}{Dynamic Panel GMM}{40}{0}{4}

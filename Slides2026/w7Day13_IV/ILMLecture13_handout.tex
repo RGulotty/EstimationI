@@ -1,0 +1,590 @@
+\documentclass[aspectratio=169, handout]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+
+\renewcommand{\familydefault}{cmss}
+\usepackage{bm}
+\usepackage{listings}
+\useinnertheme{rectangles}
+}
+\usepackage{amsmath}
+\usepackage{bbold}
+\usepackage{tcolorbox}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\definecolor{darkpurple}{rgb}{0.4, 0, 0.6}
+\usepackage{array}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=darkpurple}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+
+\usepackage{tikz}
+\usepackage{lipsum}
+\usepackage{booktabs}
+
+\lstset{%
+  language=R,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{darkgreen},
+  stringstyle=\color{darkpurple},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10}
+}
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+\usetikzlibrary{arrows.meta, positioning}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models Lecture 13: Instrumental Variables}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+
+\begin{document}
+
+\begin{frame}
+\maketitle
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Endogeneity}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Structural vs.\ Projection Parameters}
+\begin{itemize}
+\item Recall from our earlier lectures: OLS estimates the \textbf{best linear predictor} (projection).
+\item A \textbf{structural model} posits a causal data-generating process:
+$$Y = \bm{x}'\beta + e$$
+\item We can always define a projection: $\beta^*=(\mathbb{E}[\bm{x}\bm{x}'])^{-1}\mathbb{E}[\bm{x}Y]$, with $\mathbb{E}[\bm{x}e^*]=0$.
+\item When $\mathbb{E}[\bm{x}e]\neq 0$:
+\begin{align*}
+\beta^*&=\beta+(\mathbb{E}[\bm{x}\bm{x}'])^{-1}\mathbb{E}[\bm{x}e]\neq \beta
+\end{align*}
+\item OLS is \alert{inconsistent} for the structural parameter:  $\hat{\beta}\xrightarrow{p}\beta^*\neq\beta$.
+\item We call $\bm{x}$ \textbf{endogenous} when this occurs.
+\end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Measurement Error}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Endogeneity Source 1: Measurement Error}
+\begin{itemize}
+\item The true structural model is $\mathbb{E}[Y\mid \bm{z}]=\bm{z}'\beta$, but we don't observe $\bm{z}$.
+\item Our measured variables: $\bm{x}=\bm{z}+\bm{u}$, where $\bm{u}$ is measurement error.
+\item Assumptions on the error:
+\begin{itemize}
+\item $\text{plim}\;\frac{\bm{z}'\bm{u}}{n}=0$: measurement error uncorrelated with truth
+\item $\text{plim}\;\frac{e'\bm{u}}{n}=0$: measurement error uncorrelated with structural disturbance
+\end{itemize}
+\item \textbf{Political science examples:}
+\begin{itemize}
+\item Survey-reported ideology (ANES self-placement on liberal--conservative scale)
+\item GDP in developing countries used in aid allocation studies
+\item Self-reported voter turnout (overreported by $\sim$10--15\%)
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Measurement Error: Rewriting in Observables}
+\begin{itemize}
+\item Substitute $\bm{z}=\bm{x}-\bm{u}$ into the structural equation:
+\begin{align*}
+Y&=\bm{z}'\beta+e\\
+&=(\bm{x}-\bm{u})'\beta+e\\
+&=\bm{x}'\beta+\underbrace{(e-\bm{u}'\beta)}_{\equiv\;\nu}
+\end{align*}
+\item But $\bm{x}$ and $\nu$ are correlated:
+$$\mathbb{E}[\bm{x}\nu]=\mathbb{E}[(\bm{z}+\bm{u})(e-\bm{u}'\beta)]=-\mathbb{E}[\bm{u}\bm{u}']\beta\neq 0$$
+\item The measurement error in regressors creates endogeneity, even though the true model is correctly specified.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Measurement Error: Attenuation Bias}
+\begin{itemize}
+\item The OLS probability limit:
+\begin{align*}
+\text{plim}\;\hat{\beta}&=\beta+\left(\text{plim}\;\frac{\bm{X}'\bm{X}}{n}\right)^{-1}\text{plim}\;\frac{\bm{X}'\bm{u}}{n}\beta\\
+&= \beta - \Sigma_X^{-1}\Sigma_{\bm{u}}\beta\\
+&= \left(\bm{I}-\underbrace{\Sigma_X^{-1}}_{\text{signal}}\underbrace{\Sigma_{\bm{u}}}_{\text{noise}}\right)\beta
+\end{align*}
+\item In the scalar case: $\text{plim}\;\hat{\beta}=\frac{\sigma_z^2}{\sigma_z^2+\sigma_u^2}\beta$
+\item OLS is biased \textbf{toward zero} --- this is \alert{attenuation bias}.
+\item Even if only one variable has measurement error, it affects \textbf{all} slope coefficients.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Measurement Error Example: Ideology and Voting}
+\begin{itemize}
+\item \textbf{Question:} Does ideological extremism reduce electoral support?
+$$\text{VoteShare}_i = \beta_0 + \beta_1\;\text{Ideology}_i^* + \bm{x}_i'\gamma + e_i$$
+\item $\text{Ideology}^*$ = true ideological position (unobserved).
+\item We measure ideology with error:
+$$\text{Ideology}_i = \text{Ideology}_i^* + u_i$$
+(e.g., survey responses, roll-call scores like DW-NOMINATE).
+\item Attenuation bias: OLS \textbf{underestimates} the penalty for extremism.
+\item \textbf{IV solution:} Use a second measure of ideology (e.g., campaign finance scores, CFscores) as an instrument --- it shares the true signal but has independent measurement error.
+\end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Simultaneity and Endogenous Choice}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Endogeneity Source 2: Simultaneity}
+\begin{itemize}
+\item Two equations are jointly determined --- each variable is both cause and effect.
+\item \textbf{Classic example:} Arms races (Richardson model).
+\begin{align*}
+\text{MilSpend}_A &= \alpha_0 + \alpha_1\;\text{MilSpend}_B + e_A\\
+\text{MilSpend}_B &= \gamma_0 + \gamma_1\;\text{MilSpend}_A + e_B
+\end{align*}
+\item $\text{MilSpend}_B$ appears on the RHS of equation 1, but is determined in equation 2 (which depends on $\text{MilSpend}_A$).
+\item OLS on either equation is inconsistent: the regressor is correlated with the error by construction.
+\item \textbf{Other examples:} Trade policy and trade flows; campaign spending and vote share; policing levels and crime rates.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Endogeneity Source 3: Endogenous Choice (Selection)}
+\begin{itemize}
+\item Agents \textbf{choose} their treatment based on expected gains (Roy 1951).
+\item Potential outcomes: $Y_i(1)=\bm{x}_i'\beta_1+e_{1i}$, \; $Y_i(0)=\bm{x}_i'\beta_0+e_{0i}$.
+\item Selection rule: individual chooses treatment if net benefit exceeds threshold:
+$$D_i = \mathbb{1}\{\bm{z}_i'\gamma + \eta_i > 0\}, \qquad \eta_i = e_{1i}-e_{0i}$$
+\item If $\eta_i$ and $e_{1i}$ are correlated:
+$$\mathbb{E}[e_{1i}\mid D_i=1]=\mathbb{E}[e_{1i}\mid \bm{z}_i'\gamma+\eta_i>0]\neq 0$$
+\item OLS on the treated sample is \alert{biased} --- we only observe outcomes for those who chose treatment.
+\item If $\bm{z}$ includes variables excluded from $\bm{x}$, we have an \textbf{exclusion restriction}.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Endogenous Choice: Political Selection}
+\begin{itemize}
+\item \textbf{Question:} Does holding office increase personal wealth?
+$$\text{Wealth}_i = \beta_0 + \beta_1\;\text{HeldOffice}_i + \bm{x}_i'\gamma + e_i$$
+\item Problem: Who runs for office? Who wins?
+\begin{itemize}
+\item Wealthier individuals may be more likely to run and win
+\item More politically connected individuals may both win and accumulate wealth
+\item Selection on gains: those who expect to profit most from office seek it out
+\end{itemize}
+\item Observed difference $=$ \textcolor{blue}{ATT} $+$ \textcolor{darkpurple}{Selection bias}:
+$$\mathbb{E}[\text{Wealth}\mid \text{Office}=1]-\mathbb{E}[\text{Wealth}\mid \text{Office}=0]$$
+\item \textbf{IV solution:} Use close election outcomes (regression discontinuity / Lee 2008) as an instrument --- winning a close race is quasi-random.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Selection Bias Decomposition}
+\begin{itemize}
+\item The observed difference in outcomes:
+\begin{multline*}
+\mathbb{E}[Y\mid D\!=\!1]-\mathbb{E}[Y\mid D\!=\!0] = \underbrace{\mathbb{E}[Y(1)-Y(0)\mid D\!=\!1]}_{\text{ATT}}\\
+ + \underbrace{\mathbb{E}[Y(0)\mid D\!=\!1]-\mathbb{E}[Y(0)\mid D\!=\!0]}_{\textcolor{darkpurple}{\text{Type I: Selection on levels}}}
+\end{multline*}
+\item If treatment effects are heterogeneous ($\tau_i = Y_i(1)-Y_i(0)$ varies):
+$$\mathbb{E}[\tau_i\mid D=1]\neq \mathbb{E}[\tau_i] \quad\Rightarrow\quad \textcolor{blue}{\text{Type II: Selection on gains}}$$
+\item \textbf{Type I:} Officeholders would have been wealthier anyway (baseline differences).
+\item \textbf{Type II:} Those who gain most from office are most likely to seek it (differential returns).
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{The Common Thread}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+In all three cases --- measurement error, simultaneity, selection --- the core problem is $\mathbb{E}[\bm{x}e]\neq 0$.  The solution: find an instrument $Z$.
+\end{tcolorbox}
+\vspace{0.3cm}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Source} & \textbf{Why $\mathbb{E}[\bm{x}e]\neq 0$} & \textbf{IV strategy}\\
+\midrule
+Measurement error & Noise in $\bm{x}$ enters error & Second measure of $\bm{x}^*$\\
+Simultaneity & $Y$ and $X$ jointly determined & Exogenous shifter of one eq.\\
+Selection/omitted var. & Choice correlated with $e$ & Excluded exogenous variable\\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{IV Setup}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Notation: Structural Equation (Hansen Ch.\ 12)}
+\begin{itemize}
+\item $Y$ is a linear function of exogenous variables $\bm{x}_1$ and endogenous variables $\bm{y}_2$:
+$$Y_1=\bm{x}_1'\beta_1+\bm{y}_2'\beta_2+e, \qquad \mathbb{E}[\bm{y}_2 e]\neq 0$$
+\item \textbf{Instruments:} $\bm{z}=(\bm{z}_1', \bm{z}_2')'$, dimension $l\times 1$:
+\begin{itemize}
+\item $\bm{z}_1 = \bm{x}_1$: included instruments (the exogenous regressors), dimension $k_1$
+\item $\bm{z}_2$: excluded instruments, dimension $l_2 \geq k_2$
+\end{itemize}
+\item Writing $\bm{x}=(\bm{x}_1', \bm{y}_2')'$ of dimension $k=k_1+k_2$:
+$$Y_1 = \bm{x}'\beta + e$$
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Instrumental Variable Conditions}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Three conditions} for valid instruments $\bm{z}$:
+\begin{enumerate}
+\item \textbf{Exogeneity:}  $\mathbb{E}[\bm{z}e]=0$ \quad (instrument uncorrelated with structural error)
+\item \textbf{Relevance:}  $\text{rank}\;\mathbb{E}[\bm{z}\bm{x}']=k$ \quad (instruments predict endogenous regressors)
+\item \textbf{Order condition:}  $l\geq k$ \quad (at least as many instruments as regressors)
+\end{enumerate}
+\end{tcolorbox}
+\vspace{0.2cm}
+\begin{itemize}
+\item When $l=k$: \textbf{just identified} (exactly as many instruments as regressors)
+\item When $l>k$: \textbf{overidentified} ($q=l-k$ overidentifying restrictions)
+\item When $l<k$: \textbf{underidentified} (cannot estimate $\beta$)
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Example: Labeling the IV Setup}
+\textbf{Do democratic institutions cause economic growth?} (Acemoglu, Johnson \& Robinson 2001)
+\vspace{0.2cm}
+\begin{itemize}
+\item \textbf{Structural equation} ($Y_1 = \bm{x}_1'\beta_1 + \bm{y}_2'\beta_2 + e$):
+$$\text{GDP/capita}_i = \beta_1\;\text{Latitude}_i + \beta_2\;\underbrace{\text{Institutions}_i}_{\bm{y}_2\text{: endogenous}} + e_i$$
+\item \textbf{Endogeneity:} Richer countries may adopt better institutions (reverse causality); omitted factors (geography, culture) affect both.
+\item \textbf{Excluded instrument} ($\bm{z}_2$): Colonial settler mortality.
+\begin{itemize}
+\item \textbf{Relevance:} High settler mortality $\Rightarrow$ extractive colonies $\Rightarrow$ weak institutions today.
+\item \textbf{Exogeneity:} Historical disease environment affects current GDP only through institutions (exclusion restriction --- debatable!).
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Reduced Form}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Reduced Form: Definitions}
+\begin{itemize}
+\item The \textbf{reduced form} expresses all endogenous variables as functions of instruments only.
+\item For the endogenous regressors $\bm{y}_2$ ($k_2\times 1$):
+$$\bm{y}_2 = \Gamma'\bm{z}+\bm{u}_2 = \Gamma_{12}'\bm{z}_1+\Gamma_{22}'\bm{z}_2+\bm{u}_2, \qquad \mathbb{E}[\bm{z}\bm{u}_2']=0$$
+where $\Gamma$ is $l\times k_2$, defined by $\Gamma = \mathbb{E}[\bm{z}\bm{z}']^{-1}\mathbb{E}[\bm{z}\bm{y}_2']$.
+\item The full projection of all regressors $\bm{x}=(\bm{x}_1', \bm{y}_2')'$ on $\bm{z}$:
+$$\bar{\Gamma} = \begin{bmatrix} \bm{I}_{k_1} & \Gamma_{12}\\ \bm{0} & \Gamma_{22}\end{bmatrix} = \left[\begin{matrix} \bm{I}_{k_1}\\ \bm{0}\end{matrix}\quad \Gamma\right] = \mathbb{E}[\bm{z}\bm{z}']^{-1}\mathbb{E}[\bm{z}\bm{x}']$$
+\item Key: OLS consistently estimates $\Gamma$ and $\bar{\Gamma}$ because $\bm{z}$ is exogenous.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Reduced Form for $Y$}
+\begin{itemize}
+\item Plugging the reduced form for $\bm{y}_2$ into the structural equation:
+\begin{align*}
+Y_1 &= \bm{z}_1'\beta_1 + (\Gamma_{12}'\bm{z}_1 + \Gamma_{22}'\bm{z}_2+\bm{u}_2)'\beta_2 + e\\
+&= \bm{z}_1'\underbrace{(\beta_1+\Gamma_{12}\beta_2)}_{\lambda_1} + \bm{z}_2'\underbrace{\Gamma_{22}\beta_2}_{\lambda_2} + \underbrace{(\bm{u}_2'\beta_2+e)}_{u_1}\\
+&= \bm{z}'\lambda + u_1
+\end{align*}
+\item The \textbf{structural} parameters are $\beta_1, \beta_2$.
+\item The \textbf{reduced form} parameters are $\lambda, \Gamma$.
+\item Relationship: $\lambda = \bar{\Gamma}\beta$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Reduced Form: The AJR Example}
+\begin{itemize}
+\item \textbf{Structural equation} (what we want):
+$$\text{GDP}_i = \beta_1\;\text{Lat}_i + \beta_2\;\text{Institutions}_i + e_i$$
+\item \textbf{First stage} (reduced form for $\bm{y}_2$):
+$$\text{Institutions}_i = \underbrace{\Gamma_{12}}_{\text{Lat coeff}}\;\text{Lat}_i + \underbrace{\Gamma_{22}}_{\text{Mortality coeff}}\;\text{SettlerMort}_i + u_{2i}$$
+\item \textbf{Reduced form for $Y$}:
+$$\text{GDP}_i = \underbrace{\lambda_1}_{=\beta_1+\Gamma_{12}\beta_2}\;\text{Lat}_i + \underbrace{\lambda_2}_{=\Gamma_{22}\beta_2}\;\text{SettlerMort}_i + u_{1i}$$
+\item $\lambda_2$ is the ``reduced form effect'' of settler mortality on GDP.
+\item The structural parameter: $\beta_2 = \lambda_2 / \Gamma_{22}$ \quad (ratio of reduced form to first stage).
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Identification}
+\begin{itemize}
+\item $\beta$ is \textbf{identified} if it is the unique solution to the moment conditions:
+$$\mathbb{E}[\bm{z}(Y_1-\bm{x}'\beta)]=0$$
+\item This is a system of $l$ equations in $k$ unknowns.
+\item \textbf{Just identified} ($l=k$): unique solution $\beta = (\mathbb{E}[\bm{z}\bm{x}'])^{-1}\mathbb{E}[\bm{z}Y_1]$
+\item Equivalently: if $\bar{\Gamma}$ has rank $k$, then $\beta=(\bar{\Gamma}'\bar{\Gamma})^{-1}\bar{\Gamma}'\lambda$.
+\item \textbf{Overidentified} ($l>k$): system is overdetermined.
+\begin{itemize}
+\item No exact solution in general --- we need a method to combine the moment conditions.
+\item \alert{Foreshadowing:} this is exactly the problem GMM solves (Lecture 15).
+\end{itemize}
+\item The \textbf{relevance condition} (rank $\mathbb{E}[\bm{z}\bm{x}']=k$) is what makes the solution exist.
+\end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The IV Estimator}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{IV Estimator: Just-Identified Case}
+\begin{itemize}
+\item When $l=k$, the \textbf{IV estimator} is the sample analogue of the moment condition:
+$$\hat{\beta}_{IV} = (Z'X)^{-1}Z'Y$$
+\item Decompose:
+\begin{align*}
+\hat{\beta}_{IV} &= (Z'X)^{-1}Z'(X\beta+e)\\
+&= \beta + (Z'X)^{-1}Z'e
+\end{align*}
+\item Consistency: $\text{plim}\;\hat{\beta}_{IV} = \beta + (E[ZX'])^{-1}E[Ze] = \beta$ \quad under exogeneity.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Indirect Least Squares}
+\begin{itemize}
+\item \textbf{ILS}: Estimate reduced forms by OLS, then recover $\beta$.
+\item Reduced form estimates:
+$$\hat{\Gamma} = (Z'Z)^{-1}Z'X, \qquad \hat{\lambda} = (Z'Z)^{-1}Z'Y$$
+\item When $l=k$: $\hat{\beta}_{ILS} = \hat{\Gamma}^{-1}\hat{\lambda}$
+\item Show equivalence:
+\begin{align*}
+\hat{\beta}_{ILS} &= [(Z'Z)^{-1}Z'X]^{-1}(Z'Z)^{-1}Z'Y\\
+&= (Z'X)^{-1}(Z'Z)(Z'Z)^{-1}Z'Y\\
+&= (Z'X)^{-1}Z'Y = \hat{\beta}_{IV}
+\end{align*}
+\item ILS = IV in the just-identified case.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{The Wald Estimator}
+\begin{itemize}
+\item Special case: single endogenous $X$, single binary instrument $Z\in\{0,1\}$.
+\item The IV estimator simplifies to the \textbf{Wald estimator}:
+$$\hat{\beta}_{Wald} = \frac{\bar{Y}_{Z=1}-\bar{Y}_{Z=0}}{\bar{X}_{Z=1}-\bar{X}_{Z=0}} = \frac{\text{Reduced form effect on } Y}{\text{First stage effect on } X}$$
+\item Intuition: scale the \textbf{intent-to-treat} (ITT) effect by the first-stage compliance rate.
+\item This is a ratio of two consistent estimators --- a \textbf{ratio estimator}.
+\end{itemize}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+The Wald/IV estimator is the ratio of the reduced form to the first stage.  This ``ratio'' structure is central to understanding IV.
+\end{tcolorbox}
+\end{frame}
+
+
+\begin{frame}{Wald Estimator: Draft Lottery and Civic Participation}
+\begin{itemize}
+\item \textbf{Question:} Does military service increase political participation?
+\item $Y$ = voter turnout, $X$ = served in military, $Z$ = draft lottery number (low = drafted).
+\item \textbf{Reduced form:} $\bar{Y}_{Z=\text{low}} - \bar{Y}_{Z=\text{high}}$ = effect of lottery on turnout (ITT).
+\item \textbf{First stage:} $\bar{X}_{Z=\text{low}} - \bar{X}_{Z=\text{high}}$ = effect of lottery on service rate.
+$$\hat{\beta}_{Wald} = \frac{\text{ITT on turnout}}{\text{First stage compliance}} = \frac{\text{Reduced form}}{\text{First stage}}$$
+\item Not everyone drafted actually serves (deferments, exemptions).
+\item The Wald estimator rescales the ITT by the share who comply with the draft.
+\end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{2SLS}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Two-Stage Least Squares}
+\begin{itemize}
+\item When $l>k$ (overidentified), we need 2SLS.
+\item \textbf{Stage 1:}  Regress $X$ on $Z$:
+$$\hat{X} = P_Z X, \qquad P_Z = Z(Z'Z)^{-1}Z'$$
+\item \textbf{Stage 2:}  Regress $Y$ on $\hat{X}$:
+$$\hat{\beta}_{2SLS} = (\hat{X}'\hat{X})^{-1}\hat{X}'Y = (X'P_ZX)^{-1}X'P_ZY$$
+\item The projection $P_Z$ extracts the \textbf{exogenous variation} in $X$ --- the part predicted by instruments.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{2SLS = IV When Just Identified}
+\begin{itemize}
+\item When $l=k$, $P_Z = Z(Z'Z)^{-1}Z'$ and:
+\begin{align*}
+\hat{\beta}_{2SLS}&=(\hat{X}'\hat{X})^{-1}\hat{X}'Y\\
+&=(X'P_ZX)^{-1}X'P_ZY\\
+&=(X'Z(Z'Z)^{-1}Z'X)^{-1}X'Z(Z'Z)^{-1}Z'Y\\
+&=(Z'X)^{-1}(Z'Z)(X'Z)^{-1}X'Z(Z'Z)^{-1}Z'Y \tag{$(ABC)^{-1}=C^{-1}B^{-1}A^{-1}$}\\
+&=(Z'X)^{-1}Z'Y = \hat{\beta}_{IV}
+\end{align*}
+\item 2SLS generalizes IV to the overidentified case.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{R Implementation}
+\begin{lstlisting}
+library(estimatr)
+
+# 2SLS estimation
+# Y ~ endogenous + exogenous | excluded_instruments + exogenous
+fit_iv <- iv_robust(Y ~ D + X | Z + X, data = dat)
+summary(fit_iv)
+\end{lstlisting}
+\begin{itemize}
+\item Variables before ``\textbar'' are the structural equation regressors.
+\item Variables after ``\textbar'' are the instruments (excluded + included).
+\item \texttt{iv\_robust} uses heteroskedasticity-robust standard errors by default.
+\end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Asymptotic Theory}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Consistency of 2SLS (Hansen Thm.\ 12.1)}
+\begin{thm}[Consistency]
+Under the conditions: (1) $E[Ze]=0$, (2) $\text{rank}\;E[ZX']=k$, (3) $E[ZZ']>0$, the 2SLS estimator is consistent: $\hat{\beta}_{2SLS}\xrightarrow{p}\beta$.
+\end{thm}
+\vspace{0.2cm}
+\textbf{Proof sketch:}
+$$\hat{\beta}_{2SLS}-\beta = \left(\frac{X'P_ZX}{n}\right)^{-1}\frac{X'P_Ze}{n}$$
+Define $Q_{XZ}=E[XZ']$, $Q_{ZZ}=E[ZZ']$, $Q_{ZX}=E[ZX']$.  Then:
+$$\xrightarrow{p}\; (Q_{XZ}Q_{ZZ}^{-1}Q_{ZX})^{-1}Q_{XZ}Q_{ZZ}^{-1}\underbrace{E[Z'e]}_{=0} = 0$$
+\end{frame}
+
+
+\begin{frame}{Asymptotic Distribution (Hansen Thm.\ 12.2)}
+\begin{thm}[Asymptotic Normality]
+Under regularity conditions:
+$$\sqrt{n}(\hat{\beta}_{2SLS}-\beta)\xrightarrow{d} N(0, V_\beta)$$
+where:
+$$V_\beta = (Q_{XZ}Q_{ZZ}^{-1}Q_{ZX})^{-1}Q_{XZ}Q_{ZZ}^{-1}\Omega Q_{ZZ}^{-1}Q_{ZX}(Q_{XZ}Q_{ZZ}^{-1}Q_{ZX})^{-1}$$
+with $Q_{XZ}=E[XZ']$, $Q_{ZZ}=E[ZZ']$, $Q_{ZX}=E[ZX']$, $\Omega=E[Z'Zee'Z]$.
+\end{thm}
+\begin{itemize}
+\item Under homoskedasticity ($E[e^2\mid Z]=\sigma^2$), this simplifies to:
+$$V_\beta = \sigma^2(Q_{XZ}Q_{ZZ}^{-1}Q_{ZX})^{-1}$$
+\item Under heteroskedasticity, use robust covariance estimation (as in Lecture 8).
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Variance Estimation}
+\begin{itemize}
+\item \textbf{Homoskedastic} variance estimator:
+$$\hat{V}_\beta = \hat{\sigma}^2(X'P_ZX)^{-1}, \qquad \hat{\sigma}^2 = \frac{\hat{e}'\hat{e}}{n-k}$$
+where $\hat{e}=Y-X\hat{\beta}_{2SLS}$ (use \textbf{original} $X$, not $\hat{X}$).
+\item \textbf{Heteroskedastic-robust} (analogous to HC):
+$$\hat{V}_\beta = (X'P_ZX)^{-1}\left(\sum_{i=1}^n \hat{e}_i^2 \hat{X}_i\hat{X}_i'\right)(X'P_ZX)^{-1}$$
+\item \alert{Important:} Standard errors from the ``naive'' second-stage regression (regressing $Y$ on $\hat{X}$ and reading off SEs) are \textbf{incorrect} --- they use $\hat{X}$ instead of $X$ in the residuals.
+\end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Moment Conditions and GMM Preview}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{IV as a Method of Moments}
+\begin{itemize}
+\item The IV estimator solves the \textbf{sample moment condition}:
+$$\frac{1}{n}\sum_{i=1}^n Z_i(Y_i - X_i'\beta) = 0$$
+\item This is a system of $l$ equations in $k$ unknowns.
+\item When $l=k$: exactly identified, unique solution.
+\item When $l>k$: overidentified, no exact solution.
+\item \textbf{2SLS resolves this} by using a specific weighting matrix:
+$$\hat{\beta}_{2SLS} = \arg\min_\beta \left[\frac{1}{n}\sum Z_i(Y_i-X_i'\beta)\right]'(Z'Z/n)^{-1}\left[\frac{1}{n}\sum Z_i(Y_i-X_i'\beta)\right]$$
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Foreshadowing GMM}
+\begin{itemize}
+\item 2SLS uses the weighting matrix $\hat{W}=(Z'Z/n)^{-1}$.
+\item Is this the \textbf{optimal} weighting?
+\begin{itemize}
+\item Under homoskedasticity: \textbf{yes}.
+\item Under heteroskedasticity: \textbf{no} --- there exists a more efficient choice.
+\end{itemize}
+\item The \textbf{Generalized Method of Moments} (GMM) chooses $\hat{W}$ optimally:
+$$\hat{W}_{opt} = \hat{\Omega}^{-1}, \qquad \hat{\Omega} = \frac{1}{n}\sum_{i=1}^n \hat{e}_i^2 Z_iZ_i'$$
+\item GMM also extends beyond linear IV to \textbf{any} set of moment conditions.
+\item \alert{Next week:} we develop the full GMM framework.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Summary}
+\begin{enumerate}
+\item Endogeneity ($E[Xe]\neq 0$) makes OLS inconsistent for structural parameters.
+\item Instruments $Z$ satisfying exogeneity and relevance allow consistent estimation.
+\item The IV estimator $\hat{\beta}_{IV}=(Z'X)^{-1}Z'Y$ works when just identified.
+\item 2SLS $\hat{\beta}_{2SLS}=(X'P_ZX)^{-1}X'P_ZY$ generalizes to overidentification.
+\item Both are consistent and asymptotically normal under standard conditions.
+\item IV is a \textbf{method of moments} --- 2SLS is a specific weighting of moment conditions.
+\end{enumerate}
+\vspace{0.2cm}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Next lecture:} Finite sample properties, testing, LATE, and the MTE framework.
+\end{tcolorbox}
+\end{frame}
+
+\end{document}

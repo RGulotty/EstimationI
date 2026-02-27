@@ -1,0 +1,313 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb, amsthm, bm}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Two Routes to the Asymptotics of OLS \\ and Their Extension to GMM}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{1. Setup}
+
+Consider the linear model
+\[
+y = X\beta + u,
+\]
+with $X$ ($n\times k$) full column rank and
+
+\[
+E(u|X)=0,
+\qquad
+Var(u|X)=\sigma^2 I.
+\]
+
+Assume
+\[
+\frac{1}{n}X'X \to \Sigma,
+\quad
+\Sigma \text{ finite and positive definite.}
+\]
+
+OLS:
+\[
+\hat\beta = (X'X)^{-1}X'y.
+\]
+
+We derive consistency and asymptotic normality in two ways.
+
+\bigskip
+\hrule
+\bigskip
+
+\section*{2. Preliminaries: Quadratic Mean}
+
+\subsection*{Definition}
+
+$Z_n \to c$ in quadratic mean (or $L^2$) if
+\[
+E\|Z_n - c\|^2 \to 0.
+\]
+
+\subsection*{Lemma ($L^2 \Rightarrow p$)}
+
+If $Z_n \to c$ in quadratic mean, then $Z_n \xrightarrow{p} c$.
+
+\paragraph{Proof}
+For $\varepsilon>0$,
+\[
+\Pr(\|Z_n-c\|>\varepsilon)
+\le
+\frac{E\|Z_n-c\|^2}{\varepsilon^2}
+\to 0.
+\]
+\hfill $\square$
+
+\subsection*{Bias–Variance Identity}
+
+\[
+E\|\hat\theta-\theta\|^2
+=
+\operatorname{tr}\big(Var(\hat\theta)\big)
++
+\|\operatorname{Bias}(\hat\theta)\|^2.
+\]
+
+Thus bias $\to 0$ and variance $\to 0$ imply quadratic mean convergence.
+
+\bigskip
+\hrule
+\bigskip
+
+\section*{3. Method A: Quadratic Mean Route}
+
+\subsection*{Bias}
+
+\[
+E(\hat\beta|X)=\beta.
+\]
+
+\subsection*{Variance}
+
+\[
+Var(\hat\beta|X)
+=
+\sigma^2 (X'X)^{-1}
+=
+\frac{\sigma^2}{n}
+\left(
+\frac{1}{n}X'X
+\right)^{-1}.
+\]
+
+Since $\frac{1}{n}X'X \to \Sigma$,
+\[
+Var(\hat\beta)
+\to
+\frac{\sigma^2}{n}\Sigma^{-1}
+\to 0.
+\]
+
+\subsection*{Consistency}
+
+Bias $=0$ and variance $\to 0$ imply
+
+\[
+E\|\hat\beta-\beta\|^2 \to 0
+\quad\Rightarrow\quad
+\hat\beta \xrightarrow{p} \beta.
+\]
+
+\subsection*{Asymptotic Normality}
+
+\[
+\sqrt{n}(\hat\beta-\beta)
+=
+\left(\frac{1}{n}X'X\right)^{-1}
+\frac{1}{\sqrt{n}}X'u.
+\]
+
+By the multivariate CLT,
+\[
+\frac{1}{\sqrt{n}}X'u
+\overset{d}{\to}
+N(0,\sigma^2\Sigma),
+\]
+so
+\[
+\sqrt{n}(\hat\beta-\beta)
+\overset{d}{\to}
+N(0,\sigma^2\Sigma^{-1}).
+\]
+
+\bigskip
+\hrule
+\bigskip
+
+\section*{4. Method B: LLN + Continuous Mapping + Slutsky}
+
+Rewrite:
+\[
+\hat\beta-\beta
+=
+\left(\frac{1}{n}X'X\right)^{-1}
+\left(\frac{1}{n}X'u\right).
+\]
+
+\subsection*{Consistency}
+
+LLN gives:
+\[
+\frac{1}{n}X'X \xrightarrow{p} \Sigma,
+\qquad
+\frac{1}{n}X'u \xrightarrow{p} 0.
+\]
+
+By continuity of inversion and Slutsky:
+\[
+\hat\beta \xrightarrow{p} \beta.
+\]
+
+\subsection*{Asymptotic Normality}
+
+Using
+\[
+\sqrt{n}(\hat\beta-\beta)
+=
+\left(\frac{1}{n}X'X\right)^{-1}
+\frac{1}{\sqrt{n}}X'u,
+\]
+combine CLT + Slutsky to obtain
+\[
+\sqrt{n}(\hat\beta-\beta)
+\overset{d}{\to}
+N(0,\sigma^2\Sigma^{-1}).
+\]
+
+\bigskip
+\hrule
+\bigskip
+
+\section*{5. Conceptual Difference}
+
+\textbf{Method A:}
+Variance collapse $\Rightarrow$ convergence.
+
+\textbf{Method B:}
+Sample moments converge $\Rightarrow$ estimator converges.
+
+Method B generalizes to nonlinear estimators; Method A relies on closed-form variance expressions.
+
+\bigskip
+\hrule
+\bigskip
+
+\section*{6. Plug-In, Method of Moments, and GMM}
+
+\subsection*{Plug-In Principle}
+
+If $\theta_0 = T(F)$, estimate
+\[
+\hat\theta = T(F_n).
+\]
+
+No optimization is required.
+
+\subsection*{Method of Moments (Exactly Identified)}
+
+If
+\[
+E[g(W_i,\theta_0)] = 0,
+\quad g:\mathbb{R}^k\to\mathbb{R}^k,
+\]
+solve
+\[
+\bar g_n(\hat\theta)=0.
+\]
+
+OLS is exactly identified MoM:
+\[
+\frac{1}{n}X'(y-X\hat\beta)=0.
+\]
+
+\subsection*{GMM (Overidentified)}
+
+If $g$ is $m\times1$ with $m>k$, solve
+
+\[
+\hat\theta
+=
+\arg\min_\theta
+\bar g_n(\theta)'W_n\bar g_n(\theta).
+\]
+
+Now the estimator is defined by optimization, not substitution.
+
+\bigskip
+\hrule
+\bigskip
+
+\section*{7. Extension of Method B to GMM}
+
+Assume:
+
+\begin{itemize}
+\item $E[g(W_i,\theta_0)] = 0$ uniquely identifies $\theta_0$.
+\item Uniform LLN:
+\[
+\sup_\theta\|\bar g_n(\theta)-g(\theta)\| \xrightarrow{p} 0.
+\]
+\item $W_n \xrightarrow{p} W$ positive definite.
+\end{itemize}
+
+Then by the argmin theorem:
+\[
+\hat\theta_n \xrightarrow{p} \theta_0.
+\]
+
+For asymptotic normality, linearize:
+
+\[
+\sqrt{n}(\hat\theta-\theta_0)
+=
+-(G'WG)^{-1}G'W\sqrt{n}\bar g_n(\theta_0)
++o_p(1),
+\]
+
+where
+\[
+G = \frac{\partial}{\partial\theta'}E[g(W_i,\theta)]\big|_{\theta_0},
+\quad
+\Omega = Var(g(W_i,\theta_0)).
+\]
+
+By CLT,
+\[
+\sqrt{n}\bar g_n(\theta_0)
+\overset{d}{\to}
+N(0,\Omega),
+\]
+so
+\[
+\sqrt{n}(\hat\theta-\theta_0)
+\overset{d}{\to}
+N\!\left(0,(G'WG)^{-1}G'W\Omega WG(G'WG)^{-1}\right).
+\]
+
+\bigskip
+\hrule
+\bigskip
+
+\section*{8. Takeaway}
+
+OLS illustrates two asymptotic philosophies:
+
+\begin{center}
+\emph{Variance collapse} vs. \emph{Moment convergence}.
+\end{center}
+
+Modern econometrics adopts the second because it extends seamlessly to
+GMM, M-estimation, and nonlinear models.
+
+\end{document}

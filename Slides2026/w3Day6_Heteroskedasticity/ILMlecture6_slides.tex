@@ -1,0 +1,464 @@
+
+\documentclass[aspectratio=169]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+
+%  \usetheme{Pittsburgh}
+%\usefonttheme[2]{sans}
+\renewcommand{\familydefault}{cmss}
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+%\usepackage{palatino}
+%\usepackage{cmbright}
+\usepackage{bm}
+\usepackage{listings}
+\useinnertheme{rectangles}
+}
+\usepackage{amsmath}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\usepackage{array}
+\usepackage{booktabs}
+\definecolor{darkpurple}{rgb}{0.4, 0, 0.6}
+\lstset{
+  language=R,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{blue},
+  commentstyle=\color{darkgreen},
+  stringstyle=\color{darkpurple},
+  breaklines=true,
+  showstringspaces=false,
+  frame=single,
+  backgroundcolor=\color{gray!10}
+}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=darkpurple}
+\usepackage{tcolorbox}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+%\usepackage[all]{xy}
+
+\usepackage{tikz}
+\usepackage{lipsum}
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+ 
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models Lecture 6: Heteroskedasticity}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+
+\begin{document}
+
+\begin{frame}
+\maketitle
+\end{frame}
+
+\begin{frame}{Theory based vs "Agnostic" strategies}
+\begin{itemize}
+\item Two approaches to handling heteroskedasticity:
+\item[1)] Use theoretical knowledge to specify a corrected model.
+\item[2)] Use statistical estimators that perform well even when assumptions are violated.
+\item Which of these two approaches works for you will depend on the complexity of your problem and the development of theory in your field.
+\end{itemize}
+\end{frame}
+
+
+\section{Variance Corrections}
+
+\begin{frame}{Why homoskedastic SEs can be dangerously wrong (Hansen 4.13)}
+Under homoskedasticity, we estimate $\hat{\bm{V}}^0_{\hat{\beta}}=(\bm{X'X})^{-1}s^2$.
+But the \alert{true} variance under heteroskedasticity is
+$\bm{V}_{\hat{\beta}}=(\bm{X'X})^{-1}(\bm{X'DX})(\bm{X'X})^{-1}$.\pause
+
+\medskip
+\textbf{Example} (Hansen): Suppose $k=1$, $\sigma_i^2=X_i^2$, and $\mathbb{E}[X]=0$. Then:
+$$\frac{V_{\hat{\beta}}}{\mathbb{E}\left[\hat{V}^0_{\hat{\beta}}\right]}\approx \frac{\mathbb{E}[X^4]}{(\mathbb{E}[X^2])^2}\stackrel{\text{def}}{=}\kappa$$\pause
+\begin{itemize}
+\item If $X\sim N(0,\sigma^2)$: $\kappa=3$. True variance is \alert{3$\times$} the homoskedastic estimate.
+\item For \emph{wage} in the CPS: $\kappa=30$. True variance is \alert{30$\times$} the homoskedastic estimate.
+\item The homoskedastic SE understates uncertainty by a factor of $\sqrt{\kappa}$.
+\end{itemize}\pause
+\smallskip
+\textbf{Takeaway:} The classical covariance estimator can be wildly misleading.  Always use a heteroskedasticity-robust estimator.
+\end{frame}
+
+\begin{frame}{``Agnostic'' Covariance Matrix Estimation under heteroskedasticity}
+Suppose we have heteroskedasticity:
+\begin{align*}
+var(\hat{\beta})&=(\bm{X'X})^{-1}\bm{X'}\bm{D}\bm{X}(\bm{X'X})^{-1}\\
+\bm{D}&=\text{diag}(\sigma_1^2,\ldots \sigma_n^2)\\
+\end{align*}\pause
+If we knew $e_1^2,\ldots e_n^2$, then we could just plug them in:
+$$\tilde{var}(\hat{\beta})=(\bm{X'X})^{-1}(\sum_{i=1}^n \bm{x}_i\bm{x}_i'e_i^2)(\bm{X'X})^{-1}$$
+If we use observed $\hat{e}^2$, then this is called the HC0 (heteroskedasticity consistent) estimator, or White covariance matrix estimator.  
+\end{frame}
+
+\begin{frame}{Problems with White covariance estimators}
+\begin{itemize}
+\item HC0 is downward biased in finite samples.
+\item It is missing the $\frac{1}{n-k}$ term for degrees of freedom. 
+\item[$\rightarrow$] Fixing this gets us HC1.
+\item It fails to account for leverage:
+$$\mathbb{E}[\hat{e}_i^2]=\sigma^2_i(1-h_{ii})<\sigma^2_i$$
+\item[$\rightarrow$] Fixing this gets us HC2
+\end{itemize}
+\end{frame}
+
+\begin{frame}{HC2 and HC3: Leverage-corrected estimators}
+HC2 (unbiased) and HC3 (conservative) correct for the leverage of each observation:
+\begin{align*}
+\hat{\bm{V}}^{HC2}_{\hat{\beta}}&=(\bm{X'X})^{-1}\!\left(\sum_{i=1}^n (1-h_{ii})^{-1} \bm{x}_i\bm{x}_i'\hat{e}_i^2\right)\!(\bm{X'X})^{-1}\\[4pt]
+\hat{\bm{V}}^{HC3}_{\hat{\beta}}&=(\bm{X'X})^{-1}\!\left(\sum_{i=1}^n (1-h_{ii})^{-2}\bm{x}_i\bm{x}_i'\hat{e}_i^2\right)\!(\bm{X'X})^{-1}
+\end{align*}
+\medskip
+Since $(1-h_{ii})^{-2}>(1-h_{ii})^{-1}>1$, we always have:
+$$\hat{\bm{V}}^{HC0}_{\hat{\beta}}< \hat{\bm{V}}^{HC2}_{\hat{\beta}}< \hat{\bm{V}}^{HC3}_{\hat{\beta}}$$
+\end{frame}
+
+
+\begin{frame}[fragile]{Implementation in R}
+\textbf{Option 1: \texttt{estimatr} package} (recommended for applied work)
+\begin{lstlisting}
+library(estimatr)
+# HC2 is the default -- unbiased under homoskedasticity
+lm_robust(y ~ x1 + x2, data = dta, se_type = "HC2")
+# HC3 is conservative (biased away from zero)
+lm_robust(y ~ x1 + x2, data = dta, se_type = "HC3")
+\end{lstlisting}\pause
+\textbf{Option 2: \texttt{sandwich} + \texttt{lmtest}} (flexible, works with any \texttt{lm} object)
+\begin{lstlisting}
+library(sandwich); library(lmtest)
+model <- lm(y ~ x1 + x2, data = dta)
+coeftest(model, vcov = vcovHC(model, type = "HC2"))
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{R Example: Comparing Standard Errors (Hansen 4.15)}
+\begin{lstlisting}
+library(estimatr); library(sandwich); library(lmtest)
+data(mtcars)
+m <- lm(mpg ~ wt + hp, data = mtcars)
+
+# Homoskedastic (classical) SEs
+se_classical <- summary(m)$coefficients[, "Std. Error"]
+
+# Robust SEs using sandwich
+se_hc0 <- sqrt(diag(vcovHC(m, type = "HC0")))
+se_hc1 <- sqrt(diag(vcovHC(m, type = "HC1")))
+se_hc2 <- sqrt(diag(vcovHC(m, type = "HC2")))
+se_hc3 <- sqrt(diag(vcovHC(m, type = "HC3")))
+
+cbind(Classical = se_classical, HC0 = se_hc0,
+      HC1 = se_hc1, HC2 = se_hc2, HC3 = se_hc3)
+\end{lstlisting}
+\medskip
+Note: HC0 $<$ HC2 $<$ HC3 always holds.  The differences grow when observations have high leverage ($h_{ii}$ close to 1).
+\end{frame}
+
+\begin{frame}[fragile]{Notes on Interpretation}
+\begin{itemize}
+\item Robust SEs do \textbf{not} affect coefficient estimates or $R^2$/RMSE.
+\item They only change standard errors, $t$-statistics, and confidence intervals. \pause
+\item Use Wald tests (not classical $F$-tests) for joint hypotheses:
+\begin{lstlisting}
+library(car)
+linearHypothesis(model, c("x1 = 0", "x2 = 0"),
+                 white.adjust = "hc2")
+\end{lstlisting}\pause
+\item Hansen recommends HC2 (unbiased under homoskedasticity) or HC3 (conservative for any $\bm{X}$) over HC1.
+\item In most applications HC1, HC2, HC3 are similar.  They diverge when some $h_{ii}$ is large (high-leverage observations).
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{HC1 does not work with Sparse Dummy Variabes}
+\begin{itemize}
+\item Suppose $Y=\beta_1D+\beta_2+e$, where $D_i=1$ for $n_1$ cases.
+\item In the extreme case, $n_1=1$:
+$$V_{\hat{\beta}}=\sigma^2(\bm{X'X})^{-1}=\sigma^2\begin{pmatrix}1&1\\1&n\end{pmatrix}^{-1}=\sigma^2\frac{1}{n-1}\begin{pmatrix}n&-1\\-1&1\end{pmatrix}$$
+$$V_{\hat{\beta}_1}=\sigma^2\frac{n}{n-1}$$
+\item Consider the estimator $\hat{\theta}=\hat{\beta}_1+\hat{\beta}_2$, with variance $\sigma^2\frac{n}{n-1}+\sigma^2\frac{1}{n-1}-\sigma^2\frac{2}{n-1}=\sigma^2$
+$$\hat{V}^{HCI}_\beta=s^2\frac{n}{(n-1)^2}\begin{pmatrix}1&-1\\-1&1\end{pmatrix}$$
+$$\hat{V}^{HCI}_\theta=s^2\frac{n}{(n-1)^2}+s^2\frac{n}{(n-1)^2}-s^2\frac{n}{(n-1)^2}-s^2\frac{n}{(n-1)^2}+s^2\frac{n}{(n-1)^2}=0$$
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Measures of Fit (Hansen 4.18)}
+\begin{itemize}
+\item $R^2=1-\frac{\hat{\sigma}^2}{\hat{\sigma}_Y^2}$ \emph{always increases} when regressors are added $\rightarrow$ cannot be used for model selection. \pause
+\item $\bar{R}^2$ (adjusted) corrects with $(n-1)/(n-k)$, but Hansen argues it still tends to select models with too many parameters. \pause
+\item \textbf{Recommended:} the leave-one-out cross-validation $R^2$:
+$$\tilde{R}^2=1-\frac{\sum_{i=1}^n\tilde{e}_i^2}{\sum_{i=1}^n(Y_i-\bar{Y})^2}=1-\frac{\bar{\sigma}^2}{\hat{\sigma}_Y^2}$$
+where $\tilde{e}_i=\hat{e}_i/(1-h_{ii})$ are the prediction errors. \pause
+\item $\tilde{R}^2$ estimates the percentage of forecast variance explained; it can be \emph{negative} if the model predicts worse than the mean. \pause
+\item Hansen: ``It is recommended to omit $R^2$ and $\bar{R}^2$.  If a measure of fit is desired, report $\tilde{R}^2$ or $\bar{\sigma}^2$.''
+\end{itemize}
+\end{frame}
+
+
+\section{Clustered Data}
+\begin{frame}{Clustered Standard Errors}
+\begin{itemize}
+\item Suppose that our data are drawn from groups.
+\item[] E.g. students in a school, districts in a state, apartments in a building.
+\item These observations are subject to common shocks (even if observations don't affect one another).
+\item These data are called \emph{clustered}.
+\item We will assume that clusters are known to the researcher and observations are independent across clusters.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Motivating Example: Duflo, Dupas, and Kremer (2011)}
+In 2005, 140 primary schools in Kenya received funding to hire an extra teacher. Half assigned students to classrooms by prior test score (``tracking'').
+$$\widehat{TestScore}_{ig}=-0.071+0.138\ Tracking_g+\hat{e}_{ig}$$
+\pause
+\begin{itemize}
+\item With \textbf{conventional robust SEs}: $s(\hat{\gamma})=0.026$
+\item With \textbf{cluster-robust SEs} (at school level): $s(\hat{\gamma})=0.078$
+\end{itemize}
+\pause
+\medskip
+The cluster-robust SEs are \alert{3$\times$ larger} than the conventional ones!\\[6pt]
+Ignoring clustering would vastly overstate the precision of the estimated treatment effect.  The cluster-robust standard error is the appropriate one because student achievement within a school is correlated.
+\end{frame}
+
+\begin{frame}{Formalism for Clustered Regression}
+\begin{itemize}
+\item $(Y_{ig},\ \bm{x}_{ig})$ where $g=1, \ldots, G$ indexes a cluster and $i=1,\ldots, n_g$ indexes individuals in cluster g. \pause
+\item $\bm{Y}_g=(Y_{1g},\ldots Y_{ng})'$, $\bm{X}_g=(\bm{x}_{1g},\ldots \bm{x}_{ng})'$ at the group level. \pause
+\begin{align*}
+Y_{ig}&=\bm{x}_{ig}'\beta+e_{ig}\\ \pause
+\bm{\hat{\beta}}&=\left(\sum_{g=1}^G \sum_{i=1}^{n_g}\bm{x}_{ig}\bm{x}_{ig}'\right)^{-1}\left(\sum_{g=1}^G \sum_{i=1}^{n_g}\bm{x}_{ig}Y_{ig}\right)\\ \pause
+&=\left(\sum_{g=1}^G \bm{X}'_{g}\bm{X}_{g}\right)^{-1}\left(\sum_{g=1}^G \bm{X}'_{g}\bm{y}_{g}\right)\\
+&=\left(\bm{X}'\bm{X}\right)^{-1}\left(\bm{X}'\bm{y}\right)
+\end{align*}
+
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Variance of Clustered Regression}
+Call $\bm{\Sigma}_g=E\left[\bm{e}_g\bm{e}_g'\right]$ the $n_g\times n_g$ covariance in the g cluster. \pause
+\begin{align*}
+var\left[\left(\sum_{g=1}^G \bm{X}_g'\bm{e}_g\right)\right]&=\sum_{g=1}^G var\left[\bm{X}_g'\bm{e}_g\right] \tag{By independence across cluster}\\ \pause
+&=\sum_{g=1}^G \bm{X}_g'var\left[\bm{e}_g\right]\bm{X}_g\\ \pause
+&=\sum_{g=1}^G \bm{X}_g'\bm{\Sigma}_g\bm{X}_g\\ \pause
+&\equiv \Omega_n\\ \pause
+\bm{V}_{\hat{\beta}}&=\left(\bm{X}'\bm{X}\right)^{-1}\Omega_n\left(\bm{X}'\bm{X}\right)^{-1}
+\end{align*}
+\end{frame}
+
+\begin{frame}{Moulton (1990) Formula}
+Suppose all clusters are equal size $N$, homoskedastic within cluster $\mathbb{E}[e_{ig}^2]=\sigma^2$, with intra-cluster correlation $\mathbb{E}[e_{ig}e_{\ell g}]=\sigma^2\rho$ for $i\neq \ell$, and $X_{ig}$ does not vary within a cluster:
+$$\bm{V}_{\hat{\beta}}=\left(\bm{X'X}\right)^{-1}\sigma^2(1+\rho(N-1))$$\pause
+The \alert{inflation factor} $1+\rho(N-1)$ can be enormous:
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+$\rho$ & Cluster size $N$ & Inflation factor \\
+\midrule
+0.05 & 20 & 1.95 \\
+0.10 & 48 & 5.7 \\
+0.25 & 48 & \alert{12.75} \\
+0.25 & 100 & \alert{25.75} \\
+\bottomrule
+\end{tabular}
+\end{center}
+Even modest intra-cluster correlation with moderate cluster sizes produces large distortions in conventional SEs.
+ \end{frame}
+ 
+\begin{frame}{Strategy 1: Modeling intra-cluster dependence}
+\begin{itemize}
+\item A random-effects model assumes:
+$$u_{gi}=\lambda e_g+e_{gi}$$
+\item Where $e_{gi}\sim f(0,\ \omega^2)$ is individual specific, $e_g\sim f(0,1)$ is cluster wide and the two are independent.
+$$\Omega_g =\begin{bmatrix} \lambda^2+\omega^2 & \lambda^2& \ldots& \lambda^2\\
+\lambda^2 & \lambda^2+\omega^2 & \ldots& \lambda^2\\
+\lambda^2& \lambda^2& \ldots& \lambda^2+\omega^2\end{bmatrix}$$
+
+\end{itemize}
+\end{frame}
+  
+\begin{frame}{FGLS}
+\begin{itemize}
+\item Estimate pooled model of $\bm{y}$ on $\bm{X}$ using OLS.  Record $\hat{\sigma}^2$   \pause
+\item Estimate model with fixed effects: regress $\bm{y}$ on $[\bm{X}\ \bm{D}]$. This is our estimate of $\omega^2$, $\hat{\omega}^2$. \pause
+\item $\hat{\lambda}^2=\hat{\sigma}^2-\hat{\omega}^2$. \pause
+\item Plug into GLS for $\Sigma$. \pause
+\item The Random Effects Estimator is consistent, biased, and asymptotically efficient (if the errors are correct). \pause
+\item However, if we needed group fixed effects in $\bm{X}$, we already estimate $\lambda e_g$, and this model will not work.
+\end{itemize}
+
+\end{frame}
+  
+  
+\begin{frame}{Intra-cluster dependence that survives fixed effects}
+\begin{itemize}
+\item Contrast the random effects model with a factor model
+$$u_{gi}=\lambda_{gi} e_g+e_{gi}$$
+\item Where $e_{gi}\sim f(0,\ \omega^2)$ is individual specific, $e_g\sim f(0,1)$ is cluster wide and the two are independent, but now $\lambda_{gi}$ depends on the individual. \pause
+\item For example, some students may be affected more by teacher quality than others. \pause
+\item Now if we use cluster fixed effects:
+$$u_{gi}-\bar{u}_g=(\lambda_{gi}-\bar{\lambda}_g) e_g+e_{gi}-\bar{e}_g$$ \pause
+$$cov(u_{gi}-\bar{u}_g, u_{gl}-\bar{u}_g)=(\lambda_{gi}-\bar{\lambda}_g)(\lambda_{gl}-\bar{\lambda}_g)$$ \pause
+\item Which is zero only if $\lambda_{gi}$ is the same for all $i$. \pause
+\item Unfortunately, it is not obvious how to implement this model.
+\end{itemize}
+\end{frame}
+ 
+ 
+\begin{frame}{Strategy 2: Cluster Robust Standard Errors Arellano (1987), Hansen (2007)}
+The squared error $e_i^2$ is an unbiased estimate for $E[e_i^2]$, $\bm{e}_g\bm{e}_g'$ is unbiased for $E[\bm{e}_g\bm{e}_g']$.  As with White, we can estimate $e_i^2$ with  $\hat{e}_i^2$:
+\begin{align*}
+\hat{\Omega}_n&=\sum_{g=1}^G\bm{X}_g'\bm{\hat{e}}_g\bm{\hat{e}}_g'\bm{X}_g\\
+\hat{\bm{V}}_{\hat{\beta}}&=a_n\left(\bm{X}\bm{X}'\right)^{-1}\hat{\Omega}_n\left(\bm{X}\bm{X}'\right)^{-1}\\
+a_n&=\left(\frac{n-1}{n-k}\right)\left(\frac{G}{G-1}\right)
+\end{align*}
+ $a_n$ is the small sample correction used by STATA, recommended by Hansen (2007).
+ \end{frame}
+
+\begin{frame}[fragile]{Clustered SEs in R}
+\textbf{Option 1: \texttt{estimatr}} (simplest)
+\begin{lstlisting}
+library(estimatr)
+lm_robust(y ~ x1 + x2, data=dta, clusters=cluster_id, se_type="CR2")
+\end{lstlisting}\pause
+\vspace{-2pt}
+\textbf{Option 2: \texttt{sandwich} + \texttt{lmtest}}
+\begin{lstlisting}
+library(sandwich); library(lmtest)
+model <- lm(y ~ x1 + x2, data = dta)
+coeftest(model, vcov = vcovCL(model, cluster = dta$cluster_id))
+\end{lstlisting}\pause
+\vspace{-2pt}
+\textbf{Option 3: Manual construction} (Hansen Ch.\ 4 R code)
+\begin{lstlisting}
+xe <- x * rep(e, times = k)       # X_i * e_i
+xe_sum <- rowsum(xe, cluster_id)  # sum within clusters
+G <- nrow(xe_sum); omega <- t(xe_sum) %*% xe_sum
+scale <- G/(G-1) * (n-1)/(n-k)
+V_cl <- scale * invx %*% omega %*% invx
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{Inference with Clustered Samples (Hansen 4.22)}
+\begin{itemize}
+\item The \alert{effective sample size} for cluster-robust inference is $G$ (number of clusters), \textbf{not} $n$ (number of observations). \pause
+\item The cluster-robust estimator treats each cluster as a single observation and estimates the covariance from the variation across cluster means. \pause
+\item If $G=50$, inference quality is comparable to heteroskedasticity-robust inference with $n=50$. \pause
+\item Most cluster-robust theory assumes \textbf{homogeneous} cluster sizes.  When cluster sizes are highly unequal, cluster sums have heterogeneous variances $\rightarrow$ compounding problem. \pause
+\item When the number of \emph{treated} clusters is small (e.g.\ only a few schools received treatment), the cluster-robust SE on the treatment coefficient can be severely downward biased---analogous to the sparse dummy variable problem (Section 4.16).
+\end{itemize}
+\end{frame}
+
+\begin{frame}{At what level ought one cluster? (Hansen 4.23)}
+\begin{itemize}
+\item Should we cluster by individual, county, state, or region?
+\item There is a \textbf{bias--variance tradeoff}: \pause
+\begin{itemize}
+\item \textbf{Too fine} (e.g.\ household instead of village): omits covariance terms $\rightarrow$ SEs biased \emph{downward}, spurious significance. \pause
+\item \textbf{Too coarse} (e.g.\ state instead of county): adds noise $\rightarrow$ SEs imprecise, less power. \pause
+\end{itemize}
+\item Rules of thumb:
+\begin{itemize}
+\item Cluster at the level where treatment is assigned.
+\item Cluster at the coarsest level defensible by theory, provided $G$ is not too small ($G\geq 50$ preferred).
+\item Your effective sample size is $G$, not $n$.
+\end{itemize}\pause
+\item \alert{Honest assessment} (Hansen): ``We really do not know what is the `correct' level at which to do cluster-robust inference.''
+\end{itemize}
+ \end{frame}
+ 
+ \section{Practical Recommendations}
+
+\begin{frame}{Practical Recommendations (Hansen Ch.\ 4 Summary)}
+\begin{enumerate}
+\item \textbf{Always report robust standard errors.}  The classical homoskedastic formula $s^2(\bm{X'X})^{-1}$ is only valid under the strong (and rarely true) assumption of conditional homoskedasticity. \pause
+\item \textbf{Use HC2 by default} for cross-sectional data.  It is unbiased under homoskedasticity and performs well under heteroskedasticity.  Use HC3 if you want a conservative alternative. \pause
+\item \textbf{If data are clustered}, use cluster-robust SEs.  Your effective sample size is $G$ (clusters), not $n$ (observations).  Cluster at the coarsest defensible level. \pause
+\item \textbf{For measures of fit}, prefer $\tilde{R}^2$ (leave-one-out cross-validation) over $R^2$ or $\bar{R}^2$.  Hansen:  ``It is recommended to omit $R^2$ and $\bar{R}^2$.'' \pause
+\item \textbf{Watch for sparse dummies and high leverage.}  These can cause robust SE estimators to break down or be severely biased.
+\end{enumerate}
+\end{frame}
+
+ \section{Multicollinearity}
+ 
+ \begin{frame}{Multicollinearity (Hansen 4.20)}
+\begin{itemize}
+\item \textbf{Strict multicollinearity}: $\bm{X'\!X}$ is singular $\rightarrow$ $\hat{\beta}$ is undefined.  Typically caused by redundant fixed effects or a dummy variable trap. \pause
+\item \textbf{Near multicollinearity}: regressors are highly correlated.  With two regressors and correlation $\rho$:
+$$\text{var}[\hat{\beta}_j|\bm{X}]=\frac{\sigma^2}{n(1-\rho^2)}$$
+As $\rho\to 1$, the variance $\to\infty$.  \pause
+\item This is \emph{not} a bias problem---it is purely a precision problem, equivalent to having a small sample (Goldberger's ``micronumerosity'' critique). \pause
+\item Robust standard errors can be \alert{sensitive to high leverage} under near multicollinearity, producing misleadingly small SEs even when coefficient estimates are imprecise.
+\end{itemize}
+ \end{frame}
+
+
+ \begin{frame}{Ridge Regression}
+\begin{itemize}
+\item Suppose $\mathbb{E}[\bm{y}|\bm{X}]=\bm{X\beta}$.
+\item The Ridge regression estimator, given a constant $\lambda>0$ is 
+\begin{align*}
+\hat{\beta}&=(\bm{X}'\bm{X}+\bm{I}_k \lambda)^{-1}\bm{X}'\bm{y}\\ \pause
+\mathbb{E}[\hat{\beta}|\bm{X}]&=\mathbb{E}[(\bm{X}'\bm{X}+\bm{I}_k \lambda)^{-1}\bm{X}'\bm{y}|\bm{X}]\\ \pause
+&=(\bm{X}'\bm{X}+\bm{I}_k \lambda)^{-1}\bm{X}'\mathbb{E}[\bm{y}|\bm{X}]\\ \pause
+&=(\bm{X}'\bm{X}+\bm{I}_k \lambda)^{-1}\bm{X}'\bm{X\beta}
+\end{align*}
+\item Ridge purposefully introduces bias to reduce variance (MASS::lm.ridge)
+\item Note $\bm{X}'\bm{X}+\bm{I}_k \lambda$ is always full rank, so you can use ridge even if $k>n$.
+\end{itemize}
+ \end{frame}
+ 
+\end{document}

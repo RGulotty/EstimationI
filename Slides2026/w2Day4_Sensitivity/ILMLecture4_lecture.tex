@@ -1,0 +1,770 @@
+
+\documentclass[aspectratio=169]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+
+%  \usetheme{Pittsburgh}
+%\usefonttheme[2]{sans}
+\renewcommand{\familydefault}{cmss}
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+%\usepackage{palatino}
+%\usepackage{cmbright}
+\usepackage{bm}
+\usepackage{listings}
+\useinnertheme{rectangles}
+}
+\usepackage{amsmath}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\definecolor{darkpurple}{rgb}{0.4, 0, 0.6}
+\usepackage{array}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=darkpurple}
+\usepackage{tcolorbox}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+%\usepackage[all]{xy}
+
+\usepackage{tikz}
+\usepackage{lipsum}
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+ \lstset{%
+  language=R,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{red},
+  breaklines=true,
+  numbers=left,
+  numberstyle=\tiny,
+  frame=single,
+  framerule=0.5pt,
+}
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models Lecture 4: Algebra of Bias}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+
+\begin{document}
+
+\begin{frame}
+\maketitle
+\end{frame}
+
+\section{Partitioned Regression}
+
+\begin{frame}{Why Partition $\bm{X}$?}
+\begin{itemize}
+\item In applied work, we rarely care equally about every regressor. We typically have:
+\begin{itemize}
+\item A \textbf{treatment} or variable of interest ($\bm{X}_1$), and
+\item \textbf{Controls} we include to avoid omitted variable bias ($\bm{X}_2$).
+\end{itemize}\pause
+\item Partitioning $\bm{X}=[\bm{X}_1\ \ \bm{X}_2]$ lets us answer three questions:
+\begin{enumerate}
+\item What is the formula for $\hat{\beta}_1$ \emph{holding $\bm{X}_2$ constant}? $\to$ Frisch-Waugh-Lovell.
+\item What happens to $\hat{\beta}_1$ if we \emph{omit} $\bm{X}_2$? $\to$ Omitted variable bias formula.
+\item How sensitive is $\hat{\beta}_1$ to \emph{unobserved} confounders? $\to$ Cinelli-Hazlett sensitivity analysis.
+\end{enumerate}\pause
+\item The algebra of partitioned matrices (Schur complement) is the common tool behind all three results.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Partitioned Regression}
+\begin{itemize}
+\item We have seen that it is possible to partition the matrix $\bm{X}$ and $\bm{\beta}$ into subcomponents:
+\begin{align*}
+\bm{y}&=\bm{X}_1\bm{\beta}_1 +\bm{X}_2\bm{\beta}_2+\bm{e}\\ \pause
+\bm{X}&=\begin{bmatrix}\bm{X}_1& \bm{X}_2 \end{bmatrix}\\\pause
+\bm{X}'\bm{X}&=\begin{bmatrix} \bm{X}_1\\ \bm{X}_2 \end{bmatrix} \begin{bmatrix} \bm{X}_1& \bm{X}_2 \end{bmatrix}=\begin{bmatrix} \bm{X}_1'\bm{X}_1& \bm{X}_1'\bm{X}_2\\ \bm{X}_2'\bm{X}_1 &\bm{X}_2'\bm{X}_2 \end{bmatrix}\\ \pause 
+\bm{\beta}&=\begin{pmatrix} \bm{\beta}_1 \\ \bm{\beta}_2 \end{pmatrix}\\\pause
+\end{align*}
+\item We used this partition to study how including (or failing to include) control variables affects a multivariate regression.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Formula for Inverse of $\bm{X}'\bm{X}$}
+In the next few slides, we will derive the following formula:
+\begin{align*}
+(\bm{X}'\bm{X})^{-1}&=\begin{bmatrix} (\bm{X}_1'\bm{X}_1- \bm{X}_1'\bm{P}_2\bm{X}_1)^{-1}&-(\bm{X}_1'\bm{X}_1- \bm{X}_1'\bm{P}_2\bm{X}_1)^{-1}\bm{X}_1'\bm{X}_2 (\bm{X}_2'\bm{X}_2)^{-1} \\
+-(\bm{X}_2'\bm{X}_2- \bm{X}_2'\bm{P}_1'\bm{X}_2)^{-1} \bm{X}_2'\bm{X}_1 (\bm{X}_1'\bm{X}_1)^{-1} & (\bm{X}_2'\bm{X}_2- \bm{X}_2'\bm{P}_1\bm{X}_2)^{-1} \end{bmatrix}
+\end{align*}
+Where
+\begin{align*}
+\bm{P}_1&=\bm{X}_1(\bm{X}_1'\bm{X}_1)^{-1}\bm{X}_1'\\
+\bm{P}_2&=\bm{X}_2(\bm{X}_2'\bm{X}_2)^{-1}\bm{X}_2'
+\end{align*}
+
+\end{frame}
+
+\begin{frame}{Intuition}
+
+\includegraphics[width=2 in]{Bal1.pdf}
+
+\begin{align*}
+ (\bm{X}_1'\bm{X}_1- \bm{X}_1'\bm{P}_2\bm{X}_1)^{-1}&=  (\bm{X}_1'\bm{X}_1- \bm{X}_1'\bm{P}_2\bm{P}_2\bm{X}_1)^{-1}\\
+&=(\underbrace{\bm{X}_1'\bm{X}_1}_{\text{variance of }\bm{X}_1}- \underbrace{\bm{X}_1'\bm{P}_2\bm{P}_2\bm{X}_1}_{\text{Projection of }\bm{X}_1\text{ onto the column space of }\bm{X}_2})^{-1}
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{Finding Inverse of Partitioned Matrix}
+Call the $n\times n$ partitioned matrix $\bm{A}$ and its inverse $\bm{A}^{-1}$, $\bm{B}$:
+$$\begin{bmatrix} \bm{X}_1'\bm{X}_1& \bm{X}_2'\bm{X}_1\\  \bm{X}_2'\bm{X}_1 &\bm{X}_2'\bm{X}_2 \end{bmatrix}=\bm{A}=\begin{pmatrix} \bm{A}_{11} & \bm{A}_{12}\\ \bm{A}_{21} & \bm{A}_{22} \end{pmatrix} \quad \bm{B}=\begin{pmatrix} \bm{B}_{11} & \bm{B}_{12}\\\bm{B}_{21} & \bm{B}_{22} \end{pmatrix}$$\pause
+We know that if $\bm{B}=\bm{A}^{-1}$, then $\bm{AB}=\bm{I}$\pause
+\begin{align*}
+\bm{AB}&=\begin{pmatrix} \bm{A}_{11} & \bm{A}_{12}\\ \bm{A}_{21} & \bm{A}_{22} \end{pmatrix}\begin{pmatrix} \bm{B}_{11} & \bm{B}_{12}\\\bm{B}_{21} & \bm{B}_{22} \end{pmatrix}\\\pause
+&=\begin{pmatrix} \bm{A}_{11}\bm{B}_{11}+\bm{A}_{12}\bm{B}_{21}&\bm{A}_{11}\bm{B}_{12}+\bm{A}_{12}\bm{B}_{22}\\\bm{A}_{21}\bm{B}_{11}+\bm{A}_{22}\bm{B}_{21}&\bm{A}_{21}\bm{B}_{12}+\bm{A}_{22}\bm{B}_{22} \end{pmatrix}\pause
+&=\begin{pmatrix}\bm{I}_k & \bm{0}_{k,n-k}\\ \bm{0}_{n-k,k} & \bm{I}_{n-k} \end{pmatrix}
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{Inverse of Partitioned Matrix (finding $\bm{B}_{11}$)}
+We can use the following two equations to find $\bm{B}_{11}$ in terms of $\bm{A}_{11},\ \bm{A}_{12},\ \bm{A}_{22},\ \bm{A}_{21}$:
+\begin{align*}
+\bm{A}_{11}\bm{B}_{11}+\bm{A}_{12}\bm{B}_{21} &= \bm{I}_{k}\\
+\bm{A}_{21}\bm{B}_{11}+\bm{A}_{22}\bm{B}_{21}&=\bm{0}_{n-k,k}\\
+\bm{B}_{21}&=-\bm{A}_{22}^{-1}\bm{A}_{21}\bm{B}_{11} \\ \pause
+\bm{A}_{11}\bm{B}_{11}+\bm{A}_{12}[-\bm{A}_{22}^{-1}\bm{A}_{21}\bm{B}_{11} ] &= \bm{I}_{k}\\
+(\bm{A}_{11}-\bm{A}_{12}\bm{A}_{22}^{-1}\bm{A}_{21})\bm{B}_{11}&= \bm{I}_{k}
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{Inverse of Partitioned Matrix (finding $\bm{B}_{11}$)}
+\begin{align*}
+(\bm{A}_{11}-\bm{A}_{12}\bm{A}_{22}^{-1}\bm{A}_{21}) \bm{B}_{11} &= \bm{I}_{k}  \pause \\ 
+(\bm{A}_{11}-\bm{A}_{12}\bm{A}_{22}^{-1}\bm{A}_{21})^{-1} &= \bm{B}_{11} \tag{inverse of Schur complement} \pause  \\ 
+(\bm{X}_1'\bm{X}_1-\bm{X}_1'\bm{X}_2(\bm{X}_2'\bm{X}_2)^{-1}\bm{X}_2'\bm{X}_1)^{-1}&= \bm{B}_{11} \tag{plugging in for $\bm{A}$s}\pause  \\
+(\bm{X}_1'\bm{X}_1-\bm{X}_1'\bm{P}_2\bm{X}_1)^{-1}&= \bm{B}_{11}  \tag{Sub in notation for $\bm{P}_2$.}
+\end{align*}
+\end{frame}
+
+
+
+\begin{frame}{Result: Formula for Inverse of Partitioned Matrix}
+\begin{align*}
+(\bm{X}'\bm{X})^{-1}&=\begin{pmatrix} \bm{B}_{11} & \bm{B}_{12}\\\bm{B}_{21} & \bm{B}_{22} \end{pmatrix}\\
+(\bm{X}'\bm{X})^{-1}&=\begin{bmatrix} (\bm{X}_1'\bm{X}_1- \bm{X}_1'\bm{P}_2\bm{X}_1)^{-1}&-(\bm{X}_1'\bm{X}_1- \bm{X}_1'\bm{P}_2\bm{X}_1)^{-1}\bm{X}_1'\bm{X}_2 (\bm{X}_2'\bm{X}_2)^{-1} \\ 
+-(\bm{X}_2'\bm{X}_2- \bm{X}_2'\bm{P}_1\bm{X}_2)^{-1} \bm{X}_2'\bm{X}_1 (\bm{X}_1'\bm{X}_1)^{-1} & (\bm{X}_2'\bm{X}_2- \bm{X}_2'\bm{P}_1\bm{X}_2)^{-1} \end{bmatrix}
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{Using Inverse of Partitioned Matrix formula}
+Regressing $\bm{X}_1$ onto $\bm{X}$ gives us the identity matrix and 0:\pause
+\begin{align*}
+(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{X}_1 &=(\bm{X}'\bm{X})^{-1} \begin{bmatrix} \bm{X}_1'\bm{X}_1\\ \bm{X}_2'\bm{X}_1\end{bmatrix} \\\pause
+&=\begin{bmatrix} \bm{B}_{11}\bm{X}_1'\bm{X}_1 +\bm{B}_{12}\bm{X}_2'\bm{X}_1\\ \bm{B}_{21}\bm{X}_1'\bm{X}_1 +\bm{B}_{22}\bm{X}_2'\bm{X}_1\end{bmatrix}\\\pause
+&=\begin{bmatrix} \alert{(\bm{X}_1'\bm{X}_1- \bm{X}_1'\bm{P}_2\bm{X}_1)^{-1}}\bm{X}_1'\bm{X}_1 -\alert{(\bm{X}_1'\bm{X}_1- \bm{X}_1'\bm{P}_2\bm{X}_1)^{-1}}\bm{X}_1'\bm{X}_2 (\bm{X}_2'\bm{X}_2)^{-1}\bm{X}_2'\bm{X}_1 \\
+-(\bm{X}_2'\bm{X}_2- \bm{X}_2'\bm{P}_1'\bm{X}_2)^{-1} \bm{X}_2'\bm{X}_1 \alert{(\bm{X}_1'\bm{X}_1)^{-1}\bm{X}_1'\bm{X}_1} + (\bm{X}_2'\bm{X}_2- \bm{X}_2'\bm{P}_1\bm{X}_2)^{-1}\bm{X}_2'\bm{X}_1 \end{bmatrix}\\\pause
+&=\begin{bmatrix} (\bm{X}_1'\bm{X}_1- \bm{X}_1'\bm{P}_2\bm{X}_1)^{-1}[\bm{X}_1'\bm{X}_1- \bm{X}_1'\bm{P}_2\bm{X}_1] \\ 	
+-(\bm{X}_2'\bm{X}_2- \bm{X}_2'\bm{P}_1'\bm{X}_2)^{-1} \bm{X}_2'\bm{X}_1 + (\bm{X}_2'\bm{X}_2- \bm{X}_2'\bm{P}_1\bm{X}_2)^{-1}\bm{X}_2'\bm{X}_1 \end{bmatrix}\\\pause
+&=\begin{bmatrix}\bm{I}\\\bm{0} \end{bmatrix}
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{Schur Complement: A $2\times 2$ Example}
+\begin{itemize}\setlength{\itemsep}{2pt}
+\item Two regressors (education, experience) with cross-product matrix:
+$\bm{X}'\bm{X}=\begin{psmallmatrix} 10 & 3 \\ 3 & 8 \end{psmallmatrix}$\pause
+\item Direct inversion: $(\bm{X}'\bm{X})^{-1}=\frac{1}{10\cdot 8-3^2}\begin{psmallmatrix} 8 & -3 \\ -3 & 10 \end{psmallmatrix}=\frac{1}{71}\begin{psmallmatrix} 8 & -3 \\ -3 & 10 \end{psmallmatrix}$\pause
+\item Schur complement for $B_{11}$: $\left(10-\frac{3^2}{8}\right)^{-1}=\left(\frac{71}{8}\right)^{-1}=\frac{8}{71}$ \checkmark\pause
+\item The denominator $10-\frac{9}{8}=\frac{71}{8}$ is the variance of education \emph{not explained by} experience.
+\end{itemize}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, boxsep=2pt, top=2pt, bottom=2pt]
+The Schur complement isolates the \emph{unique} information in $\bm{X}_1$ after removing $\bm{X}_2$. More collinearity $\to$ less unique info $\to$ larger standard errors.
+\end{tcolorbox}
+\end{frame}
+
+
+\section{Proof of FWL}
+\setcounter{subsection}{1}
+\begin{frame}{Frisch Waugh Lovell in Matrix Terms}
+\begin{itemize}
+\item FWL claim is that the regression coefficient $\bm{\hat{\beta}}_2$ is the same as the result of first regressing $\bm{y}$ and $\bm{X}_2$ on $\bm{X}_1$ and then on one another.  That is, we can first project $\bm{y}$ into the orthogonal complement of the column space of $\bm{X}_1$, then project it onto $\bm{X}_2$.
+\begin{align*}
+\bm{y}&=\bm{X}_1 \bm{\hat{\beta}}_1+\bm{X}_2 \bm{\hat{\beta}}_2+e\\\pause
+\bm{M}_1\bm{y}&=\bm{M}_1 \bm{X}_2 \bm{\hat{\beta}}_2+\bm{M}_1e\\\pause
+ \bm{\hat{\beta}}_2&=((\bm{M}_1\bm{X}_2)'\bm{M}_1\bm{X}_2)^{-1}(\bm{X}_2\bm{M}_1)'\bm{M}_1\bm{y}\\\pause
+&=(\bm{X}_2'\bm{M}_1\bm{X}_2)^{-1}\bm{X}'_2\bm{M}_1\bm{y}\pause
+\end{align*}
+\item Where $\bm{M}_1\bm{q}$ produces the residuals of any variable $\bm{q}$ regressed on $\bm{X}_1$ 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Normal Form Equations (FWL proof part I)}
+
+$$\begin{bmatrix} \bm{X}_1'\bm{X}_1& \bm{X}_1'\bm{X}_2\\  \bm{X}_2'\bm{X}_1 &\bm{X}_2'\bm{X}_2 \end{bmatrix} \begin{bmatrix}\bm{\hat{\beta}}_1\\ \bm{\hat{\beta}}_2\end{bmatrix}=\begin{bmatrix}\bm{X}_1'\bm{y}\\ \bm{X}_2'\bm{y}\end{bmatrix}$$\pause
+Derivation of $\bm{\hat{\beta}}_1$:
+\begin{align*}
+(\bm{X}_1'\bm{X}_1)\bm{\hat{\beta}}_1+(\bm{X}_1'\bm{X}_2)\bm{\hat{\beta}}_2&=\bm{X}'_1\bm{y}\\\pause
+(\bm{X}_1'\bm{X}_1)\bm{\hat{\beta}}_1&=\bm{X}'_1\bm{y}-(\bm{X}_1'\bm{X}_2)\bm{\hat{\beta}}_2\\\pause
+\bm{\hat{\beta}}_1&=(\bm{X}_1'\bm{X}_1)^{-1}\bm{X}'_1\bm{y}-(\bm{X}_1'\bm{X}_1)^{-1}(\bm{X}_1'\bm{X}_2)\bm{\hat{\beta}}_2 \tag{This is the omitted variable bias formula}\\\pause
+\bm{\hat{\beta}}_1&=(\bm{X}_1'\bm{X}_1)^{-1}\bm{X}'_1(\bm{y}-\bm{X}_2\bm{\hat{\beta}}_2)\\
+\end{align*}
+\end{frame}
+
+\begin{frame}{Normal Form Equations (FWL part II)}
+
+$$\begin{bmatrix} \bm{X}_1'\bm{X}_1& \bm{X}_1'\bm{X}_2\\  \bm{X}_2'\bm{X}_1 &\bm{X}_2'\bm{X}_2 \end{bmatrix} \begin{bmatrix}\bm{\hat{\beta}}_1\\ \bm{\hat{\beta}}_2\end{bmatrix}=\begin{bmatrix}\bm{X}_1'\bm{y}\\ \bm{X}_2'\bm{y}\end{bmatrix}$$\pause
+Derivation of $\bm{\hat{\beta}}_2$:
+\begin{align*}
+(\bm{X}_2'\bm{X}_1)\bm{\hat{\beta}}_1+(\bm{X}_2'\bm{X}_2)\bm{\hat{\beta}}_2&=\bm{X}'_2\bm{y}\\\pause
+(\bm{X}_2'\bm{X}_1)[(\bm{X}_1'\bm{X}_1)^{-1}\bm{X}'_1(\bm{y}-\bm{X}_2\bm{\hat{\beta}}_2)]+(\bm{X}_2'\bm{X}_2)\bm{\hat{\beta}}_2&=\bm{X}'_2\bm{y}\\\pause
+\bm{X}_2'\bm{P}_1\bm{y}-\bm{X}'_2\bm{P}_1\bm{X}_2\bm{\hat{\beta}}_2+(\bm{X}_2'\bm{X}_2)\bm{\hat{\beta}}_2&=\bm{X}'_2\bm{y}\\\pause
+(\bm{X}_2'\bm{X}_2)\bm{\hat{\beta}}_2-\bm{X}'_2\bm{P}_1\bm{X}_2\bm{\hat{\beta}}_2&=\bm{X}'_2\bm{y}-\bm{X}_2'\bm{P}_1\bm{y}\\\pause
+\bm{X}_2'(1-\bm{P}_1)\bm{X}_2\bm{\hat{\beta}}_2&=\bm{X}'_2(1-\bm{P}_1)\bm{y}\\\pause
+\bm{X}_2'\bm{M}_1\bm{X}_2\bm{\hat{\beta}}_2&=\bm{X}'_2\bm{M}_1\bm{y}\\\pause
+\bm{\hat{\beta}}_2&=(\bm{X}_2'\bm{M}_1\bm{X}_2)^{-1}\bm{X}'_2\bm{M}_1\bm{y}
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{Frisch-Waugh-Lovell (FWL)}
+\begin{itemize}
+\item Under $\bm{y} = \bm{X\beta}+\bm{e}$,
+\begin{align*}
+\bm{\hat{y}} &=b_0+ b_1\bm{x}_1+\ldots + b_{k-1} \bm{x}_{k-1} + b_{k} \bm{x}_{k}\quad + b_{k+1} \bm{x}_{k+1}+  \ldots+b_{n} \bm{x}_{n}\\\pause
+\bm{\tilde{y}} &= d_0+ d_1\bm{x}_1+\ldots + d_{k-1} \bm{x}_{k-1} + \quad0\quad \ + d_{k+1} \bm{x}_{k+1}+  \ldots+d_{n} \bm{x}_{n}\\
+\bm{\hat{x}_k} &= c_0+ c_1\bm{x}_1+\ldots + c_{k-1} \bm{x}_{k-1}+ \quad0\quad \ +  c_{k+1} \bm{x}_{k+1}+ \ldots+c_{n} \bm{x}_{n}\pause
+\end{align*}
+\item FWL: The regression coefficient $b_k$ is equivalent to a regression coefficient $b^{*}_1$ produced by regressing the residualised outcome $\bm{e_y}=\bm{y}-\bm{\tilde{y}}$ on the residualised $\bm{x_k}$: $\bm{e_{x_k}}=\bm{x_k}-\bm{\hat{x}}_k$.
+$$\bm{e}_y= b^*_0+ b^*_1\bm{e}_{x_k}+\bm{e}$$
+\end{itemize}
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+  \begin{lstlisting}[language=R]
+mod0 <- lm(prestige ~ education + income +  women, data=Prestige)
+mod1a <- lm(prestige ~  income  + women, data = Prestige)
+mod1b <- lm(education ~ income  + women, data = Prestige)
+eprest <- lm(resid(mod1a)~resid(mod1b))
+coef(eprest)
+ (Intercept) resid(mod1b) 
+2.445994e-15 4.362425
+coef(mod0)
+ (Intercept)    education       income        women 
+-7.524222154  4.362424649  0.001172269 -0.012946077 
+\end{lstlisting} 
+\end{frame}
+
+\begin{frame}{Applications Frisch-Waugh-Lovell (FWL)}
+\begin{itemize}
+\item Practical: Plotting data/ coefficients from multivariate regression in 2d.
+\item Theoretical: Basis for sensitivity tests to evaluate the effects of omitted variables.
+\item Pedagogical: Improving understanding of the linear model.
+\end{itemize}
+\end{frame}
+
+\section{Leverage}
+
+\begin{frame}{Trace of Projection and Annihilator Matrix}
+\begin{itemize}
+\item Recall, the \textbf{trace} of a matrix is the sum of the diagonal elements and the sum of the eigenvalues.
+\item The \textbf{rank} of a matrix is the maximum number of linearly independent column vectors.
+\item The trace of $\bm{P}$ is its rank $k$
+\begin{itemize}
+\item The projection matrix is \textbf{idempotent}: $\bm{P}=\bm{P}^2$.
+\item If $\lambda$ is an eigenvalue of $\bm{P}$, $\bm{P}v=\lambda v$
+\item Applying P again: $\bm{P}^2v=\lambda \bm{P}v$, which means that $\bm{P}^2v=\lambda\lambda v$.
+\item $\bm{P}^2v=\bm{P}v=\lambda^2v$, or $\lambda=\lambda^2$.  Only true for $\lambda=0$ or $\lambda=1$.
+\item The eigenvalue 1 corresponds to a direction preserved by the projection, the dimension of the column space of $\bm{X}$.
+\end{itemize}
+\item $tr(\bm{M})=tr(\bm{I})-tr(\bm{P})=n-k$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Alternative proof that Trace of Projection is $k$}
+\begin{itemize}
+\item Theorem: $\text{tr} \bm{P}=k$.
+\begin{align*}
+\text{tr}\bm{P}&=\text{tr}\left(\bm{X}(\bm{X}'\bm{X})^{-1}\bm{X}'\right)\\
+&=\text{tr}\left((\bm{X}'\bm{X})^{-1}\bm{X}'\bm{X}\right)\\
+&=\text{tr}(\bm{I}_k)\\
+&=k
+\end{align*}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Leverage}
+\begin{itemize}
+\item The $i$'th diagonal element of $\bm{P}$ is $h_{ii}=X_i'(\bm{X}'\bm{X})^{-1}X_i$ is called the \emph{leverage} of the $i$'th observation. 
+\item $h_{ii}$ ranges between 0 and 1, measures how unusual the $i^{th}$ observation $X_i$ is relative to other observations.
+\item A regression design is called \textbf{balanced} when the leverage values are roughly equal.  
+\item Recall, the sum of $h_{ii}=k$
+\item A regression is perfectly balanced if $\max(h_{ii})=k/n$
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Leave-One-Out Regression}
+\begin{itemize}
+\item The Leave-One-Out Regression estimates the projection model excluding an observation $i$, repeating for each observation.
+\begin{align*}
+\hat{\beta}_{(-i)}&=\left( \sum_{j\neq i}X_jX_j'\right)^{-1}\left( \sum_{j\neq i}X_jY_j\right)\\
+&=\left(\bm{X'X}-X_jX_i'\right)^{-1}\left( \bm{X'X}-X_iY_i\right)\\
+&=\left(\bm{X}_{(-i)}'\bm{X}_{(-i)}\right)^{-1}\bm{X}_{(-i)}\bm{y}_{(-i)}\\
+\end{align*}
+\item Where $\bm{X}_{(-i)}$ excludes row $i$.
+\item $\hat{\beta}_{(-i)}$ is not a function of $i$, so it can be used for prediction.
+$$\tilde{Y}_i=X_i'\hat{\beta}_{(i)}$$
+\item The \textbf{leave-one-out residual, prediction error} is $\tilde{e}_i=Y_i-\tilde{Y}_i$, which we will use as an estimator of the residuals.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Leave-One-Out Regression}
+\begin{itemize}
+\item Calculating $\hat{\beta}_{(-i)}$ comes for free from our projection model:
+$$\hat{\beta}_{(-i)}=\hat{\beta}-(\bm{X}'\bm{X})^{-1}X_i\tilde{e}_i$$
+$$\tilde{e}_i=(1-h_{ii})^{-1}\hat{e}_i$$
+\item We can define a modified annihilator matrix: 
+$$\bm{M}^*\equiv (\bm{I}_n-\text{diag}\{h_{11},\ldots,h_{nn}\})^{-1}$$
+Which allows us to rewrite:
+$$\tilde{\bm{e}}=\bm{M}^*\hat{\bm{e}}$$
+\item We observe the residuals $\hat{\bm{e}}$ and we know how much each observation affects the regression, so we can just subtract that out.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Proof}
+\begin{itemize}
+\item We will now derive the formula for $\hat{\beta}_{(-i)}$ in terms of $\tilde{e}_i$
+\begin{align*}
+\hat{\beta}_{(-i)}&=(\bm{X}'\bm{X}-X_iX_i')^{-1}(\bm{X}'\bm{y}-X_iY_i)\\
+(\bm{X}'\bm{X}-X_iX_i')\hat{\beta}_{(-i)}&=(\bm{X}'\bm{X}-X_iX_i')(\bm{X}'\bm{X}-X_iX_i')^{-1}(\bm{X}'\bm{y}-X_iY_i)\\
+\bm{X}'\bm{X}\hat{\beta}_{(-i)}-X_iX_i'\hat{\beta}_{(-i)}&=(\bm{X}'\bm{y}-X_iY_i)\\
+(\bm{X}'\bm{X})^{-1}(\bm{X}'\bm{X}\hat{\beta}_{(-i)}-X_iX_i'\hat{\beta}_{(-i)})&=(\bm{X}'\bm{X})^{-1}(\bm{X}'\bm{y}-X_iY_i)\\
+\hat{\beta}_{(-i)}-(\bm{X}'\bm{X})^{-1}X_iX_i'\hat{\beta}_{(-i)}&=\hat{\beta}-(\bm{X}'\bm{X})^{-1}X_iY_i\\
+\hat{\beta}_{(-i)}&=\hat{\beta}-(\bm{X}'\bm{X})^{-1}X_iY_i+(\bm{X}'\bm{X})^{-1}X_iX_i'\hat{\beta}_{(-i)}\\
+\hat{\beta}_{(-i)}&=\hat{\beta}-(\bm{X}'\bm{X})^{-1}X_i(Y_i-X_i'\hat{\beta}_{(-i)})\\
+\hat{\beta}_{(-i)}&=\hat{\beta}-(\bm{X}'\bm{X})^{-1}X_i\tilde{e}_i\\
+\end{align*}
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Proof}
+\begin{itemize}
+\item We will now prove the relationship between $\hat{e}_i$ and $\tilde{e}_i$.
+\begin{align*}
+\hat{\beta}_{(-i)}&=\hat{\beta}-(\bm{X}'\bm{X})^{-1}X_i\tilde{e}_i\\
+X_i'\hat{\beta}_{(-i)}&=X_i'\hat{\beta}-X_i'(\bm{X}'\bm{X})^{-1}X_i\tilde{e}_i\\
+X_i'\hat{\beta}_{(-i)}&=X_i'\hat{\beta}-h_{ii}\tilde{e}_i\\
+Y_i-X_i'\hat{\beta}_{(-i)}&=Y_i-X_i'\hat{\beta}+h_{ii}\tilde{e}_i\\
+\tilde{e}_i&=\hat{e}_i+h_{ii}\tilde{e}_i\\
+\tilde{e}_i-h_{ii}\tilde{e}_i&=\hat{e}_i\\
+\tilde{e}_i&=(1-h_{ii})^{-1}\hat{e}_i
+\end{align*}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Check your understanding}
+\begin{itemize}
+\item For what observation would $\hat{\beta}_{(-i)}=\hat{\beta}$?
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Influential observations}
+\begin{itemize}
+\item An observation $i$ is influential if its omission changes the parameter of interest.
+\item $\hat{\beta}- \hat{\beta}_{(-i)}=(\bm{X}'\bm{X})^{-1}X_i\tilde{e}_i$.
+\item Premultiply by $X_i'$, and we get that 
+$$\hat{Y}_i-\tilde{Y}_i=X'_i(\bm{X}'\bm{X})^{-1}X_i\tilde{e}_i=h_{ii}\tilde{e}_i$$
+\item So $i$ is influential if $h_{ii}$ is big and $|\tilde{e}_i|$ is big.
+\item This warrants investigation: it could indicate a data entry error, an outlier from a different population, or a genuine extreme case that deserves scrutiny.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Leave-One-Out in Practice}
+\begin{columns}[T]
+\begin{column}{0.55\textwidth}
+\begin{lstlisting}[language=R, basicstyle=\ttfamily\scriptsize, numbers=none]
+library(carData)
+mod <- lm(prestige ~ education +
+           income + women, data=Prestige)
+# Leverage values
+h <- hatvalues(mod)
+which.max(h)  # highest-leverage obs
+# Studentized residuals
+rst <- rstudent(mod)
+# Flag: |rstudent| > 2
+Prestige$flag <- abs(rst) > 2
+\end{lstlisting}
+\end{column}
+\begin{column}{0.4\textwidth}
+\begin{itemize}\setlength{\itemsep}{2pt}
+\item \texttt{hatvalues()} returns the diagonal of $\bm{P}$.\pause
+\item \texttt{rstudent()} gives $\tilde{e}_i/\hat{\sigma}_{(-i)}$: the leave-one-out residual scaled by its SE.\pause
+\item Both high leverage \emph{and} $|\text{rstudent}|>2$ warrants investigation.
+\end{itemize}
+\end{column}
+\end{columns}
+\smallskip
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, boxsep=2pt, top=2pt, bottom=2pt]
+High leverage + large residual = investigate. It may be a data error, an outlier, or the most interesting observation in your dataset.
+\end{tcolorbox}
+\end{frame}
+
+
+
+\section{Bias}
+
+
+\begin{frame}{What is Bias?}
+\begin{itemize}
+\item Formally, an estimator is unbiased if the expectation of the conditional distribution of our estimator is the true parameter.
+\item We will discuss an "unbiased" estimator next week, which will assume we have correctly specified our model.
+\item What to do if we might not have correctly specified our model?
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{How do we choose $\bm{X}$?}
+\begin{itemize}
+\item What to include? Include control variables that are 1) predictive of the outcome and 2) determined prior to the treatment.
+\item Common examples: racial composition of a county, gender of a respondent, distance to the ocean.
+\item What should the functional form be? Logs, levels or differences?
+\end{itemize}
+\end{frame}
+
+% Slide 1: Theoretical Framework
+\begin{frame}{Theoretical Framework: Factory Closures and Voting Behavior}
+  \begin{itemize}
+    \item \textbf{Observation:} A local factory closure is visible evidence that trade may harm the local economy.
+    \item \textbf{Mechanism:} Voters interpret a closure as an indication that trade liberalization negatively affects their community.
+    \item \textbf{Prediction:} Exposure to a factory closure increases the likelihood of voting for a protectionist candidate.
+    \item \textbf{Moderating Factor:} The effect of a factory closure depends on the \emph{industrial composition} of the region—areas with a higher share of trade-dependent industries are more affected.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Econometric Model Specification}
+  \begin{itemize}
+    \item \textbf{Outcome Variable:} \(Y_i\) = Indicator for voting protectionist (e.g., 1 if yes, 0 otherwise)
+    \item \textbf{Key Predictor:} \(\text{Closure}_i\) = Indicator for a factory closure in region \(i\)
+    \item \textbf{Control Variable:} \(\text{IndComp}_i\) = Measure of industrial composition in region \(i\)
+    \item \textbf{Interaction:} \(\text{Closure}_i \times \text{IndComp}_i\) captures how the impact of closures varies with industrial structure
+  \end{itemize}
+  
+  \vspace{1em}
+  \[
+  Y_i = \alpha + \beta\,\text{Closure}_i + \gamma\,\text{IndComp}_i + \delta\,(\text{Closure}_i \times \text{IndComp}_i) + \epsilon_i
+  \]
+  
+  \begin{itemize}
+    \item \(\beta\): Baseline effect of a factory closure on voting behavior.
+    \item \(\gamma\): Direct effect of industrial composition on voting.
+    \item \(\delta\): Differential effect of a closure when industrial composition favors exposure
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Tools to address bias}
+\begin{itemize}
+\item Preregistration: eg OSF.io, to defining the entire data-collection and data-analysis protocol ahead of time
+\item Pre-publication replication, preregistered protocol for a followup.
+\item Training and test split: fixing the specification on a subset of the data, testing on the remaining data.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Normal Form Equations (FWL proof part I)}
+OLS with two sets of variables $\bm{X}_1$ and $\bm{X}_2$:
+$$\begin{bmatrix} \bm{X}_1'\bm{X}_1& \bm{X}_1'\bm{X}_2\\  \bm{X}_2'\bm{X}_1 &\bm{X}_2'\bm{X}_2 \end{bmatrix} \begin{bmatrix}\bm{\hat{\beta}}_1\\ \bm{\hat{\beta}}_2\end{bmatrix}=\begin{bmatrix}\bm{X}_1'\bm{y}\\ \bm{X}_2'\bm{y}\end{bmatrix}$$\pause
+Derivation of $\bm{\hat{\beta}}_1$:
+\begin{align*}
+(\bm{X}_1'\bm{X}_1)\bm{\hat{\beta}}_1+(\bm{X}_1'\bm{X}_2)\bm{\hat{\beta}}_2&=\bm{X}'_1\bm{y}\\\pause
+(\bm{X}_1'\bm{X}_1)\bm{\hat{\beta}}_1&=\bm{X}'_1\bm{y}-(\bm{X}_1'\bm{X}_2)\bm{\hat{\beta}}_2\\\pause
+\bm{\hat{\beta}}_1&=(\bm{X}_1'\bm{X}_1)^{-1}\bm{X}'_1\bm{y}-(\bm{X}_1'\bm{X}_1)^{-1}(\bm{X}_1'\bm{X}_2)\bm{\hat{\beta}}_2\\ \pause
+\bm{\hat{\beta}}_{res}&=\bm{\hat{\beta}}_1+\underbrace{(\bm{X}_1'\bm{X}_1)^{-1}(\bm{X}_1'\bm{X}_2)\bm{\hat{\beta}}_2}_{\widehat{bias}\ for\ excluding\ X_2}
+\end{align*}
+\end{frame}
+
+
+
+\begin{frame}{Unpacking the Bias}
+
+$$\underbrace{(\bm{X}_1'\bm{X}_1)^{-1}(\bm{X}_1'\bm{X}_2)}_{\text{Imbalance of }X_2\text{ w.r.t.\ }X_1.}\underbrace{\bm{\hat{\beta}}_2}_{\text{Partial impact of }X_2\text{ on }Y}$$
+\begin{itemize}
+\item $\bm{\hat{\beta}}_2$ reflects the causal effects of $X_2$ as well as any spurious associations between $\bm{X}_2$ and $Y$.
+\item $(\bm{X}_1'\bm{X}_1)^{-1}(\bm{X}_1'\bm{X}_2)$ are the coefficients of a regression of $\bm{X}_2$ on $\bm{X}_1$, which is to say, how well does treatment predict confounders? 
+\item Cinelli and Hazlett (2020) call this "impact" $\hat{\gamma}$ times "imbalance" $\hat{\delta}$
+\item The problem is that $\bm{X}_1$ and $\bm{X}_2$ are multivariate, so this is difficult to sign.
+\end{itemize}
+\end{frame}
+
+\section{Partial $R^2$}
+
+\begin{frame}{Reparameterizing in terms of partial $R^2$}
+\begin{itemize}
+\item Cinelli and Hazlett (2020) propose studying omitted variables using $R^2$ as a metric.
+\item Suppose the full linear regression is as follows:
+$$Y=\bm{X}_1\bm{\beta}_1+\bm{X}_2\bm{\beta}_2+\bm{e}$$
+\item $\bm{P}_1=\bm{X}_1(\bm{X}'_1\bm{X}_1)^{-1}\bm{X}_1'$ is the projection matrix onto $\bm{X}_1$.
+\item $\bm{M}_1=\bm{I}-\bm{X}_1(\bm{X}'_1\bm{X}_1)^{-1}\bm{X}_1'$ is the residual maker for $\bm{X}_1$.
+\item In general the partial $R^2$ measures the proportion of the variance in $Y$ that is uniquely explained by a set of predictors $\bm{X}_2$ after accounting for $\bm{X}_1$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Formula for $R^2$ with one variable}
+\begin{align*}
+R^2_{Y\sim \bm{Z}} &= \frac{SSR}{TSS} &&\text{(definition (1) of $R^2$)}\\[10pt]
+&= \frac{var(\hat{Y})}{var(Y)} &&\text{($SSR$ is variance explained)}\\[10pt]
+&= 1 - \frac{var(e)}{var(Y)} &&\text{(since $var(Y)=var(\hat{Y})+var(e)$)}\\[10pt]
+&= corr(Y, \hat{Y})^2 &&\text{(definition (2) of $R^2$)}\\[10pt]
+&= corr(Y, \bm{Z})^2 &&\text{($\hat{Y}$ is linear prediction from $\bm{Z}$)}
+\end{align*}
+
+\end{frame}
+
+
+\begin{frame}[fragile]{Example in R}
+\begin{lstlisting}
+library(carData)
+attach(Prestige)
+mod <- lm(prestige ~ education)
+summary(mod)$r.square
+# [1] 0.7228007
+var(predict(mod)) / var(prestige) 
+1 - var(resid(mod)) / var(prestige) 
+cor(prestige, predict(mod))^2
+cor(prestige, education)^2
+\end{lstlisting}
+
+\end{frame}
+
+
+\begin{frame}{Formula for partial $R^2$}
+\begin{itemize}
+\item Using Residual Sum of Squares:
+\begin{itemize}
+\item $R^2_{\bm{Y}\sim \bm{X}_2|\bm{X}_1}=1-\frac{\text{RSS}(\bm{X}_1,\bm{X}_2)}{\text{RSS}(\bm{X}_1)}$
+\item $\text{RSS}(\bm{X}_1)=||\bm{M}_1Y||^2=Y\bm{M_1}'\bm{M}_1Y=Y'\bm{M_1}Y$
+\item $\text{RSS}(\bm{X}_{1},\bm{X}_2)=||\bm{M}_{1,2}Y||^2=Y'\bm{M}_{1,2}Y$
+\end{itemize}\pause
+\item Using Sum of Squared Residuals:
+\begin{itemize}
+\item $R^2_{\bm{Y}\sim \bm{X}_2|\bm{X}_1}=\frac{\text{SSR}(\bm{X}_2|\bm{X}_1)}{\text{RSS}(\bm{X}_1)}$
+\item SSR, the explained sum of squares, the amount explained by $\bm{X}_2$ once accounting for $\bm{X}_1$
+\begin{align*}
+\text{SSR}(\bm{X}_2|\bm{X}_1)&=Y'\bm{M}_1\bm{X}_2(\bm{X}_2'\bm{M}_1\bm{X}_2)^{-1}\bm{X}_2'\bm{M}_1Y\\
+&=Y'\bm{M}_1\bm{X}_2\bm{\hat{\beta}}_2
+\end{align*}
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Cinelli Hazlett (2020) formulation}
+We model $Y=\hat{\beta}_1D+e$, so $\hat{\beta}_1=\frac{cov(D,\ Y)}{var(D)}$.\\
+\bigskip
+What if there is regression of $Y$ on $D$ and there is a a single omitted variable $Z$?
+\begin{align*}
+\widehat{\text{bias}} &= (\bm{X}_1'\bm{X}_1)^{-1}(\bm{X}_1'\bm{X}_2)\bm{\hat{\beta}}_2\\
+ &=\left(\frac{cov(D, Z)}{var(D)}\right)\left(\frac{cov(Z^{\perp D},\ Y^{\perp D})}{var(Z^{\perp D})}\right)
+ \end{align*}
+ Lets write this in terms of $D$ and two new formalisms for the disturbance: $Z^{\perp D}$ the part of $Z$ not predicted by $D$, and $Y^{\perp D}$ the part of $Y$ not predicted by $D$. 
+\end{frame}
+
+%\begin{frame}{Cinelli Hazlett (2020) formulation}
+%\begin{align*}
+%\widehat{\text{bias}} &= (\bm{X}_1'\bm{X}_1)^{-1}(\bm{X}_1'\bm{X}_2)\bm{\hat{\beta}}_2\\\pause
+% &=\left(\frac{cov(D, Z)}{var(D)}\right)\left(\frac{cov(Z^{\perp D},\ Y^{\perp D})}{var(Z^{\perp D})}\right)\\\pause
+%  &=\left(\frac{corr(Y^{\perp D}, Z^{\perp D})corr(D, Z)}{sd(Z^{\perp D})/sd(Z)}\right)\left(\frac{sd(Y^{\perp D})}{sd(D)}\right)\\\pause
+%  |\widehat{bias}|&=\sqrt{\left(\frac{R^2_{Y\sim Z|D},R^2_{D\sim Z}}{1-R^2_{D\sim Z}}\right)\left(\frac{sd(Y^{\perp D})}{sd(D)}\right)}
+% \end{align*}
+%
+%\end{frame}
+
+% Slide 1: Model Setup and the Omitted Variable Bias Expression
+\begin{frame}{Cinelli Hazlett (2020) -- Part 1: Model Setup}
+We start with the regression model:
+\[
+Y = \hat{\beta}_1 D + e,\qquad \hat{\beta}_1 = \frac{\operatorname{cov}(D,Y)}{\operatorname{var}(D)}.
+\]
+\vspace{1ex}
+Now consider the case where a variable \(Z\) is omitted from the regression of \(Y\) on \(D\).  
+The omitted variable bias is given by:
+\[
+\widehat{\text{bias}} = \frac{\operatorname{cov}(D,Z)}{\operatorname{var}(D)}\cdot\frac{\operatorname{cov}(Z^{\perp D},Y^{\perp D})}{\operatorname{var}(Z^{\perp D})}.
+\]
+\textbf{Note:}  
+The first fraction reflects how \(D\) and \(Z\) co-move, while the second captures the effect of \(Z\) on \(Y\) once \(D\)’s influence is removed.
+\end{frame}
+
+% Slide 2: Unpacking the Covariance to Correlation Conversion
+\begin{frame}{Cinelli Hazlett (2020) -- Part 2: Covariance to Correlation Conversion}
+\vspace{-1ex}
+\textbf{For the First Term:}
+\[
+\frac{\operatorname{cov}(D,Z)}{\operatorname{var}(D)} 
+=\frac{\operatorname{corr}(D,Z)\,sd(D)\,sd(Z)}{sd(D)^2}
+=\frac{\operatorname{corr}(D,Z)\,sd(Z)}{sd(D)}.
+\]
+\textbf{Note:}  
+We used the identity
+\[
+\operatorname{cov}(X,Y)=\operatorname{corr}(X,Y)\,sd(X)\,sd(Y),
+\]
+and noted that \(\operatorname{var}(D)=sd(D)^2\).
+
+\vspace{2ex}\pause
+\textbf{For the Second Term:}
+\[
+\frac{\operatorname{cov}(Z^{\perp D},Y^{\perp D})}{\operatorname{var}(Z^{\perp D})}
+=\frac{\operatorname{corr}(Z^{\perp D},Y^{\perp D})\,sd(Z^{\perp D})\,sd(Y^{\perp D})}{sd(Z^{\perp D})^2}
+=\frac{\operatorname{corr}(Z^{\perp D},Y^{\perp D})\,sd(Y^{\perp D})}{sd(Z^{\perp D})}.
+\]
+\textbf{Note:}  
+Similarly, we express the covariance in terms of correlation and standard deviations, with \(\operatorname{var}(Z^{\perp D})=sd(Z^{\perp D})^2\).
+\end{frame}
+
+% Slide 3: Combining the Steps into the Final Expression
+\begin{frame}{Cinelli Hazlett (2020) -- Part 3: Final Bias Expression}
+Combining the two unpacked terms, we obtain:
+\[
+\widehat{\text{bias}} 
+=\left(\frac{\operatorname{corr}(D,Z)\,sd(Z)}{sd(D)}\right)
+\left(\frac{\operatorname{corr}(Z^{\perp D},Y^{\perp D})\,sd(Y^{\perp D})}{sd(Z^{\perp D})}\right).
+\]
+Rearranging, this becomes:
+\[
+\widehat{\text{bias}} = \frac{\operatorname{corr}(D,Z)\,\operatorname{corr}(Z^{\perp D},Y^{\perp D})\,sd(Z)\,sd(Y^{\perp D})}{sd(D)\,sd(Z^{\perp D})}.
+\]
+Replacing partial $R^2$:
+\[
+|\widehat{\text{bias}}| = \sqrt{\left(\frac{R^2_{D\sim Z}R^2_{Y\sim Z|D}}{1 - R^2_{D\sim Z}}\right)
+\left(\frac{sd(Y^{\perp D})}{sd(D)}\right)}.
+\]
+\end{frame}
+
+\begin{frame}{What Does the Bias Formula Tell Applied Researchers?}
+\begin{itemize}
+\item The bias depends on two quantities, both expressed as partial $R^2$:
+\begin{enumerate}
+\item $R^2_{D\sim Z}$: How strongly does the omitted variable predict the \textbf{treatment}?
+\item $R^2_{Y\sim Z|D}$: How strongly does the omitted variable predict the \textbf{outcome}, after accounting for treatment?
+\end{enumerate}\pause
+\item If \emph{either} partial $R^2$ is small, the bias is small---a confounder must predict both $D$ and $Y$ to be dangerous.\pause
+\item In practice, you ask: ``Is it plausible that an unobserved variable explains $x\%$ of the residual variation in $D$ and $y\%$ of the residual variation in $Y$?''
+\item Observed covariates serve as benchmarks: if the strongest observed predictor has $R^2_{Y\sim Z|D}=0.05$, an omitted confounder would need to be far stronger to overturn your result.
+\end{itemize}
+\end{frame}
+
+% Slide 1: Simulation Setup and Motivation
+\begin{frame}{Example: Simulation Setup for Sensitivity Analysis}
+\textbf{Simulation Design:}
+\begin{itemize}
+    \item Generate \(N\) observations with treatment \(D\), observed confounder \(Z\), and outcome:
+    \[
+    Y = \beta_D D + \beta_Z Z + e,\quad e \sim N(0,1).
+    \]
+    \item We first show that omitting \(Z\) biases the estimate of \(\beta_D\).
+    \item Then we include \(Z\) and ask: how robust is our estimate to \emph{additional} unobserved confounders?
+\end{itemize}
+\end{frame}
+
+% Slide 2: Data Simulation and Comparing Models
+\begin{frame}[fragile]{Step 1: Simulate Data and Compare Models}
+\begin{lstlisting}
+set.seed(123)
+N <- 1000; beta_D <- 2; beta_Z <- 3
+D <- rbinom(N, 1, 0.5); Z <- rnorm(N)
+Y <- beta_D * D + beta_Z * Z + rnorm(N)
+
+# Naive model (omitting Z) -- biased
+coef(lm(Y ~ D))          # beta_D != 2
+
+# Full model (including Z) -- unbiased
+model_full <- lm(Y ~ D + Z)
+coef(model_full)          # beta_D ~ 2
+\end{lstlisting}
+\vspace{1ex}
+The naive model is biased because $Z$ is correlated with both $D$ and $Y$. The full model recovers the true effect---but what if there were \emph{another} confounder we could not observe?
+\end{frame}
+
+% Slide 3: Conducting Sensitivity Analysis with sensemakr
+\begin{frame}[fragile]{Step 2: Running the Sensitivity Analysis}
+\begin{lstlisting}
+library(sensemakr)
+
+# Sensitivity analysis on the FULL model
+sensitivity <- sensemakr(model_full, treatment = "D",
+                         benchmark_covariates = "Z")
+summary(sensitivity)
+plot(sensitivity)
+\end{lstlisting}
+\vspace{1ex}
+\textbf{Key question:} How strong would an \emph{unobserved} confounder need to be---relative to the observed confounder $Z$---to explain away the estimated effect of $D$?
+\end{frame}
+
+% Slide 4: Interpreting the Diagnostic Outputs
+\begin{frame}{Interpreting the Sensitivity Analysis Output}
+\textbf{Key Diagnostics:}
+\begin{itemize}
+    \item \textbf{Robustness Value:} The minimum strength (in terms of partial \(R^2\)) that an unobserved confounder must have with both the treatment and outcome to fully explain away the estimated effect.
+    \item \textbf{Benchmark Comparison:} Using the observed \(Z\) as a benchmark helps gauge whether such a confounder is plausible. If an omitted variable would need to be 3$\times$ stronger than \(Z\), the result is likely robust.
+    \item \textbf{Contour Plot:} Visualizes all combinations of $R^2_{D\sim U|X}$ and $R^2_{Y\sim U|D,X}$ that would reduce the estimated effect to zero.
+\end{itemize}
+\end{frame}
+
+
+\end{document}

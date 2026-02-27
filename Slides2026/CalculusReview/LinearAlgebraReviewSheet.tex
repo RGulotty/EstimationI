@@ -1,0 +1,469 @@
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+
+\setlength{\headheight}{13.6pt}
+\addtolength{\topmargin}{-1.6pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{PLSC 30700: Estimation I}
+\rhead{Linear Algebra Review Sheet}
+\cfoot{\thepage}
+
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\col}{col}
+\DeclareMathOperator{\spn}{span}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+
+\title{Linear Algebra for Estimation\\[4pt]\large PLSC 30700 --- Pre-Midterm Review}
+\author{Robert Gulotty \\ University of Chicago}
+\date{Winter 2026}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\noindent This sheet collects the linear algebra concepts used in Lectures 1--7 (before the midterm). Calculus skills are covered in a separate document. Each section lists the key definitions and results, and indicates where they appear in the course.
+
+\medskip
+\begin{tcolorbox}[colback=gray!5, colframe=gray!50, title=\textbf{Abbreviations Used in This Document}]
+\small
+\begin{tabular}{@{}ll@{\quad}ll@{}}
+OLS & Ordinary Least Squares & GLS & Generalized Least Squares\\
+SSE & Sum of Squared Errors ($\hat{\bm{e}}'\hat{\bm{e}}$) & SSR & Sum of Squares due to Regression ($\hat{\bm{y}}'\hat{\bm{y}}$)\\
+BLP & Best Linear Predictor & CEF & Conditional Expectation Function\\
+ANOVA & Analysis of Variance & FWL & Frisch-Waugh-Lovell (Theorem)\\
+PD & Positive Definite & PSD & Positive Semi-Definite\\
+HC & Heteroskedasticity-Consistent & & \\
+\end{tabular}
+\end{tcolorbox}
+
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Vectors and Basic Operations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Vectors and Notation}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+A \textbf{column vector} $\bm{a}\in\mathbb{R}^k$ is a $k\times 1$ array of numbers. Its \textbf{transpose} $\bm{a}'$ is $1\times k$.
+$$\bm{a} = \begin{pmatrix} a_1 \\ a_2 \\ \vdots \\ a_k \end{pmatrix}, \qquad \bm{a}' = (a_1,\; a_2,\; \ldots,\; a_k)$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} The coefficient vector $\bm{\beta}$ ($k\times 1$), the outcome vector $\bm{y}$ ($n\times 1$), the observation vector $\bm{x}_i$ ($k\times 1$).
+\item \textbf{Day 3 onward:} The residual vector $\bm{\hat{e}}$ ($n\times 1$).
+\end{itemize}
+
+\subsection{Inner Product (Dot Product)}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+For $\bm{a},\bm{b}\in\mathbb{R}^k$:
+$$\bm{a}'\bm{b} = \sum_{j=1}^k a_j b_j$$
+\begin{itemize}[nosep]
+\item $\bm{a}'\bm{b} = 0$ means $\bm{a}$ and $\bm{b}$ are \textbf{orthogonal}.
+\item $\|\bm{a}\| = \sqrt{\bm{a}'\bm{a}}$ is the \textbf{Euclidean norm} (length).
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Covariance is an inner product of demeaned vectors. OLS residuals are orthogonal to $\bm{X}$: $\bm{X}'\bm{\hat{e}}=\bm{0}$.
+\item \textbf{Day 3:} SSE $= \bm{\hat{e}}'\bm{\hat{e}} = \|\bm{\hat{e}}\|^2$. The ANOVA decomposition is an orthogonal decomposition of $\bm{y}$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Matrices}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Matrix Multiplication}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+If $\bm{A}$ is $k\times r$ and $\bm{B}$ is $r\times s$, the product $\bm{AB}$ is $k\times s$ with entries:
+$$(\bm{AB})_{ij} = \sum_{\ell=1}^r a_{i\ell}\, b_{\ell j}$$
+Key properties:
+\begin{itemize}[nosep]
+\item $\bm{AB} \neq \bm{BA}$ in general (not commutative).
+\item $(\bm{AB})' = \bm{B}'\bm{A}'$ (transpose reverses order).
+\item $\bm{A}(\bm{BC}) = (\bm{AB})\bm{C}$ (associative).
+\item $\bm{A}(\bm{B}+\bm{C}) = \bm{AB}+\bm{AC}$ (distributive).
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} The compact regression notation $\bm{y}=\bm{X}\bm{\beta}+\bm{e}$. The Gram matrix $\bm{X}'\bm{X}$.
+\item \textbf{Day 3:} Expanding $(\bm{y}-\bm{X}\bm{\beta})'(\bm{y}-\bm{X}\bm{\beta})$ using the distributive and transpose rules.
+\item \textbf{Day 5:} Variance formulas: $\Var(\bm{A}\bm{y}) = \bm{A}\Var(\bm{y})\bm{A}'$.
+\end{itemize}
+
+\subsection{The Design Matrix $\bm{X}$}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\bm{X} = \begin{pmatrix} 1 & x_{11} & \cdots & x_{1,k-1} \\ 1 & x_{21} & \cdots & x_{2,k-1} \\ \vdots & \vdots & \ddots & \vdots \\ 1 & x_{n1} & \cdots & x_{n,k-1} \end{pmatrix} \quad (n\times k)$$
+\begin{itemize}[nosep]
+\item Rows are observations ($\bm{x}_i'$), columns are variables.
+\item First column is $\bm{\iota}=(1,1,\ldots,1)'$ (the intercept).
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:} Every lecture from Day 1 onward. The full rank condition ($\rank(\bm{X})=k$) is Assumption 3 for OLS.
+
+\subsection{Matrix Inverse}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+A square matrix $\bm{A}$ ($k\times k$) is \textbf{invertible} (nonsingular) if there exists $\bm{A}^{-1}$ with $\bm{A}\bm{A}^{-1}=\bm{A}^{-1}\bm{A}=\bm{I}_k$.
+\begin{itemize}[nosep]
+\item $(\bm{A}')^{-1} = (\bm{A}^{-1})'$
+\item $(\bm{AB})^{-1} = \bm{B}^{-1}\bm{A}^{-1}$ \quad (reverses order)
+\item $\bm{A}$ is invertible iff $\rank(\bm{A})=k$ iff $\det(\bm{A})\neq 0$.
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} OLS requires $(\bm{X}'\bm{X})^{-1}$ to exist, which needs full column rank.
+\item \textbf{Day 2:} BLP requires $\bm{Q}_{XX}=\mathbb{E}[\bm{XX}']$ to be invertible.
+\item \textbf{Day 4:} Partitioned inverse of $\bm{X}'\bm{X}$ (Schur complement).
+\end{itemize}
+
+\subsection{The Identity Matrix}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$\bm{I}_k$ is the $k\times k$ matrix with 1s on the diagonal and 0s elsewhere.
+$$\bm{I}_k\bm{A} = \bm{A}\bm{I}_k = \bm{A}$$
+\end{tcolorbox}
+\textbf{Where it appears:} Homoskedasticity is $\Var(\bm{e}|\bm{X})=\sigma^2\bm{I}_n$ (Days 3, 5, 6). The annihilator is $\bm{M}=\bm{I}-\bm{P}$ (Day 3).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Symmetric Matrices and Quadratic Forms}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Symmetric Matrices}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$\bm{A}$ is \textbf{symmetric} if $\bm{A}'=\bm{A}$. Equivalently, $a_{ij}=a_{ji}$ for all $i,j$.
+\end{tcolorbox}
+\textbf{Where it appears:} $\bm{X}'\bm{X}$ is always symmetric. The variance-covariance matrix $\bm{\Sigma}$ is symmetric. The projection matrix $\bm{P}$ is symmetric (Day 1, 3).
+
+\subsection{Quadratic Forms}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+A \textbf{quadratic form} is a scalar of the form $\bm{x}'\bm{A}\bm{x}$, where $\bm{A}$ is symmetric:
+$$\bm{x}'\bm{A}\bm{x} = \sum_i a_{ii}x_i^2 + 2\sum_{i<j}a_{ij}x_ix_j$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} SSR is a quadratic form: $\bm{\beta}'\bm{X}'\bm{X}\bm{\beta}$. The SSE bowl is the surface plot of $\bm{\beta}'\bm{X}'\bm{X}\bm{\beta}-2\bm{y}'\bm{X}\bm{\beta}+\bm{y}'\bm{y}$.
+\item \textbf{Day 3:} $\bm{\hat{e}}'\bm{\hat{e}}=\bm{e}'\bm{M}\bm{e}$ is a quadratic form in $\bm{e}$ (used in proving unbiasedness of $s^2$).
+\item \textbf{Day 7:} $\bm{z}'\bm{A}\bm{z}\sim\chi^2(\nu)$ when $\bm{z}\sim N(\bm{0},\bm{I})$ and $\bm{A}$ is idempotent with $\rank(\bm{A})=\nu$.
+\end{itemize}
+
+\subsection{Positive Definiteness}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+A symmetric matrix $\bm{A}$ is:
+\begin{itemize}[nosep]
+\item \textbf{Positive definite} (PD) if $\bm{c}'\bm{A}\bm{c} > 0$ for all $\bm{c}\neq\bm{0}$.
+\item \textbf{Positive semi-definite} (PSD) if $\bm{c}'\bm{A}\bm{c} \geq 0$ for all $\bm{c}\neq\bm{0}$.
+\end{itemize}
+Key facts:
+\begin{itemize}[nosep]
+\item PD $\iff$ all eigenvalues are positive $\iff$ invertible.
+\item If $\bm{A}$ is PD, then $\bm{A}^{-1}$ is also PD.
+\item If $\bm{X}$ has full column rank, then $\bm{X}'\bm{X}$ is PD.
+\item $\bm{C}'\bm{C}$ is always PSD (PD if $\bm{C}$ has full column rank).
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} PD of $\bm{X}'\bm{X}$ guarantees a unique OLS solution and that the SSE is strictly convex (the ``bowl'' has a unique bottom).
+\item \textbf{Day 2:} $\bm{Q}_{XX}=\mathbb{E}[\bm{XX}']$ must be PD for the BLP to be identified.
+\item \textbf{Day 3:} Second-order condition: $2\bm{X}'\bm{X}$ is PD, confirming $\hat{\bm\beta}$ is a minimum.
+\item \textbf{Day 5:} Gauss-Markov proof: $\bm{A}'\bm{A}-(\bm{X}'\bm{X})^{-1} = \bm{C}'\bm{C} \geq 0$ shows OLS has smallest variance.
+\item \textbf{Day 5:} Comparing estimators via PD: ``$\bm{A}-\bm{B}$ is PD'' means $\bm{A}$ has ``larger'' variance.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Trace, Rank, and Determinant}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Trace}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\tr(\bm{A}) = \sum_{i=1}^n a_{ii}$$
+Key properties:
+\begin{itemize}[nosep]
+\item $\tr(\bm{A}+\bm{B})=\tr(\bm{A})+\tr(\bm{B})$
+\item $\tr(c\bm{A})=c\,\tr(\bm{A})$
+\item $\tr(\bm{A}')=\tr(\bm{A})$
+\item $\tr(\bm{AB})=\tr(\bm{BA})$ \quad (cyclic property---the most used)
+\item $\tr(\bm{A})=\sum_i \lambda_i$ \quad (sum of eigenvalues)
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} $\tr(\bm{P})=k$, $\tr(\bm{M})=n-k$. This is the algebraic origin of degrees of freedom.
+\item \textbf{Day 3:} Proving $\mathbb{E}[\bm{\hat{e}}'\bm{\hat{e}}|\bm{X}]=\sigma^2(n-k)$ via the ``trace trick'':
+$$\mathbb{E}[\bm{e}'\bm{M}\bm{e}|\bm{X}] = \tr(\bm{M}\,\mathbb{E}[\bm{ee}'|\bm{X}]) = \sigma^2\tr(\bm{M}) = \sigma^2(n-k)$$
+\item \textbf{Day 4:} $\tr(\bm{P})=k$ proved via the cyclic property: $\tr(\bm{X}(\bm{X}'\bm{X})^{-1}\bm{X}')=\tr(\bm{I}_k)=k$.
+\item \textbf{Day 5:} Unbiasedness of $\hat\sigma^2$: $\mathbb{E}[\hat\sigma^2|\bm{X}]=\frac{1}{n}\tr(\bm{MD})$.
+\end{itemize}
+
+\subsection{Rank}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$\rank(\bm{A})$ = number of linearly independent columns (or rows).
+\begin{itemize}[nosep]
+\item $\rank(\bm{X})=k$ means full column rank (no perfect multicollinearity).
+\item $\rank(\bm{AB})\leq\min(\rank(\bm{A}),\rank(\bm{B}))$.
+\item For idempotent $\bm{A}$: $\rank(\bm{A})=\tr(\bm{A})$.
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Full rank of $\bm{X}$ is needed for OLS; rank deficiency $=$ perfect multicollinearity.
+\item \textbf{Day 6:} Near multicollinearity inflates $\Var(\hat\beta_j)$ via $(1-\rho^2)^{-1}$.
+\end{itemize}
+
+\subsection{Determinant}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$\det(\bm{A})$ measures signed volume scaling. Key facts:
+\begin{itemize}[nosep]
+\item $\det(\bm{A})=0 \iff \bm{A}$ is singular (not invertible).
+\item $\det(\bm{A})=\prod_i\lambda_i$ (product of eigenvalues).
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Mentioned as a diagnostic for invertibility.
+\item \textbf{Day 7:} The multivariate normal density involves $|\bm{\Sigma}|=\det(\bm{\Sigma})$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Eigenvalues and Eigenvectors}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+If $\bm{A}\bm{u}=\lambda\bm{u}$ for nonzero $\bm{u}$, then $\lambda$ is an \textbf{eigenvalue} and $\bm{u}$ is the corresponding \textbf{eigenvector}.\\[4pt]
+For symmetric $\bm{A}$:
+\begin{itemize}[nosep]
+\item All eigenvalues are real.
+\item Eigenvectors corresponding to distinct eigenvalues are orthogonal.
+\item $\bm{A}$ is PD $\iff$ all $\lambda_i>0$.
+\item $\bm{A}$ is singular $\iff$ some $\lambda_i=0$.
+\item $\tr(\bm{A})=\sum\lambda_i$, \quad $\det(\bm{A})=\prod\lambda_i$.
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Eigenvalues diagnose PD of $\bm{X}'\bm{X}$; idempotent matrices have eigenvalues in $\{0,1\}$.
+\item \textbf{Day 5:} Spectral decomposition $\bm{\Sigma}=\bm{C}\bm{\Lambda}\bm{C}'$ used to construct $\bm{\Sigma}^{-1/2}$ for GLS.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Linear Independence, Span, and Column Space}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\begin{itemize}[nosep]
+\item Vectors $\bm{x}_1,\ldots,\bm{x}_k$ are \textbf{linearly independent} if $c_1\bm{x}_1+\cdots+c_k\bm{x}_k=\bm{0}$ implies $c_1=\cdots=c_k=0$.
+\item The \textbf{span} (or column space) of $\bm{X}$ is $\col(\bm{X})=\{c_1\bm{x}_1+\cdots+c_k\bm{x}_k : c_j\in\mathbb{R}\}$.
+\item The \textbf{dimension} of a subspace is the number of vectors in any basis.
+\item \textbf{Orthogonal complement}: $\mathcal{W}^\perp=\{\bm{v}:\bm{v}'\bm{w}=0\text{ for all }\bm{w}\in\mathcal{W}\}$.
+\item $\dim(\mathcal{W})+\dim(\mathcal{W}^\perp)=n$.
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Fitted values $\hat{\bm{y}}\in\col(\bm{X})$ (dimension $k$); residuals $\hat{\bm{e}}\in\col(\bm{X})^\perp$ (dimension $n-k$). This is the geometric origin of degrees of freedom: $n-k$.
+\item \textbf{Day 1:} Linear dependence among columns of $\bm{X}$ $\Leftrightarrow$ perfect multicollinearity $\Leftrightarrow$ no unique OLS.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Projection Matrices}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{The Hat Matrix $\bm{P}$}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\bm{P} = \bm{X}(\bm{X}'\bm{X})^{-1}\bm{X}'$$
+Properties:
+\begin{itemize}[nosep]
+\item \textbf{Symmetric}: $\bm{P}'=\bm{P}$.
+\item \textbf{Idempotent}: $\bm{P}^2=\bm{P}$ (projecting twice does nothing extra).
+\item $\bm{P}\bm{X}=\bm{X}$ (anything in the column space is unchanged).
+\item $\bm{P}\bm{y}=\bm{X}\hat{\bm{\beta}}=\hat{\bm{y}}$ (fitted values).
+\item $\tr(\bm{P})=\rank(\bm{P})=k$.
+\item Diagonal entries: $h_{ii}=\bm{x}_i'(\bm{X}'\bm{X})^{-1}\bm{x}_i\in[0,1]$ (leverage).
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Introduced as the geometric heart of OLS---projection of $\bm{y}$ onto $\col(\bm{X})$.
+\item \textbf{Day 3:} Computing fitted values, residuals, and showing $\hat{\bm{y}}'\hat{\bm{e}}=\bm{0}$.
+\item \textbf{Day 4:} Diagonal entries $h_{ii}$ measure how much each observation influences fitted values.
+\end{itemize}
+
+\subsection{The Annihilator Matrix $\bm{M}$}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\bm{M} = \bm{I}_n - \bm{P} = \bm{I}_n - \bm{X}(\bm{X}'\bm{X})^{-1}\bm{X}'$$
+Properties:
+\begin{itemize}[nosep]
+\item Symmetric and idempotent.
+\item $\bm{M}\bm{X}=\bm{0}$ (annihilates anything in $\col(\bm{X})$).
+\item $\bm{M}\bm{y}=\bm{y}-\hat{\bm{y}}=\hat{\bm{e}}$ (residuals).
+\item $\tr(\bm{M})=n-k$.
+\item $\hat{\bm{e}}=\bm{M}\bm{e}$ (residuals are a linear function of the true errors).
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 3:} Residuals as $\bm{M}\bm{y}$; demeaning as $\bm{M}_1\bm{y}=\bm{y}-\bm{\iota}\bar{Y}$; variance decomposition.
+\item \textbf{Day 4:} Frisch-Waugh-Lovell: $\hat{\bm{\beta}}_2=(\bm{X}_2'\bm{M}_1\bm{X}_2)^{-1}\bm{X}_2'\bm{M}_1\bm{y}$. The residual maker $\bm{M}_1$ ``partials out'' $\bm{X}_1$.
+\item \textbf{Day 5:} $\Var(\hat{\bm{e}}|\bm{X})=\bm{M}\bm{D}\bm{M}$ (heteroskedastic case) or $\sigma^2\bm{M}$ (homoskedastic).
+\end{itemize}
+
+\subsection{Idempotent Matrices}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$\bm{A}$ is \textbf{idempotent} if $\bm{A}^2=\bm{A}$.
+\begin{itemize}[nosep]
+\item Eigenvalues of an idempotent matrix are either 0 or 1.
+\item $\rank(\bm{A})=\tr(\bm{A})=$ (number of eigenvalues equal to 1).
+\item Both $\bm{P}$ and $\bm{M}$ are symmetric and idempotent.
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Proof that eigenvalues of an idempotent matrix are 0 or 1.
+\item \textbf{Day 3:} Simplification: $\bm{M}'\bm{M}=\bm{M}^2=\bm{M}$, so $\hat{\bm{e}}'\hat{\bm{e}}=\bm{e}'\bm{M}\bm{e}$.
+\item \textbf{Day 7:} If $\bm{z}\sim N(\bm{0},\bm{I})$ and $\bm{A}$ is idempotent, then $\bm{z}'\bm{A}\bm{z}\sim\chi^2(\tr(\bm{A}))$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Partitioned Matrices}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Block Matrix Multiplication}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+If $\bm{X}=[\bm{X}_1\ \ \bm{X}_2]$, then:
+$$\bm{X}'\bm{X} = \begin{pmatrix}\bm{X}_1'\bm{X}_1 & \bm{X}_1'\bm{X}_2 \\ \bm{X}_2'\bm{X}_1 & \bm{X}_2'\bm{X}_2\end{pmatrix}, \qquad \bm{X}'\bm{y} = \begin{pmatrix}\bm{X}_1'\bm{y}\\\bm{X}_2'\bm{y}\end{pmatrix}$$
+\end{tcolorbox}
+
+\subsection{Schur Complement and Partitioned Inverse}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+For a block matrix $\bm{A}=\begin{pmatrix}\bm{A}_{11}&\bm{A}_{12}\\\bm{A}_{21}&\bm{A}_{22}\end{pmatrix}$, the \textbf{Schur complement} of $\bm{A}_{22}$ is:
+$$\bm{A}_{11\cdot 2} = \bm{A}_{11}-\bm{A}_{12}\bm{A}_{22}^{-1}\bm{A}_{21}$$
+The $(1,1)$ block of $\bm{A}^{-1}$ is $\bm{A}_{11\cdot 2}^{-1}$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 2:} Partitioned regression: $\beta_1 = \bm{Q}_{11\cdot 2}^{-1}\bm{Q}_{1Y\cdot 2}$ --- the coefficient on $X_1$ after removing the linear influence of $X_2$.
+\item \textbf{Day 4:} Full derivation of $(\bm{X}'\bm{X})^{-1}$ in block form. Foundation for FWL theorem and partitioned regression.
+\end{itemize}
+
+\subsection{Frisch-Waugh-Lovell (FWL) Theorem}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+In the regression $\bm{y}=\bm{X}_1\hat{\bm\beta}_1+\bm{X}_2\hat{\bm\beta}_2+\hat{\bm{e}}$:
+$$\hat{\bm\beta}_2 = (\bm{X}_2'\bm{M}_1\bm{X}_2)^{-1}\bm{X}_2'\bm{M}_1\bm{y}$$
+where $\bm{M}_1=\bm{I}-\bm{X}_1(\bm{X}_1'\bm{X}_1)^{-1}\bm{X}_1'$.\\[4pt]
+Interpretation: $\hat{\bm\beta}_2$ equals the coefficient from regressing the residuals of $\bm{y}$ on $\bm{X}_1$ against the residuals of $\bm{X}_2$ on $\bm{X}_1$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 4:} Proved via the normal equations and the partitioned inverse. Shows how projection matrices decompose multivariate regression into sequential bivariate regressions.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Variance-Covariance Matrices}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Definition and the Sandwich Formula}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+For a random vector $\bm{X}$:
+$$\Var(\bm{X}) = \mathbb{E}[(\bm{X}-\mathbb{E}[\bm{X}])(\bm{X}-\mathbb{E}[\bm{X}])'] = \bm{\Sigma}$$
+$\bm{\Sigma}$ is symmetric and PSD. For linear transformations:
+$$\Var(\bm{A}\bm{X}+\bm{b}) = \bm{A}\bm{\Sigma}\bm{A}'$$
+Applied to OLS:
+$$\Var(\hat{\bm\beta}|\bm{X}) = (\bm{X}'\bm{X})^{-1}\bm{X}'\bm{D}\bm{X}(\bm{X}'\bm{X})^{-1} \quad\text{(sandwich)}$$
+where $\bm{D}=\diag(\sigma_1^2,\ldots,\sigma_n^2)$.\\
+Under homoskedasticity ($\bm{D}=\sigma^2\bm{I}$): $\Var(\hat{\bm\beta}|\bm{X})=\sigma^2(\bm{X}'\bm{X})^{-1}$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} $\Var(\bm{A}\bm{X}+\bm{b})=\bm{A}\bm{\Sigma}\bm{A}'$ introduced as a recurring formula.
+\item \textbf{Day 3:} Derivation of $\Var(\hat{\bm\beta}|\bm{X})$ using $\hat{\bm\beta}-\bm\beta=(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{e}$.
+\item \textbf{Day 5:} The sandwich formula with general $\bm{D}$; homoskedastic simplification; Gauss-Markov proof that $\sigma^2(\bm{X}'\bm{X})^{-1}$ is the smallest possible variance.
+\item \textbf{Day 5 (GLS):} $\Var(\hat{\bm\beta}_{GLS})=\sigma^2(\bm{X}'\bm\Sigma^{-1}\bm{X})^{-1}$, the efficiency lower bound.
+\item \textbf{Day 6:} Different choices of diagonal matrix $\bm{D}$ in the sandwich formula (e.g., $\diag(\hat{e}_i^2)$, $\diag(\hat{e}_i^2/(1-h_{ii}))$) yield different variance estimators.
+\end{itemize}
+
+\subsection{Diagonal Matrices}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$\bm{D}=\diag(d_1,\ldots,d_n)$ has $d_i$ on the diagonal and 0s elsewhere.
+\begin{itemize}[nosep]
+\item $\bm{D}\bm{x}$ scales each element: $(\bm{Dx})_i=d_i x_i$.
+\item $\bm{D}^{-1}=\diag(1/d_1,\ldots,1/d_n)$ (if all $d_i\neq 0$).
+\item $\bm{X}'\bm{D}\bm{X}=\sum_{i=1}^n d_i\bm{x}_i\bm{x}_i'$.
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 5:} $\bm{D}=\diag(\sigma_1^2,\ldots,\sigma_n^2)$ in the heteroskedastic variance formula.
+\item \textbf{Day 4:} $\diag((1-h_{11})^{-1},\ldots,(1-h_{nn})^{-1})$ arises from inverting diagonal entries of $\bm{I}-\bm{P}$.
+\item \textbf{Day 6:} Block-diagonal structure $\bm{\Sigma}=\text{blockdiag}(\bm{\Sigma}_1,\ldots,\bm{\Sigma}_G)$ arises when observations are independent across groups but correlated within.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Spectral Decomposition and Matrix Square Roots}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+Any symmetric PD matrix $\bm\Sigma$ can be decomposed as:
+$$\bm\Sigma = \bm{C}\bm\Lambda\bm{C}' \quad\text{where}\quad \bm\Lambda=\diag(\lambda_1,\ldots,\lambda_n),\quad \bm{C}'\bm{C}=\bm{I}$$
+$\bm{C}$ is the matrix of orthonormal eigenvectors; $\bm\Lambda$ contains the eigenvalues.\\[4pt]
+The matrix square root and its inverse:
+$$\bm\Sigma^{1/2} = \bm{C}\bm\Lambda^{1/2}\bm{C}', \qquad \bm\Sigma^{-1/2} = \bm{C}\bm\Lambda^{-1/2}\bm{C}'$$
+Key property: $\bm\Sigma^{-1/2}\bm\Sigma\,\bm\Sigma^{-1/2} = \bm{I}$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 5 (GLS):} The transformation $\tilde{\bm{y}}=\bm\Sigma^{-1/2}\bm{y}$, $\tilde{\bm{X}}=\bm\Sigma^{-1/2}\bm{X}$ converts a heteroskedastic model into a homoskedastic one. OLS on the transformed data gives GLS:
+$$\hat{\bm\beta}_{GLS} = (\bm{X}'\bm\Sigma^{-1}\bm{X})^{-1}\bm{X}'\bm\Sigma^{-1}\bm{y}$$
+\item \textbf{Day 5:} The efficiency lower bound proof transforms any linear estimator through $\bm\Sigma^{-1/2}$ and then applies Gauss-Markov in the spherical world.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The Normal Distribution and Linear Transformations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+If $\bm{y}\sim N(\bm\mu,\bm\Sigma)$ and $\bm{z}=\bm{g}+\bm{H}\bm{y}$ where $\bm{H}$ has full row rank, then:
+$$\bm{z}\sim N(\bm{g}+\bm{H}\bm\mu,\;\bm{H}\bm\Sigma\bm{H}')$$
+Special case: if $\bm{y}\sim N(\bm{X}\bm\beta,\;\sigma^2\bm{I})$, then $\hat{\bm\beta}=(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{y}$ gives:
+$$\hat{\bm\beta}\sim N(\bm\beta,\;\sigma^2(\bm{X}'\bm{X})^{-1})$$
+Under joint normality, uncorrelated $\Rightarrow$ independent.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 7:} The distribution of $\hat{\bm\beta}$ is derived as a linear transformation of the multivariate normal $\bm{y}$.
+\item \textbf{Day 7:} Independence of $\hat{\bm\beta}$ and $\hat{\bm{e}}$ (they are jointly normal and uncorrelated because $\Cov(\hat{\bm\beta}-\bm\beta,\hat{\bm{e}})=\sigma^2(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{M}=\bm{0}$). This independence is what makes the $t$-statistic work.
+\item \textbf{Day 7:} Conditional distributions of multivariate normals are obtained via block partitioning of $\bm\mu$ and $\bm\Sigma$; the conditional mean is linear in the conditioning variable.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Summary: Concepts by Lecture Day}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{center}
+\small
+\begin{tabular}{lp{10cm}}
+\toprule
+\textbf{Lecture} & \textbf{Linear Algebra Concepts Used}\\
+\midrule
+Day 1 (Review) & Vectors, inner product, orthogonality; matrix multiplication, transpose; design matrix $\bm{X}$; matrix inverse; positive definiteness; quadratic forms; column space, span, basis, dimension; projection $\bm{P}$ and annihilator $\bm{M}$; idempotent matrices; eigenvalues; trace and rank; degrees of freedom as $\dim(\col(\bm{X})^\perp)$\\[6pt]
+Day 2 (CEF/BLP) & $\bm{Q}_{XX}=\mathbb{E}[\bm{XX}']$ and its inverse; partitioned $\bm{Q}$ matrices; Schur complement for multivariate regression\\[6pt]
+Day 3 (OLS) & Expanding $(\bm{y}-\bm{X}\bm\beta)'(\bm{y}-\bm{X}\bm\beta)$; projection and annihilator matrices; idempotent simplifications ($\bm{M}'\bm{M}=\bm{M}$); trace trick ($\mathbb{E}[\bm{x}'\bm{A}\bm{x}]=\tr(\bm{A}\bm\Sigma)$); orthogonal decomposition ($\bm{y}=\hat{\bm{y}}+\hat{\bm{e}}$)\\[6pt]
+Day 4 (Sensitivity) & Partitioned inverse (Schur complement); block matrix multiplication; diagonal entries of $\bm{P}$ ($h_{ii}$)\\[6pt]
+Day 5 (GLS) & Sandwich formula ($\bm{A}\bm\Sigma\bm{A}'$); diagonal matrices; PSD matrix ordering ($\bm{C}'\bm{C}\geq 0$); spectral decomposition; matrix square root $\bm\Sigma^{-1/2}$\\[6pt]
+Day 6 (Heteroskedasticity) & Weighted quadratic forms ($\bm{X}'\bm{D}\bm{X}$); block-diagonal matrices; diagonal scaling\\[6pt]
+Day 7 (MLE/Normal) & Multivariate normal distribution; linear transformations of normals; independence via uncorrelatedness under joint normality; quadratic forms in normal vectors ($\chi^2$ from idempotent matrices)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

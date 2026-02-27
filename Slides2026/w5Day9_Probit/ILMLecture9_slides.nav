@@ -1,0 +1,80 @@
+\headcommand {\slideentry {0}{0}{1}{1/1}{}{0}}
+\headcommand {\beamer@framepages {1}{1}}
+\headcommand {\beamer@sectionpages {1}{1}}
+\headcommand {\beamer@subsectionpages {1}{1}}
+\headcommand {\sectionentry {1}{Binary Outcomes and the Linear Probability Model}{2}{Binary Outcomes and the Linear Probability Model}{0}}
+\headcommand {\slideentry {1}{0}{1}{2/5}{}{0}}
+\headcommand {\beamer@framepages {2}{5}}
+\headcommand {\slideentry {1}{0}{2}{6/9}{}{0}}
+\headcommand {\beamer@framepages {6}{9}}
+\headcommand {\slideentry {1}{0}{3}{10/12}{}{0}}
+\headcommand {\beamer@framepages {10}{12}}
+\headcommand {\slideentry {1}{0}{4}{13/15}{}{0}}
+\headcommand {\beamer@framepages {13}{15}}
+\headcommand {\beamer@sectionpages {2}{15}}
+\headcommand {\beamer@subsectionpages {2}{15}}
+\headcommand {\sectionentry {2}{The Probit Model}{16}{The Probit Model}{0}}
+\headcommand {\slideentry {2}{0}{1}{16/20}{}{0}}
+\headcommand {\beamer@framepages {16}{20}}
+\headcommand {\slideentry {2}{0}{2}{21/25}{}{0}}
+\headcommand {\beamer@framepages {21}{25}}
+\headcommand {\slideentry {2}{0}{3}{26/30}{}{0}}
+\headcommand {\beamer@framepages {26}{30}}
+\headcommand {\slideentry {2}{0}{4}{31/32}{}{0}}
+\headcommand {\beamer@framepages {31}{32}}
+\headcommand {\beamer@sectionpages {16}{32}}
+\headcommand {\beamer@subsectionpages {16}{32}}
+\headcommand {\sectionentry {3}{Maximum Likelihood Estimation}{33}{Maximum Likelihood Estimation}{0}}
+\headcommand {\slideentry {3}{0}{1}{33/36}{}{0}}
+\headcommand {\beamer@framepages {33}{36}}
+\headcommand {\slideentry {3}{0}{2}{37/40}{}{0}}
+\headcommand {\beamer@framepages {37}{40}}
+\headcommand {\slideentry {3}{0}{3}{41/43}{}{0}}
+\headcommand {\beamer@framepages {41}{43}}
+\headcommand {\slideentry {3}{0}{4}{44/47}{}{0}}
+\headcommand {\beamer@framepages {44}{47}}
+\headcommand {\slideentry {3}{0}{5}{48/49}{}{0}}
+\headcommand {\beamer@framepages {48}{49}}
+\headcommand {\beamer@sectionpages {33}{49}}
+\headcommand {\beamer@subsectionpages {33}{49}}
+\headcommand {\sectionentry {4}{Asymptotic Distribution}{50}{Asymptotic Distribution}{0}}
+\headcommand {\slideentry {4}{0}{1}{50/53}{}{0}}
+\headcommand {\beamer@framepages {50}{53}}
+\headcommand {\slideentry {4}{0}{2}{54/56}{}{0}}
+\headcommand {\beamer@framepages {54}{56}}
+\headcommand {\slideentry {4}{0}{3}{57/62}{}{0}}
+\headcommand {\beamer@framepages {57}{62}}
+\headcommand {\slideentry {4}{0}{4}{63/67}{}{0}}
+\headcommand {\beamer@framepages {63}{67}}
+\headcommand {\beamer@sectionpages {50}{67}}
+\headcommand {\beamer@subsectionpages {50}{67}}
+\headcommand {\sectionentry {5}{From Probit to Measurement Models}{68}{From Probit to Measurement Models}{0}}
+\headcommand {\slideentry {5}{0}{1}{68/71}{}{0}}
+\headcommand {\beamer@framepages {68}{71}}
+\headcommand {\slideentry {5}{0}{2}{72/75}{}{0}}
+\headcommand {\beamer@framepages {72}{75}}
+\headcommand {\slideentry {5}{0}{3}{76/80}{}{0}}
+\headcommand {\beamer@framepages {76}{80}}
+\headcommand {\slideentry {5}{0}{4}{81/85}{}{0}}
+\headcommand {\beamer@framepages {81}{85}}
+\headcommand {\beamer@sectionpages {68}{85}}
+\headcommand {\beamer@subsectionpages {68}{85}}
+\headcommand {\sectionentry {6}{Implementation in R}{86}{Implementation in R}{0}}
+\headcommand {\slideentry {6}{0}{1}{86/87}{}{0}}
+\headcommand {\beamer@framepages {86}{87}}
+\headcommand {\slideentry {6}{0}{2}{88/90}{}{0}}
+\headcommand {\beamer@framepages {88}{90}}
+\headcommand {\slideentry {6}{0}{3}{91/92}{}{0}}
+\headcommand {\beamer@framepages {91}{92}}
+\headcommand {\beamer@sectionpages {86}{92}}
+\headcommand {\beamer@subsectionpages {86}{92}}
+\headcommand {\sectionentry {7}{Unifying Perspective and Looking Ahead}{93}{Unifying Perspective and Looking Ahead}{0}}
+\headcommand {\slideentry {7}{0}{1}{93/94}{}{0}}
+\headcommand {\beamer@framepages {93}{94}}
+\headcommand {\slideentry {7}{0}{2}{95/96}{}{0}}
+\headcommand {\beamer@framepages {95}{96}}
+\headcommand {\beamer@partpages {1}{96}}
+\headcommand {\beamer@subsectionpages {93}{96}}
+\headcommand {\beamer@sectionpages {93}{96}}
+\headcommand {\beamer@documentpages {96}}
+\headcommand {\gdef \inserttotalframenumber {27}}

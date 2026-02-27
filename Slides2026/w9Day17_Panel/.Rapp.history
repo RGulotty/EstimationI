@@ -1,0 +1,139 @@
+ANES<-read_dta("~/Dropbox/LinearModels/Homeworks/Homework4/ANES2008_excpt.dta")#
+#
+ANES<-ANES%>%mutate(demft=obamaft)#
+#
+ANES04<-read_dta("~/Dropbox/LinearModels/anes2004TSdta/anes2004TS.dta")#
+#
+ANES04<-ANES04%>%mutate(black=ifelse(V043299==10,1,0), demft=V043039)
+library(haven)#
+library(tidyverse)
+ANES<-read_dta("~/Dropbox/LinearModels/Homeworks/Homework4/ANES2008_excpt.dta")#
+#
+ANES<-ANES%>%mutate(demft=obamaft)#
+#
+ANES04<-read_dta("~/Dropbox/LinearModels/anes2004TSdta/anes2004TS.dta")#
+#
+ANES04<-ANES04%>%mutate(black=ifelse(V043299==10,1,0), demft=V043039)
+head(ANES)
+ANES04$V043249a
+2004-ANES04$V043249a
+ANES04<-ANES04%>%mutate(black=ifelse(V043299==10,1,0), demft=V043039, age=ifelse(abs(2004-V043249a)<100,V043249a, NA) )
+ANES0408<-cbind(ANES, ANES04)
+ANES04<-ANES04%>%mutate(black=ifelse(V043299==10,1,0), demft=V043039, age=ifelse(abs(2004-V043249a)<100,V043249a, NA) )%>%select(black, obamaft, age)
+ANES04<-ANES04%>%mutate(black=ifelse(V043299==10,1,0), demft=V043039, age=ifelse(abs(2004-V043249a)<100,V043249a, NA) )%>%select(black, demft, age)
+ANES0408<-cbind(ANES, ANES04)
+ANES0408<-rbind(ANES, ANES04)
+ANES<-read_dta("~/Dropbox/LinearModels/Homeworks/Homework4/ANES2008_excpt.dta")#
+#
+ANES<-ANES%>%mutate(demft=obamaft)%>%select(black, demft, age)
+ANES04<-read_dta("~/Dropbox/LinearModels/anes2004TSdta/anes2004TS.dta")
+ANES04<-ANES04%>%mutate(black=ifelse(V043299==10,1,0), demft=V043039, age=ifelse(abs(2004-V043249a)<100,V043249a, NA) )%>%select(black, demft, age)
+ANES0408<-rbind(ANES, ANES04)
+library(haven)#
+library(tidyverse)#
+#
+#The study interviewed respondents in a pre-election survey that was conducted between August 18, 2020 and November 3, 2020. Election day was November 3, 2020. The study re-interviewed as many as possible of the same respondents in a post-election survey that was conducted between November 8, 2020 and January 4, 2021. #
+ANES<-read_dta("~/Dropbox/LinearModels/Homeworks/Homework4/ANES2008_excpt.dta")#
+#
+ANES<-ANES%>%mutate(y08=0,demft=obamaft)%>%select(y08,black, demft, age)#
+#
+ANES04<-read_dta("~/Dropbox/LinearModels/anes2004TSdta/anes2004TS.dta")#
+ANES04<-ANES04%>%mutate(y08=0,black=ifelse(V043299==10,1,0), demft=V043039, age=ifelse(abs(2004-V043249a)<100,V043249a, NA) )%>%select(y08,black, demft, age)#
+ANES0408<-rbind(ANES, ANES04)#
+#
+lm(demft~y08+black+age,data=ANES0408)
+library(haven)#
+library(tidyverse)#
+#
+#The study interviewed respondents in a pre-election survey that was conducted between August 18, 2020 and November 3, 2020. Election day was November 3, 2020. The study re-interviewed as many as possible of the same respondents in a post-election survey that was conducted between November 8, 2020 and January 4, 2021. #
+ANES<-read_dta("~/Dropbox/LinearModels/Homeworks/Homework4/ANES2008_excpt.dta")#
+#
+ANES<-ANES%>%mutate(y08=1,demft=obamaft)%>%select(y08,black, demft, age)#
+#
+ANES04<-read_dta("~/Dropbox/LinearModels/anes2004TSdta/anes2004TS.dta")#
+ANES04<-ANES04%>%mutate(y08=0,black=ifelse(V043299==10,1,0), demft=V043039, age=ifelse(abs(2004-V043249a)<100,V043249a, NA) )%>%select(y08,black, demft, age)#
+ANES0408<-rbind(ANES, ANES04)#
+#
+lm(demft~y08+black+age,data=ANES0408)
+restricted<-lm(demft~y08+black+age,data=ANES0408)
+unrestricted<-lm(demft~y08*black+age,data=ANES0408)
+anova(unrestricted, restricted)
+summary(unrestricted)
+stargazer(unrestricted, restricted)
+library(stargazer)
+stargazer(unrestricted, restricted)
+unrestricted<-lm(demft~y08+I(1-y08)+I(1-y08)*blacky08*black+age-1,data=ANES0408)
+unrestricted<-lm(demft~y08+I(1-y08)+I(1-y08)*blacky+age-1,data=ANES0408)
+unrestricted<-lm(demft~y08+I(1-y08)+I(1-y08)*black+y08*black+age-1,data=ANES0408)
+unrestricted<-lm(demft~y08+I(1-y08)+I(1-y08)*black+y08*black+age-1,data=ANES0408)
+restricted<-lm(demft~y08+I(1-y08)+I(1-y08)*black+y08*black+age-1,data=ANES0408)
+unrestricted<-lm(demft~y08+I(1-y08)+I(1-y08)*black+y08*black+black+age-1,data=ANES0408)
+restricted<-lm(demft~y08+I(1-y08)+I(1-y08)*black+y08*black+black+age-1,data=ANES0408)
+stargazer(unrestricted, restricted)
+restricted<-lm(demft~y08+I(1-y08)+black+age-1,data=ANES0408)
+stargazer(unrestricted, restricted)
+unrestricted<-lm(demft~y08+I(1-y08)+I(1-y08)*black+y08*black+age-1,data=ANES0408)
+restricted<-lm(demft~y08+I(1-y08)+black+age-1,data=ANES0408)
+stargazer(unrestricted, restricted)
+summary(unrestricted)
+unrestricted<-lm(demft~y08+I(1-y08)+I(1-y08):black+y08:black+age-1,data=ANES0408)
+summary(unrestricted)
+restricted<-lm(demft~y08+I(1-y08)+black+age-1,data=ANES0408)
+stargazer(unrestricted, restricted)
+unrestricted<-lm(demft~y08+I(1-y08)+black+I(1-y08):black+y08:black+age-1,data=ANES0408)
+restricted<-lm(demft~y08+I(1-y08)+black+age-1,data=ANES0408)
+stargazer(unrestricted, restricted, digits=1)
+unrestricted<-lm(demft~y08+I(1-y08)+I(1-y08):black+y08:black+age-1,data=ANES0408)
+stargazer(unrestricted, restricted, digits=1)
+summary(lm(demft~y08+y08*black+age,data=ANES0408))
+ANES0408$demft
+ANES04<-ANES04%>%mutate(y08=0,black=ifelse(V043299==10,1,0), demft=ifelse(V043039<101&V043039>0,V043039, NA) , age=ifelse(abs(2004-V043249a)<100&V043249a>0,V043249a, NA) )%>%select(y08,black, demft, age)
+library(haven)#
+library(tidyverse)#
+#
+#The study interviewed respondents in a pre-election survey that was conducted between August 18, 2020 and November 3, 2020. Election day was November 3, 2020. The study re-interviewed as many as possible of the same respondents in a post-election survey that was conducted between November 8, 2020 and January 4, 2021. #
+ANES<-read_dta("~/Dropbox/LinearModels/Homeworks/Homework4/ANES2008_excpt.dta")#
+#
+ANES<-ANES%>%mutate(y08=1,demft=obamaft)%>%select(y08,black, demft, age)#
+#
+ANES04<-read_dta("~/Dropbox/LinearModels/anes2004TSdta/anes2004TS.dta")#
+ANES04<-ANES04%>%mutate(y08=0,black=ifelse(V043299==10,1,0), demft=ifelse(V043039<101&V043039>0,V043039, NA) , age=ifelse(abs(2004-V043249a)<100&V043249a>0,V043249a, NA) )%>%select(y08,black, demft, age)#
+ANES0408<-rbind(ANES, ANES04)#
+#
+summary(lm(demft~y08+y08*black+age,data=ANES0408))#
+#
+unrestricted<-lm(demft~y08+I(1-y08)+I(1-y08):black+y08:black+age-1,data=ANES0408)
+restricted<-lm(demft~y08+I(1-y08)+black+age-1,data=ANES0408)
+stargazer(unrestricted, restricted, digits=1)
+anova(unrestricted, restricted)
+ANES0408$Demft
+ANES0408$demft
+mean(ANES0408$demft)
+mean(ANES0408$demft,na.rm=T)
+ANES0408%>%group_by(y08)%>%summarise(mean(demft,na.rm=T)
+)
+summary(lm(demft~y08+y08*black+age,data=ANES0408))
+300*.04
+30*.04
+summary(lm(demft~y08+y08*black+age,data=ANES0408))
+summary(ANES0408$demft)
+summary(lm(demft~y08,data=ANES0408))
+summary(lm(demft~age,data=ANES0408))
+summary(lm(demft~age+black,data=ANES0408))
+summary(lm(demft~y08age+black,data=ANES0408))
+summary(lm(demft~y08+age+black,data=ANES0408))
+summary(lm(demft~y08+age,data=ANES0408))
+ANES0408$age
+ANES04<-ANES04%>%mutate(y08=0,black=ifelse(V043299==10,1,0), demft=ifelse(V043039<101&V043039>0,V043039, NA) , age=ifelse(abs(2004-V043249a)<100&V043249a>0,2004-V043249a, NA) )%>%select(y08,black, demft, age)
+ANES04<-ANES04%>%mutate(y08=0, black=ifelse(V043299==10,1,0), demft=ifelse(V043039<101&V043039>0,V043039, NA) , age=ifelse(abs(2004-V043249a)<100&V043249a>0, 2004-V043249a, NA) )%>%select(y08,black, demft, age)
+ANES04$V043299
+ANES04<-read_dta("~/Dropbox/LinearModels/anes2004TSdta/anes2004TS.dta")
+ANES04<-ANES04%>%mutate(y08=0, black=ifelse(V043299==10,1,0), demft=ifelse(V043039<101&V043039>0,V043039, NA) , age=ifelse(abs(2004-V043249a)<100&V043249a>0, 2004-V043249a, NA) )%>%select(y08,black, demft, age)
+ANES0408<-rbind(ANES, ANES04)
+summary(lm(demft~y08+y08*black+age,data=ANES0408))
+summary(lm(demft~y08+age,data=ANES0408))
+summary(ANES0408$demft)
+unrestricted<-lm(demft~y08+I(1-y08)+I(1-y08):black+y08:black+age-1,data=ANES0408)
+restricted<-lm(demft~y08+I(1-y08)+black+age-1,data=ANES0408)
+stargazer(unrestricted, restricted, digits=1)
+anova(unrestricted, restricted)

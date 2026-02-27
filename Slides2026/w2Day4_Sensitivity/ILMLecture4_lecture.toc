@@ -1,0 +1,5 @@
+\beamer@sectionintoc {1}{Partitioned Regression}{2}{0}{1}
+\beamer@sectionintoc {2}{Proof of FWL}{31}{0}{2}
+\beamer@sectionintoc {3}{Leverage}{54}{0}{3}
+\beamer@sectionintoc {4}{Bias}{66}{0}{4}
+\beamer@sectionintoc {5}{Partial $R^2$}{77}{0}{5}

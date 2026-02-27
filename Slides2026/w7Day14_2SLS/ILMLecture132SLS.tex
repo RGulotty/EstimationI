@@ -1,0 +1,300 @@
+
+\documentclass[aspectratio=169]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+
+%  \usetheme{Pittsburgh}
+%\usefonttheme[2]{sans}
+\renewcommand{\familydefault}{cmss}
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+%\usepackage{palatino}
+%\usepackage{cmbright}
+\usepackage{bm}
+\usepackage{listings}
+\useinnertheme{rectangles}
+}
+\usepackage{amsmath}
+\usepackage{tcolorbox}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\usepackage{array}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=red}
+\usepackage{tcolorbox}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+%\usepackage[all]{xy}
+
+\usepackage{tikz}
+\usepackage{lipsum}
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+ 
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models Lecture 13: IV}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+
+\begin{document}
+
+\begin{frame}
+\maketitle
+\end{frame}
+
+\begin{frame}{2SLS and IV}
+\begin{itemize}
+\item iv\_robust(Y $\sim$ $D + X | Z + X$, data = dat)
+\item IV formula:
+ $$\hat{\beta}_{IV}=(Z'X)^{-1}Z'y$$
+\item Two stage least squares:
+\begin{itemize}
+\item Suppose in the first stage we regress 
+$$X=Z\gamma+v$$
+\item In the second stage, we use $\hat{X}=Z\hat{\gamma}=Z(Z'Z)^{-1}Z'X=P_ZX$,
+$$\hat{\beta}_{2SLS}=(\hat{X}'\hat{X})^{-1}\hat{X}'y$$
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Equivalence Between 2SLS and IV}
+\begin{itemize}
+\item 2SLS is exactly identical to IV when $l=k$
+\begin{align*}
+\hat{\beta}_{2SLS}&=(\hat{X}'\hat{X})^{-1}\hat{X}'y\\
+&=(X'Z(Z'Z)^{-1}Z'Z(Z'Z)^{-1}Z'X)^{-1}X'Z(Z'Z)^{-1}Z'y\\
+&=(X'Z(Z'Z)^{-1}Z'X)^{-1}X'Z(Z'Z)^{-1}Z'y\\
+&=(Z'X)^{-1}(Z'Z)(X'Z)^{-1}X'Z(Z'Z)^{-1}Z'y \tag{$(ABC)^{-1}=C^{-1}B^{-1}A^{-1}$}\\
+&=(Z'X)^{-1}(Z'Z)(Z'Z)^{-1}Z'y\\
+&=(Z'X)^{-1}Z'y=\hat{\beta}_{IV}
+\end{align*}
+\end{itemize}
+\end{frame}
+
+
+\section{Control Function}
+
+\begin{frame}{Control Function Regression}
+\begin{itemize}
+\item Assume that $X_2$ is endogenous:
+$$Y=\bm{x}_1'\beta_1+\bm{x}_2'\beta_2+e$$
+$$\bm{x}_2=\Gamma'_{12}\bm{z}_1+\Gamma'_{22}\bm{z}_2+u_2$$
+\item The control function approach directly models the error:
+$$e=u_2'\alpha+v$$
+$$\alpha=(E[u_2u_2'])^{-1}E[u_2e]$$
+$$E[u_2v]=0$$
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Control Function Regression}
+\begin{itemize}
+
+\item We then plug this in to the original structural form equation, controlling for the error.
+\begin{align*}
+Y&=X_1'\beta_1+X_2'\beta_2+e\\
+Y&=X_1'\beta_1+X_2'\beta_2+u_2'\alpha+v\\
+E[X_1v]&=0\\
+E[X_2v]&=0\\
+E[u_2v]&=0
+\end{align*}
+\item After we control for $u_2$, the error is uncorrelated with X.
+\item We estimate this new control with the reduced form residual:
+$$\hat{u}_{2i}=X_{2i}-\hat{\Gamma}'_{12}Z_1+\hat{\Gamma}'_{22}Z_2$$
+\item It is like subtracting off the endogenous part.
+$$\bm{Y}=\bm{X}\hat{\beta}+\bm{\hat{U}}_e\hat{\alpha}+\hat{v}$$
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Challenges with IV}
+\begin{itemize}
+\item The IV estimator is among the most common tools of econometrics.
+\item However, it has several weaknesses.
+\begin{itemize}
+\item Imprecision
+\item Small sample Bias
+\item Sensitivity to Weak Instruments
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Problems with IV estimator: Imprecision}
+\begin{itemize}
+\item Suppose Z and X are mean 0, $y=X\beta+e$,
+\begin{align*}
+Z'X&=X'Z=\sum z_ix_i=n*cov(z,x)\\
+Z'Z&=\sum z_i^2=n*var(z)\\
+X'X&=\sum x_i^2=n*var(x)\\
+\hat{\beta}_{IV}&=(Z'X)^{-1}Z'y\\
+\hat{\beta}_{OLS}&=(X'X)^{-1}X'y\\
+Avar(\hat{\beta}_{OLS})&=\sigma_e^2(X'X)^{-1}\\
+Avar(\hat{\beta}_{IV})&=\sigma_e^2(Z'X)^{-1}Z'Z(X'Z)^{-1}
+\end{align*}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Problems with IV estimator: Imprecision}
+\begin{align*}
+Avar(\hat{\beta}_{OLS})&=\sigma_e^2(X'X)^{-1}=\frac{\sigma_e^2}{n}\frac{1}{var(x)}\\
+Avar(\hat{\beta}_{IV})&=\sigma_e^2(Z'X)^{-1}Z'Z(X'Z)^{-1}=\frac{\sigma_e^2}{n^2}\frac{n*var(z)}{cov(x,z)^2}\\
+&=\frac{\sigma_e^2}{n}\frac{1}{var(x)}\frac{var(x)var(z)}{cov(x,z)^2}\\
+&=\frac{\sigma_e^2}{n}\frac{1}{var(x)}\frac{1}{\rho^2_{xz}}\\
+&=Avar(\hat{\beta}_{OLS})\frac{1}{\rho^2_{xz}}
+\end{align*}
+\begin{itemize}
+\item As $\rho^2_{xz}\rightarrow 0$, $Avar(\hat{\beta}_{IV})\rightarrow \infty$
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Problems with IV estimator: Bias}
+\begin{itemize}
+\item IV is often is neither biased nor unbiased because it does not even have an expectation.
+\item Kiviet has shown that the IV estimator has M moments, the number of overidentifying restrictions.  If $q=0$, IV has no expectation.
+\end{itemize}
+\begin{align*}
+y&=X\beta+e\\
+X&=Z\pi+v\\
+\hat{\beta}_{IV}&=(X'P_ZX)^{-1}X'P_zy\\
+&=\beta+(X'P_ZX)^{-1}X'P_ze\\
+&=\beta+(X'P_ZX)^{-1}(\pi'Z'+v')P_ze\\
+&=\beta+(X'P_ZX)^{-1}(\pi'Z'+v')P_ze\\
+&=\beta+(X'P_ZX)^{-1}\pi'Z'P_ze+(X'P_ZX)^{-1}v'P_ze\\
+&=\beta+(X'P_ZX)^{-1}\pi'Z'e+(X'P_ZX)^{-1}v'P_ze
+\end{align*}
+\end{frame}
+
+
+
+\begin{frame}{Form of small sample bias}
+\begin{align*}
+E(\hat{\beta}_{IV})-\beta&\approx E(X'P_ZX)^{-1}E(\pi'Z'e)+E(X'P_ZX)^{-1}E(v'P_ze)\\
+&=E(X'P_ZX)^{-1}\pi'E(Z'e)+E(X'P_ZX)^{-1}E(v'P_ze)\\
+&=(E(X'P_ZX))^{-1}E(v'P_ze)\\
+&=(E(\pi'Z'+v')P_z(Z\pi+v)))^{-1}E(v'P_ze)\\
+&=(E(\pi'Z'Z\pi+\pi'Z'v+v'Z\pi+v'P_zv))^{-1}E(v'P_ze)\\
+&=(E(\pi'Z'Z\pi)+E(v'P_zv))^{-1}E(v'P_ze) \tag{b/c $E(Z'e)=E(Z'v)=0$}\\
+&=(E(\pi'Z'Z\pi)+E(v'P_zv))^{-1}\sigma^2_{ev} p\\
+&=(E(\pi'Z'Z\pi)+\sigma_{v}^2p)^{-1}\sigma^2_{ev} p\\
+&=\frac{1}{\left(\frac{E(\pi'Z'Z\pi)/p}{\sigma^2_v}+1\right)}\frac{\sigma_{ev}^2}{\sigma_v^2}
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{F-test}
+\begin{align*}
+E(\hat{\beta}_{IV})-\beta&\approx \frac{1}{\left(\frac{E(\pi'Z'Z\pi)/p}{\sigma^2_v}+1\right)}\frac{\sigma_{ev}^2}{\sigma_v^2}
+&\approx \frac{1}{\left(1+F_{p,n-p}\right)}\frac{\sigma_{ev}^2}{\sigma_v^2}
+\end{align*}
+\begin{itemize}
+\item F is the test where the null is that all instrument coefficients are 0.
+\item The bias of IV only goes away if $F\rightarrow \infty$
+\item The bias of IV is the OLS bias as $F\rightarrow 0$.
+\item Adding useless instruments increases p, which decreases F and increases the bias.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Weak instruments}
+Suppose we have a single $x$ and a single instrument $z$.  An instrument is weak if $\rho_{zx}$ is small.
+\tiny
+\begin{align*}
+plim \hat{\beta}_{OLS}&=plim \frac{cov(x,y)}{var(x)}=plim \frac{cov(x,\alpha+\beta+e)}{var(x)}\\
+ &=\beta+plim \frac{cov(x,e)}{var(x)}=\beta+plim \frac{cov(x,e)}{\sqrt{var(x)}\sqrt{var(e)}}\frac{\sqrt{var(e)}}{\sqrt{var(x)}}\\
+  &=\beta+\rho_{xe}\frac{\sigma_e}{\sigma_x}\\
+  plim \hat{\beta}_{IV}&=plim \frac{cov(x,\alpha+\beta+e)}{cov(z,x)}\\
+     &=\beta+plim \frac{cov(z,e)}{cov(z,x)}=\beta+plim \frac{\frac{cov(z,e)}{\sqrt{var(x)}\sqrt{var(e)}}}{\frac{cov(z,x)}{\sqrt{var(x)}\sqrt{var(z)}}}\frac{\sqrt{var(e)}}{\sqrt{var(x)}}\\
+ &=\beta+\frac{\rho_{ze}}{\rho_{zx}}\frac{\sigma_e}{\sigma_x}\\
+ &=\beta+\frac{\rho_{ze}}{\rho_{zx}\rho_{xe}}\rho_{xe}\frac{\sigma_e}{\sigma_x}=\beta+\frac{\rho_{ze}}{\rho_{zx}\rho_{xe}}ABias(\hat{\beta}_{OLS})
+   \end{align*}
+ \end{frame}
+ 
+\begin{frame}{Weak/Bad instruments are worse than OLS}
+$$\frac{ABias(\hat{\beta}_{OLS})}{ABias(\hat{\beta}_{IV})}>1\rightarrow \frac{\rho_{ze}}{\rho_{zx}\rho_{xe}}> 1$$
+If $\frac{\rho_{ze}}{\rho_{zx}\rho_{xe}}\geq 1$, then IV is more biased than OLS. \\
+
+Suppose $\rho_{xu}=.5$, so X is super endogenous, $Z$ is barely endogenous: $\rho_{zu}=0.01$.\\
+Small $\rho_{zx}=0.019$ gives $\frac{ABias(\hat{\beta}_{OLS})}{ABias(\hat{\beta}_{IV})}=1.052$.
+\end{frame}
+
+\begin{frame}{Testing power of instruments}
+$$\frac{ABias(\hat{\beta}_{OLS})}{ABias(\hat{\beta}_{IV})}\approx \frac{1}{F}$$
+F statistic of 100 means IV is 1\% as biased as OLS.
+\end{frame}
+
+\begin{frame}{Testing endogeneity via Durbin-Hausman-Wu test}
+\begin{itemize}
+\item If X is exogenous, then both OLS and IV are consistent, but OLS is BLUE.
+\item Asymptotically, the difference between OLS and IV should converge to zero.
+$$H=(\hat{\beta}_{IV}-\hat{\beta}_{OLS})'[Avar(\hat{\beta}_{IV})-Avar(\hat{\beta}_{OLS})]^{-1}(\hat{\beta}_{IV}-\hat{\beta}_{OLS})\sim \chi^2_{dim(\beta)}$$
+\item Rejecting null says that OLS and IV are not close to one another, so either X is endogneous or Z is an invalid instrument. 
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Application: Heterogenous Returns to Education}
+\begin{itemize}
+\item Consider the canonical returns to education model:
+$$lwage_i=\bm{z}_{i1}\bm{\delta}_1+g_{i1}educ_i+u_{i1}$$
+\item The returns to schooling for the population is $\gamma_i=E[g_{i1}]$
+$$g_{i1}=\gamma_{1}+v_{i1}$$
+\item Plugging in:
+$$lwage_i=\bm{z}_{i1}\bm{\delta}_1+\gamma_{1}educ_i+v_{i1}educ_i+u_{i1}$$
+$$educ_i=\bm{z}_i\pi_2+v_{i2}$$
+Control function approach assumes that unobservables are linearly related to $v_{i2}$
+\item We then proceed estimation by controlling for $\hat{v}_{i2}$ and the interaction between $\hat{educ}_i$ and the estimated $\hat{v}_{i2}$.
+\end{itemize}
+\end{frame}
+\end{document}
+

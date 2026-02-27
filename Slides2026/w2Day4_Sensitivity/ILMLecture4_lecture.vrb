@@ -1,0 +1,12 @@
+\frametitle{Step 2: Running the Sensitivity Analysis}
+\begin{lstlisting}
+library(sensemakr)
+
+# Sensitivity analysis on the FULL model
+sensitivity <- sensemakr(model_full, treatment = "D",
+                         benchmark_covariates = "Z")
+summary(sensitivity)
+plot(sensitivity)
+\end{lstlisting}
+\vspace{1ex}
+\textbf{Key question:} How strong would an \emph{unobserved} confounder need to be---relative to the observed confounder $Z$---to explain away the estimated effect of $D$?

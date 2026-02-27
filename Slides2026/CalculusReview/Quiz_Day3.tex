@@ -1,0 +1,117 @@
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{PLSC 30700}
+\rhead{Calculus Warm-Up: Day 3}
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{center}
+{\Large\textbf{Calculus Warm-Up Quiz --- Day 3}}\\[4pt]
+{\large Estimation of the Linear Projection Model}\\[4pt]
+\textit{Complete before lecture. 10 minutes.}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Name:} \hrulefill
+
+\bigskip
+
+Today we derive the OLS estimator using matrix calculus: differentiating linear and quadratic forms.  We also verify the second-order condition. This quiz reviews the scalar versions of these skills.
+
+\bigskip
+
+\begin{enumerate}[label=\textbf{\arabic*.}, itemsep=12pt]
+
+\item \textbf{Expanding a Quadratic.} Let $f(\beta) = (y - x\beta)^2$ where $y$ and $x$ are known constants.
+\begin{enumerate}[label=(\alph*)]
+\item Expand $f(\beta)$ fully.
+\vspace{0.5in}
+\item Identify the constant, linear, and quadratic terms in $\beta$.
+\vspace{0.5in}
+\end{enumerate}
+
+\item \textbf{Derivative of a Sum of Squares.} Consider $S(\beta) = \sum_{i=1}^3 (y_i - x_i\beta)^2$ with data:
+\begin{center}
+\begin{tabular}{ccc}
+$i$ & $y_i$ & $x_i$\\
+\hline
+1 & 4 & 2\\
+2 & 5 & 3\\
+3 & 7 & 4\\
+\end{tabular}
+\end{center}
+\begin{enumerate}[label=(\alph*)]
+\item Write $S(\beta) = \sum y_i^2 - 2\beta\sum x_iy_i + \beta^2\sum x_i^2$. Compute each sum.
+\vspace{0.8in}
+\item Find $\dfrac{dS}{d\beta}$ and set it to zero. Solve for $\hat\beta$.
+\vspace{0.8in}
+\item Compute $\dfrac{d^2S}{d\beta^2}$. Confirm it is positive.
+\vspace{0.5in}
+\end{enumerate}
+
+\item \textbf{Derivative of Linear and Quadratic Forms (Scalar Versions).}\\
+Let $a$ be a scalar and $z$, $q$ be constants. Compute:
+\begin{enumerate}[label=(\alph*)]
+\item $\dfrac{d}{da}(za) = $
+\vspace{0.3in}
+\item $\dfrac{d}{da}(qa^2) = $
+\vspace{0.3in}
+\item $\dfrac{d}{da}(qa^2 - 2za) = $ \quad Set this to zero and solve for $a$.
+\vspace{0.5in}
+\end{enumerate}
+
+\item \textbf{Matrix Calculus Preview.} In today's lecture, we will differentiate
+$$SSE(\bm\beta) = \bm{y'y} - 2\bm{y'X}\bm\beta + \bm\beta'\bm{X'X}\bm\beta$$
+The matrix calculus rules we will use are:
+\begin{itemize}
+\item $\nabla_{\bm\beta}(\bm{y'X}\bm\beta) = \bm{X'y}$ \quad (linear form $\to$ coefficient vector)
+\item $\nabla_{\bm\beta}(\bm\beta'\bm{X'X}\bm\beta) = 2\bm{X'X}\bm\beta$ \quad (quadratic form, symmetric matrix)
+\end{itemize}
+Using these rules, compute $\nabla_{\bm\beta} SSE(\bm\beta)$ and set it to $\bm{0}$.
+\vspace{1in}
+
+\end{enumerate}
+
+\newpage
+\begin{center}
+{\Large\textbf{Answer Key --- Day 3}}
+\end{center}
+
+\begin{enumerate}[label=\textbf{\arabic*.}, itemsep=8pt]
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $f(\beta) = y^2 - 2xy\beta + x^2\beta^2$
+\item Constant: $y^2$. Linear in $\beta$: $-2xy\beta$. Quadratic in $\beta$: $x^2\beta^2$.
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $\sum y_i^2 = 16+25+49 = 90$. \quad $\sum x_iy_i = 8+15+28 = 51$. \quad $\sum x_i^2 = 4+9+16 = 29$.\\
+So $S(\beta) = 90 - 102\beta + 29\beta^2$.
+\item $S'(\beta) = -102 + 58\beta = 0 \implies \hat\beta = 102/58 = 51/29 \approx 1.759$.
+\item $S''(\beta) = 58 > 0$. Confirmed: the critical point is a minimum.
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $z$
+\item $2qa$
+\item $2qa - 2z = 0 \implies a = z/q$. (This is the scalar version of $\hat\beta = (\bm{X'X})^{-1}\bm{X'y}$.)
+\end{enumerate}
+
+\item
+$\nabla_{\bm\beta} SSE = \bm{0} - 2\bm{X'y} + 2\bm{X'X}\bm\beta = \bm{0}$\\
+$\implies 2\bm{X'X}\bm\beta = 2\bm{X'y}$\\
+$\implies \hat{\bm\beta} = (\bm{X'X})^{-1}\bm{X'y}$
+\end{enumerate}
+
+\end{document}

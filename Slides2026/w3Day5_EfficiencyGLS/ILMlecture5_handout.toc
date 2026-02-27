@@ -1,0 +1,4 @@
+\beamer@sectionintoc {1}{Gauss Markov}{2}{0}{1}
+\beamer@sectionintoc {2}{Method of Moments}{22}{0}{2}
+\beamer@sectionintoc {3}{GLS}{24}{0}{3}
+\beamer@sectionintoc {4}{Residuals}{37}{0}{4}

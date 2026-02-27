@@ -1,0 +1,21 @@
+\frametitle{Connection to ivmte}
+
+Recall from Lecture 14: the \texttt{ivmte} package (Shea \& Torgovitsky) estimates MTE:
+
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+library(ivmte)
+result <- ivmte(
+  data = df,
+  outcome = "regime_support",
+  treatment = "watch_western_tv",
+  instrument = "signal_access",
+  target = "ate",       # or "att", "prte"
+  m0 = ~ u + I(u^2),   # MTE polynomial for control
+  m1 = ~ u + I(u^2),   # MTE polynomial for treated
+  propensity = D ~ signal_access
+)
+\end{lstlisting}
+
+\smallskip
+\textbf{Under the hood, \texttt{ivmte} performs:} nonlinear GMM estimation of MTE parameters, efficient weighting across moment conditions, and overidentification testing (J-test).
+

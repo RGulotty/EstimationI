@@ -1,0 +1,121 @@
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{PLSC 30700}
+\rhead{Calculus Warm-Up: Day 1}
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{center}
+{\Large\textbf{Calculus Warm-Up Quiz --- Day 1}}\\[4pt]
+{\large Review of Probability and Linear Algebra}\\[4pt]
+\textit{Complete before lecture. 10 minutes.}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Name:} \hrulefill
+
+\bigskip
+
+Today we will minimize prediction error using derivatives, compute expectations and marginal densities using integrals, and take gradients to derive OLS. This quiz checks those prerequisite skills.
+
+\bigskip
+
+\begin{enumerate}[label=\textbf{\arabic*.}, itemsep=12pt]
+
+\item \textbf{Power Rule.} Compute the following derivatives.
+\begin{enumerate}[label=(\alph*)]
+\item $\dfrac{d}{dx} x^2 = $
+\vspace{0.3in}
+\item $\dfrac{d}{dx} 3x^3 = $
+\vspace{0.3in}
+\item $\dfrac{d}{d\mu}(\mu^2 - 4\mu) = $
+\vspace{0.3in}
+\end{enumerate}
+
+\item \textbf{Optimization.} Consider $f(\mu) = \mu^2 - 6\mu + 5$.
+\begin{enumerate}[label=(\alph*)]
+\item Find $f'(\mu)$ and set it equal to zero to find the critical point $\mu^*$.
+\vspace{0.8in}
+\item Compute $f''(\mu)$. Is $\mu^*$ a minimum or a maximum?
+\vspace{0.5in}
+\end{enumerate}
+
+\item \textbf{Definite Integrals.} Evaluate the following.
+\begin{enumerate}[label=(\alph*)]
+\item $\displaystyle\int_0^1 2x\, dx = $
+\vspace{0.5in}
+\item $\displaystyle\int_0^{1} (1 - y)\, dy = $
+\vspace{0.5in}
+\item $\displaystyle\int_0^{1-x} 6(1-x-y)\, dy = $ \quad (Treat $x$ as a constant.)
+\vspace{0.8in}
+\end{enumerate}
+
+\item \textbf{Partial Derivatives.} Let $f(x,y) = 3x^2y + 2xy^2 - y$.
+\begin{enumerate}[label=(\alph*)]
+\item $\dfrac{\partial f}{\partial x} = $
+\vspace{0.5in}
+\item $\dfrac{\partial f}{\partial y} = $
+\vspace{0.5in}
+\end{enumerate}
+
+\item \textbf{Preview: Minimizing Mean Squared Error.}\\
+Suppose we want to choose $\mu$ to minimize $M(\mu) = \mathbb{E}[(Y-\mu)^2]$.
+Expanding: $M(\mu) = \mathbb{E}[Y^2] - 2\mu\,\mathbb{E}[Y] + \mu^2$.
+\begin{enumerate}[label=(\alph*)]
+\item Treating $\mathbb{E}[Y^2]$ and $\mathbb{E}[Y]$ as constants, find $\dfrac{dM}{d\mu}$.
+\vspace{0.5in}
+\item Set the derivative equal to zero and solve for $\mu^*$.
+\vspace{0.5in}
+\end{enumerate}
+
+\end{enumerate}
+
+\newpage
+\begin{center}
+{\Large\textbf{Answer Key --- Day 1}}
+\end{center}
+
+\begin{enumerate}[label=\textbf{\arabic*.}, itemsep=8pt]
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $2x$
+\item $9x^2$
+\item $2\mu - 4$
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $f'(\mu)=2\mu-6=0 \implies \mu^*=3$.
+\item $f''(\mu)=2>0$, so $\mu^*=3$ is a minimum.
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $[x^2]_0^1 = 1$.
+\item $[y - y^2/2]_0^1 = 1 - 1/2 = 1/2$.
+\item $6[(1-x)y - y^2/2]_0^{1-x} = 6[(1-x)^2 - (1-x)^2/2] = 6\cdot(1-x)^2/2 = 3(1-x)^2$.
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $6xy + 2y^2$
+\item $3x^2 + 4xy - 1$
+\end{enumerate}
+
+\item
+\begin{enumerate}[label=(\alph*)]
+\item $\dfrac{dM}{d\mu} = -2\mathbb{E}[Y] + 2\mu$
+\item $-2\mathbb{E}[Y]+2\mu^* = 0 \implies \mu^* = \mathbb{E}[Y]$.
+\end{enumerate}
+\end{enumerate}
+
+\end{document}

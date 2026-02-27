@@ -1,0 +1,17 @@
+\frametitle{R: \texttt {ivmte} --- LATE and Richer Specifications}
+\begin{lstlisting}
+# LATE for specific complier group
+late <- ivmte(data = AE, target = "late",
+  late.from = c(samesex = 0),
+  late.to   = c(samesex = 1),
+  m0 = ~ u + I(u^2) + yob,
+  m1 = ~ u + I(u^2) + yob,
+  ivlike = worked ~ morekids + samesex,
+  propensity = morekids ~ samesex + yob)
+\end{lstlisting}
+\begin{itemize}
+\item \texttt{m0}, \texttt{m1}: marginal treatment response functions; \texttt{u} is the unobserved resistance $U_D$.
+\item \texttt{target}: \texttt{"ate"}, \texttt{"att"}, \texttt{"atu"}, \texttt{"late"}, or \texttt{"genlate"}.
+\item Polynomial terms in \texttt{u} allow flexible MTE curves.
+\item The package implements Mogstad, Santos \& Torgovitsky (2018, \textit{Econometrica}) --- bounds when point identification fails.
+\end{itemize}

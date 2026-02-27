@@ -1,0 +1,248 @@
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{PLSC 30700: Estimation I}
+\rhead{Calculus Review Sheet}
+\cfoot{\thepage}
+
+\title{Calculus Skills for Estimation I\\[4pt]\large PLSC 30700 --- Pre-Midterm Review}
+\author{Robert Gulotty \\ University of Chicago}
+\date{Winter 2026}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\noindent This sheet collects the calculus skills used in Lectures 1--7 (before the midterm). Linear algebra skills are covered in a separate document. Each section lists the rules you need and where they appear in the course. If any of these are unfamiliar, review them before the relevant lecture.
+
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Derivative Rules (Single Variable)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+These rules are the building blocks for everything that follows.
+
+\subsection{Power Rule}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\frac{d}{dx} x^n = n x^{n-1}$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Minimizing MSE.  $\frac{d}{d\mu}[\mu^2] = 2\mu$, used to show $\mathbb{E}[Y]$ minimizes $\mathbb{E}[(Y-\mu)^2]$.
+\item \textbf{Day 7 (MLE):} Maximizing the binomial likelihood $p^4(1-p)^6$.
+\end{itemize}
+
+\subsection{Product Rule}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\frac{d}{dx}[f(x)\cdot g(x)] = f'(x)g(x) + f(x)g'(x)$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 7:} Differentiating the binomial likelihood $p^4(1-p)^6$:
+$$\frac{d}{dp}[p^4(1-p)^6] = 4p^3(1-p)^6 - 6p^4(1-p)^5$$
+\end{itemize}
+
+\subsection{Chain Rule}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\frac{d}{dx} f(g(x)) = f'(g(x))\cdot g'(x)$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 7:} Differentiating $\log f(x|\theta)$ when $f$ involves compositions (e.g., $\exp(-x^2/(2\theta))$).
+\item \textbf{Day 7:} MLE invariance: if $\hat\theta$ is the MLE of $\theta$, then $h(\hat\theta)$ is the MLE of $h(\theta)$.
+\end{itemize}
+
+\subsection{Derivative of $\log x$}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\frac{d}{dx}\log x = \frac{1}{x}, \qquad \frac{d}{dx}\log(g(x)) = \frac{g'(x)}{g(x)}$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 7:} Log-likelihood of the exponential: $\frac{d}{d\lambda}[-n\log\lambda] = -n/\lambda$.
+\item \textbf{Day 7:} Log-likelihood of the normal: $\frac{d}{d\sigma^2}[-\tfrac{n}{2}\log(\sigma^2)] = -\tfrac{n}{2\sigma^2}$.
+\end{itemize}
+
+\subsection{Derivative of $e^x$ and $e^{g(x)}$}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\frac{d}{dx}e^x = e^x, \qquad \frac{d}{dx}e^{g(x)} = g'(x)\cdot e^{g(x)}$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} The normal density $f(x) = \frac{1}{\sqrt{2\pi\sigma^2}}\exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)$.
+\item \textbf{Day 7:} Exponential family likelihoods, normal log-likelihood.
+\end{itemize}
+
+\subsection{Derivative of $1/x$}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\frac{d}{dx}\frac{1}{x} = -\frac{1}{x^2}, \qquad\text{equivalently, } \frac{d}{dx}x^{-1} = -x^{-2}$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 7:} MLE for exponential distribution: $\frac{d}{d\lambda}\left[-\frac{\sum X_i}{\lambda}\right] = \frac{\sum X_i}{\lambda^2}$.
+\end{itemize}
+
+\subsection{Second Derivatives and Second-Order Conditions}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+If $f'(x^*)=0$ and $f''(x^*)>0$, then $x^*$ is a local minimum.\\
+If $f'(x^*)=0$ and $f''(x^*)<0$, then $x^*$ is a local maximum.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Verifying that $\mu^*=\mathbb{E}[Y]$ minimizes MSE.
+\item \textbf{Day 3:} The Hessian of the SSE is $2\bm{X'X}$, which is positive definite $\Rightarrow$ unique minimum.
+\item \textbf{Day 7:} Verifying that the MLE is a maximum of the likelihood.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Integration}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Definite Integrals and the Power Rule for Integration}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\int x^n\, dx = \frac{x^{n+1}}{n+1} + C \quad (n\neq -1)$$
+$$\int_a^b f(x)\,dx = F(b) - F(a) \quad\text{where } F'(x)=f(x)$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Computing expectations: $\mathbb{E}[Y] = \int y\, f(y)\,dy$.
+\item \textbf{Day 1:} Marginal density from joint: $f_X(x) = \int_0^{1-x} 6(1-x-y)\,dy$.
+\begin{itemize}
+  \item Requires integrating $\int (1-x)y - y^2/2$ and evaluating at limits.
+\end{itemize}
+\item \textbf{Day 1:} Computing the CEF: $\mathbb{E}[Y|X=x] = \int y\cdot f_{Y|X}(y|x)\,dy$.
+\end{itemize}
+
+\subsection{Double Integrals}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\int\!\!\int f(x,y)\,dx\,dy = \int\left[\int f(x,y)\,dy\right]dx$$
+Integrate the inner variable first, treating the outer variable as a constant.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Verifying a joint density integrates to 1: $\int_0^1\int_0^{1-x} 6(1-x-y)\,dy\,dx = 1$.
+\item \textbf{Day 1:} Law of iterated expectations (proof): $\mathbb{E}[Y] = \int\!\int y\, f(x,y)\,dy\,dx$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Partial Derivatives}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Definition and Notation}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\frac{\partial f(x,y)}{\partial x} = \lim_{h\to 0}\frac{f(x+h, y)-f(x,y)}{h}$$
+Differentiate with respect to one variable, holding all others constant.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Joint density from CDF: $f(x,y) = \frac{\partial^2}{\partial x\,\partial y}F(x,y)$.
+\item \textbf{Day 2:} Solving for BLP: take $\frac{\partial}{\partial a}$ and $\frac{\partial}{\partial b}$ of $\mathbb{E}[(Y-(a+bX))^2]$.
+\item \textbf{Day 2:} Marginal effects with interactions: $\frac{\partial \mathbb{E}[y|X]}{\partial x_i} = \beta_1 + \gamma z_i$.
+\item \textbf{Day 7:} MLE for normal regression: separate FOCs for $\beta$ and $\sigma^2$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Differentiating Through Expectations and Sums}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\frac{d}{d\theta}\mathbb{E}[g(X,\theta)] = \mathbb{E}\!\left[\frac{\partial}{\partial \theta}g(X,\theta)\right] \quad\text{(under regularity conditions)}$$
+$$\frac{d}{d\theta}\sum_{i=1}^n g(x_i,\theta) = \sum_{i=1}^n \frac{\partial}{\partial\theta}g(x_i,\theta)$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} $\frac{d}{d\mu}\mathbb{E}[(Y-\mu)^2] = \mathbb{E}\!\left[\frac{d}{d\mu}(Y-\mu)^2\right] = -2\mathbb{E}[Y]+2\mu$.
+\item \textbf{Day 2:} FOC for BLP: $\frac{d}{da}\mathbb{E}[(Y-a-bX)^2] = -2\mathbb{E}[Y-a-bX]$.
+\item \textbf{Day 3:} FOC for OLS: $\frac{d}{d\beta}\sum(Y_i - \bm{x}_i'\beta)^2 = -2\sum \bm{x}_i(Y_i-\bm{x}_i'\beta)$.
+\item \textbf{Day 7:} Score of the log-likelihood: $\frac{d}{d\theta}\sum \log f(X_i|\theta)= \sum \frac{d}{d\theta}\log f(X_i|\theta)$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Gradients (Vector Calculus)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Gradient of a Scalar Function}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+If $f(\bm{a})$ is a scalar function of a vector $\bm{a}\in\mathbb{R}^k$:
+$$\nabla_{\bm{a}} f(\bm{a}) = \begin{pmatrix}\partial f/\partial a_1 \\ \vdots \\ \partial f/\partial a_k\end{pmatrix}$$
+Setting $\nabla_{\bm{a}} f = \bm{0}$ gives the first-order conditions.
+\end{tcolorbox}
+
+\subsection{Key Formulas for Matrix Calculus}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\begin{align*}
+\nabla_{\bm{a}}(\bm{z}'\bm{a}) &= \bm{z} & &\text{(derivative of a linear form)}\\
+\nabla_{\bm{a}}(\bm{a}'\bm{Z}\bm{a}) &= (\bm{Z}+\bm{Z}')\bm{a} = 2\bm{Z}\bm{a} \text{ if $\bm{Z}$ symmetric} & &\text{(derivative of a quadratic form)}
+\end{align*}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 1:} Deriving OLS from vector calculus.
+\item \textbf{Day 2:} Multivariate BLP: $\frac{\partial}{\partial\beta}S(\beta) = -2\mathbb{E}[XY]+2\mathbb{E}[XX']\beta$.
+\item \textbf{Day 3:} Full OLS derivation:
+\begin{align*}
+\nabla_\beta[\bm{y'y} - 2\bm{y'X}\beta + \beta'\bm{X'X}\beta] &= -2\bm{X'y}+2\bm{X'X}\beta = \bm{0}\\
+\Rightarrow\quad \hat\beta &= (\bm{X'X})^{-1}\bm{X'y}
+\end{align*}
+\item \textbf{Day 3 (SOC):} The Hessian is $2\bm{X'X}$, which is positive definite under the rank condition.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Optimization (Putting It All Together)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Recipe for unconstrained optimization:}
+\begin{enumerate}
+\item Write the objective function $f(\theta)$.
+\item Compute the first derivative(s) and set equal to zero: $f'(\theta^*)=0$ (FOC).
+\item Solve for the critical point(s) $\theta^*$.
+\item Check the second-order condition: $f''(\theta^*)>0$ means minimum, $f''(\theta^*)<0$ means maximum.
+\end{enumerate}
+\end{tcolorbox}
+
+This recipe is used in every major derivation:
+\begin{center}
+\begin{tabular}{lllc}
+\toprule
+\textbf{Lecture} & \textbf{Objective} & \textbf{Result} & \textbf{Min/Max}\\
+\midrule
+Day 1 & $\mathbb{E}[(Y-\mu)^2]$ & $\mu^*=\mathbb{E}[Y]$ & Min\\
+Day 2 & $\mathbb{E}[(Y-a-bX)^2]$ & $b=\text{Cov}(X,Y)/\text{Var}(X)$ & Min\\
+Day 3 & $(\bm{y}-\bm{X}\beta)'(\bm{y}-\bm{X}\beta)$ & $\hat\beta=(\bm{X'X})^{-1}\bm{X'y}$ & Min\\
+Day 7 & $\mathcal{L}_n(\theta)=\prod f(X_i|\theta)$ & $\hat\theta_{MLE}$ & Max\\
+Day 7 & Normal log-lik for $(\beta,\sigma^2)$ & $\hat\beta_{MLE}=\hat\beta_{OLS}$ & Max\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Summary: Skills by Lecture Day}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{center}
+\small
+\begin{tabular}{lp{10cm}}
+\toprule
+\textbf{Lecture} & \textbf{Calculus Skills Used}\\
+\midrule
+Day 1 (Review) & Definite integrals (expectations, marginals, CEF); double integrals; partial derivatives; power rule; gradient and quadratic form derivatives; FOC/SOC\\[6pt]
+Day 2 (CEF/BLP) & Differentiating through expectations; partial derivatives for multi-parameter optimization; marginal effects as partial derivatives of regression function\\[6pt]
+Day 3 (OLS) & Matrix calculus (linear and quadratic forms); FOC in matrix notation; SOC via Hessian; differentiating sums\\[6pt]
+Day 4 (Sensitivity) & No new calculus (algebraic manipulation of OLS formulas)\\[6pt]
+Day 5 (GLS) & No new calculus (variance formulas, matrix algebra)\\[6pt]
+Day 6 (Heteroskedasticity) & No new calculus (variance estimator properties)\\[6pt]
+Day 7 (MLE) & Product rule; chain rule; $\frac{d}{dx}\log x$; $\frac{d}{dx}e^{g(x)}$; $\frac{d}{dx}x^{-1}$; second derivatives of log-likelihoods; score and Hessian; optimization of likelihoods\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

@@ -1,0 +1,6 @@
+\beamer@sectionintoc {1}{Review}{2}{0}{1}
+\beamer@sectionintoc {2}{Convergence}{7}{0}{2}
+\beamer@sectionintoc {3}{Law of Large Numbers}{13}{0}{3}
+\beamer@sectionintoc {4}{Central Limit Theory}{25}{0}{4}
+\beamer@sectionintoc {5}{Asymptotic Properties: Delta Method}{33}{0}{5}
+\beamer@sectionintoc {6}{Summary and Looking Ahead}{46}{0}{6}

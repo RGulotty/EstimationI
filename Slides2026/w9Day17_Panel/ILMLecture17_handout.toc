@@ -1,0 +1,5 @@
+\beamer@sectionintoc {1}{Intro}{2}{0}{1}
+\beamer@sectionintoc {2}{Difference in Difference}{9}{0}{2}
+\beamer@sectionintoc {3}{Panel Data}{35}{0}{3}
+\beamer@sectionintoc {4}{Pooled Data}{53}{0}{4}
+\beamer@sectionintoc {5}{Between and Within Estimators}{69}{0}{5}

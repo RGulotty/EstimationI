@@ -1,0 +1,4 @@
+\beamer@sectionintoc {1}{Recap and Testing}{1}{0}{1}
+\beamer@sectionintoc {2}{Hypothesis Testing}{7}{0}{2}
+\beamer@sectionintoc {3}{Application: Propaganda}{13}{0}{3}
+\beamer@sectionintoc {4}{Course Integration}{22}{0}{4}

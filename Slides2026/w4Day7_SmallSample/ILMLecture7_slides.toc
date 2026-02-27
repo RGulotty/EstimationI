@@ -1,0 +1,4 @@
+\beamer@sectionintoc {1}{Likelihood Methods}{2}{0}{1}
+\beamer@sectionintoc {2}{Normal Linear Model}{59}{0}{2}
+\beamer@sectionintoc {3}{MLE estimator}{71}{0}{3}
+\beamer@sectionintoc {4}{Hypothesis Testing under Normality}{140}{0}{4}

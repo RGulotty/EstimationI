@@ -1,0 +1,7 @@
+\beamer@sectionintoc {1}{Binary Outcomes and the Linear Probability Model}{2}{0}{1}
+\beamer@sectionintoc {2}{The Probit Model}{16}{0}{2}
+\beamer@sectionintoc {3}{Maximum Likelihood Estimation}{33}{0}{3}
+\beamer@sectionintoc {4}{Asymptotic Distribution}{50}{0}{4}
+\beamer@sectionintoc {5}{From Probit to Measurement Models}{68}{0}{5}
+\beamer@sectionintoc {6}{Implementation in R}{86}{0}{6}
+\beamer@sectionintoc {7}{Unifying Perspective and Looking Ahead}{93}{0}{7}

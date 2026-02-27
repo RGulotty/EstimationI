@@ -1,0 +1,28 @@
+\frametitle{Comparing Methods: Results}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+& \textbf{Complete Case} & \textbf{Dummy Variable} & \textbf{GMM} \\
+\midrule
+$\hat\alpha$ (BMI) & $-0.0343$ & $-0.0343$ & $-0.0340$ \\
+SE & $(0.0077)$ & $(0.0073)$ & $(0.0072)$ \\[4pt]
+$\hat\beta_{IQ}$ & $0.0563$ & $0.0567$ & $0.0564$ \\
+SE & $(0.0017)$ & $(0.0015)$ & $(0.0015)$ \\[4pt]
+$n$ used & 4231 & 5326 & 5326 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\medskip
+\textbf{J-test for overidentifying restrictions:}
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+specTest(gmm_men)  # J-test = ?, df = 2, p-value = ?
+\end{lstlisting}
+
+\begin{itemize}
+\item Large p-value: fail to reject $\Rightarrow$ Assumption 1 is plausible
+\item Small p-value: evidence against the linear projection restriction
+\end{itemize}
+

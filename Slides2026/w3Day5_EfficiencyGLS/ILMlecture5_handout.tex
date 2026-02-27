@@ -1,0 +1,672 @@
+
+\documentclass[aspectratio=169, handout]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+
+%  \usetheme{Pittsburgh}
+%\usefonttheme[2]{sans}
+\renewcommand{\familydefault}{cmss}
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+%\usepackage{palatino}
+%\usepackage{cmbright}
+\usepackage{bm}
+\usepackage{listings}
+\usepackage{cancel}
+\useinnertheme{rectangles}
+}
+\usepackage{amsmath}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\definecolor{darkpurple}{rgb}{0.4, 0, 0.6}
+\usepackage{array}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=darkpurple}
+\usepackage{tcolorbox}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+%\usepackage[all]{xy}
+
+\usepackage{tikz}
+\usepackage{lipsum}
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+ \lstset{%
+  language=R,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{darkpurple},
+  breaklines=true,
+  numbers=left,
+  numberstyle=\tiny,
+  frame=single,
+  framerule=0.5pt,
+}
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models Lecture 6: Finite Sample Properties}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+\newcommand{\var}{\text{var}}
+\begin{document}
+
+\begin{frame}
+\maketitle
+\end{frame}
+\section{Gauss Markov}
+
+\begin{frame}{Why use $(\bm{X}'\bm{X})^{-1}\bm{X}'Y$ in my work?}
+\begin{itemize}
+\item Motive 1: best approximation to the conditional expectation function (CEF).
+\begin{itemize}
+\item While the conditional mean $E(Y|\bm{X})$ is the best predictor of $Y$, its form is typically unknown.
+\item The linear model is an approximation to the conditional mean that has the lowest mean squared error among linear predictors.
+\end{itemize}\pause
+\item Motive 2: Sampling Properties.  
+\begin{itemize}
+\item When the underlying CEF is linear and the residual variance is constant, OLS is optimal.
+\item OLS is the Best Linear Unbiased Estimator, here meaning the minimum variance (most efficient) linear estimator for the parameter vector $\bm{\beta}$.
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Why Study Finite Sample Properties?}
+\begin{itemize}
+\item Finite sample results hold \emph{exactly} for any sample size $n$---they do not require $n\to\infty$.
+\item The finite sample framework answers four questions:
+\begin{enumerate}
+\item Is $\hat{\beta}$ centered on $\beta$? $\to$ \textbf{Unbiasedness.}
+\item How much does $\hat{\beta}$ vary across samples? $\to$ \textbf{Variance.}
+\item Can any other estimator do better? $\to$ \textbf{Efficiency (Gauss-Markov).}
+\item What if $\text{var}[\bm{e}|\bm{X}]\neq\sigma^2\bm{I}$? $\to$ \textbf{GLS.}
+\end{enumerate}\pause
+\item These results provide the theoretical foundation for standard errors, confidence intervals, and hypothesis tests.
+\item They also reveal \emph{when} OLS is and is not optimal, motivating the alternatives we study in this lecture and beyond.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Finite Sample Assumptions of OLS estimator}
+\begin{itemize}
+\item Assumption 1: The random variables $\{(Y_1,\ X_1),\ (Y_2,\ X_2), \ldots, (Y_n,\ X_n)$ are independent and identically distributed.
+\item Assumption 2: $Y=\bm{X}'\beta+e$, where $\mathbb{E}(e|\bm{X})=0$. 
+\item Assumption 3: $\mathbb{E}(\bm{X}\bm{X}')>0$ is invertible (with probability 1).
+\item Assumption 4*: $\mathbb{E}[e^2|\bm{X}]=\sigma^2(\bm{X})=\sigma^2$. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{When Are These Assumptions Reasonable?}
+\begin{itemize}
+\item \textbf{A1 (i.i.d.):} Holds well for cross-sectional surveys with random sampling. Fails with time-series data (serial correlation), clustered data (students within schools), or panel data.\pause
+\item \textbf{A2 ($\mathbb{E}[e|\bm{X}]=0$):} Requires that no omitted variable is correlated with $\bm{X}$. Fails when there is selection bias, simultaneity, or measurement error in $\bm{X}$. This is the assumption most contested in applied work.\pause
+\item \textbf{A3 (rank condition):} Fails with perfect multicollinearity (e.g.\ including a dummy for every category plus an intercept). Nearly violated when regressors are highly collinear.\pause
+\item \textbf{A4* (homoskedasticity):} Rarely holds exactly. Variance of earnings typically grows with education; variance of GDP growth differs across countries. Violation does \emph{not} bias $\hat{\beta}$, but makes OLS inefficient and standard errors wrong.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Goals for Sampling Properties.}
+\begin{itemize}
+\item \textbf{unbiased}: The (conditional) expectation of the estimator $\hat{\beta}$ of $\beta$ is equal to the paramater.  $\mathbb{E}[\hat{\beta}]=\beta$
+\item \textbf{efficient}: The estimator $\hat{\beta}$ of $\beta$ has a lower variance matrix than other estimators.
+\item The latter efficiency result is called the Gauss Markov Theorem and depends on Assumption 4*.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Unbiasedness}
+\begin{itemize}
+\item We will show that $\mathbb{E}[\hat{\beta}|\bm{X}]=\beta$ using three methods: summation, matrix, and decomposition.
+\item Each relies heavily on the conditioning theorem:
+$$\mathbb{E}[g(\bm{X})Y|\bm{X}]=g(\bm{X})\mathbb{E}[Y|\bm{X}]$$
+and
+$$\mathbb{E}[g(\bm{X})Y]=\mathbb{E}[g(\bm{X})\mathbb{E}[Y|\bm{X}]]$$
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Unbiasedness of the OLS slope estimator: Version 1}
+\begin{itemize}
+\item Assume $\bm{x}_i$ is a $k\times 1$ vector representing observation $i$\\
+\item $\mathbb{E}[Y_i|\bm{x}_1,\ldots, \bm{x}_n]=\mathbb{E}[Y_i|\bm{x}_i]$ because of independence of observations across $i$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Unbiasedness (shown in summation operation)}
+\small
+\begin{align*}
+\mathbb{E}[\hat{\beta}|\bm{x}_1,\ldots \bm{x}_n]&=\mathbb{E}[(\sum_{i=1}^n\bm{x}_i\bm{x}_i')^{-1}(\sum_{i=1}^n\bm{x}_iY_i)|\bm{x}_1,\ldots \bm{x}_n]\\\pause
+&=(\sum_{i=1}^n\bm{x}_i\bm{x}_i')^{-1}\mathbb{E}[(\sum_{i=1}^n\bm{x}_iY_i)|\bm{x}_1,\ldots \bm{x}_n] \tag{Conditioning Theorem}\\ \pause
+&=(\sum_{i=1}^n\bm{x}_i\bm{x}_i')^{-1}\sum_{i=1}^n \mathbb{E}[\bm{x}_iY_i|\bm{x}_1,\ldots \bm{x}_n] \tag{Linearity of Expectations}\\ \pause
+&=(\sum_{i=1}^n\bm{x}_i\bm{x}_i')^{-1}\sum_{i=1}^n \bm{x}_i\mathbb{E}[Y_i|\bm{x}_i] \tag{Conditioning Theorem, and independence}\\ \pause
+&=(\sum_{i=1}^n\bm{x}_i\bm{x}_i')^{-1}\sum_{i=1}^n \bm{x}_i\bm{x}_i'\beta \tag{Linear conditional expectation}\\ \pause
+&=\beta \tag{Inverse}\\
+\end{align*}
+\end{frame}
+
+\begin{frame}{Unbiasedness of the OLS slope estimator: Version 2}
+Using Matrix notation, $\mathbb{E}[\bm{y}|\bm{X}]=\bm{X}\beta$,  $\mathbb{E}[\bm{e}|\bm{X}]=0$ (by assumption 2)
+\begin{align*} \pause
+\mathbb{E}[\hat{\beta}|\bm{X}]&=\mathbb{E}[(\bm{X'X})^{-1}\bm{X'Y}|\bm{X}]\\ \pause
+&=(\bm{X'X})^{-1}\bm{X}'\mathbb{E}[\bm{y}|\bm{X}] \tag{Conditioning Theorem}\\ \pause
+&=(\bm{X'X})^{-1}\bm{X}'\bm{X}\beta \tag{Independence}\\ \pause
+&=\beta \tag{Inverse} \pause
+\end{align*}
+\end{frame}
+
+\begin{frame}{Unbiasedness of the OLS slope estimator: Version 3}
+Decomposition, noting $\bm{y}=\bm{X}\bm{\beta}+\bm{e}$ 
+\begin{align*}
+\bm{\hat{\beta}}&=(\bm{X'X})^{-1}\bm{X'y}\\ \pause
+&=(\bm{X'X})^{-1}\bm{X}'(\bm{X}\beta+\bm{e}) \tag{plug in}\\ \pause
+&=(\bm{X'X})^{-1}\bm{X}'\bm{X}\beta+(\bm{X'X})^{-1}\bm{X}'\bm{e}  \tag{distribute}\\ \pause
+&=\bm{\beta}+(\bm{X'X})^{-1}\bm{X}'\bm{e}\tag{Inverse} \pause
+\end{align*}
+So now we can just check that $\mathbb{E}[\bm{\hat{\beta}}-\bm{\beta}|\bm{X}]=0$ by applying assumption 2.
+$$\mathbb{E}[\bm{\hat{\beta}}-\bm{\beta}|\bm{X}]=\mathbb{E}[(\bm{X'X})^{-1}\bm{X}'\bm{e}|\bm{X}]=(\bm{X'X})^{-1}\bm{X}'\mathbb{E}[\bm{e}|\bm{X}]=0$$
+\end{frame}
+
+
+\begin{frame}{Variance of Least Squares Estimator}
+We can write the variance of the OLS estimator in terms of 
+
+$$\bm{D}=\begin{pmatrix} \sigma_1^2 &0 &\cdots& 0 \\ 0& \sigma_2^2& \cdots& 0 \\ \vdots & \vdots & & \vdots\\ 0&0&\cdots &\sigma_n^2\end{pmatrix}$$
+Where $\sigma_i^2$ gives us the variation in the regression error for observation $i$.
+\end{frame}
+
+\begin{frame}{Derivation of Variance of $\hat{\beta}$}
+\begin{align*}
+var[\bm{\hat{\beta}}|\bm{X}]&=E[(\bm{\hat{\beta}}-\bm{\beta})(\bm{\hat{\beta}}-\bm{\beta})'|\bm{X}]\\ \pause
+&=E[((\bm{\beta}+(\bm{X'X})^{-1}\bm{X'e})-\bm{\beta})((\beta+(\bm{X'X})^{-1}\bm{X'e})-\bm{\beta})'|\bm{X}]\\ \pause
+&=E[((\bm{X'X})^{-1}\bm{X'e})((\bm{X'X})^{-1}\bm{X'e})'|\bm{X}]\\ \pause
+&=E[(\bm{X'X})^{-1}\bm{X'e}\bm{e'X}(\bm{X'X})^{-1}|\bm{X}]\\ \pause
+&=(\bm{X'X})^{-1}\bm{X'}E[\bm{e}\bm{e}'|\bm{X}]\bm{X}(\bm{X'X})^{-1}\\ \pause
+&=(\bm{X'X})^{-1}\bm{X'}\bm{D}\bm{X}(\bm{X'X})^{-1}\\ \pause
+\end{align*}
+Note that $\bm{X'}\bm{D}\bm{X}=\sum_{i=1}^n\bm{x}_i\bm{x}_i\sigma_i^2$
+\end{frame}
+
+\begin{frame}{The Sandwich Formula in Practice}
+\begin{itemize}
+\item The variance $(\bm{X'X})^{-1}\bm{X'DX}(\bm{X'X})^{-1}$ is called the \textbf{sandwich formula}: $\bm{(X'X)}^{-1}$ is the ``bread'' and $\bm{X'DX}$ is the ``meat.''\pause
+\item This is the formula behind every ``robust standard error'' you see in applied papers.\pause
+\item In R: \texttt{vcovHC(lm\_model, type="HC2")} computes this variance using $\hat{e}_i^2$ to estimate the diagonal of $\bm{D}$.\pause
+\item Under homoskedasticity ($\bm{D}=\sigma^2\bm{I}$), the sandwich simplifies to $\sigma^2(\bm{X'X})^{-1}$---the classical formula. Robust SEs and classical SEs agree.
+\item When they diverge, it signals heteroskedasticity in your data.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Special case, $\sigma^2_i=\sigma^2_j=\sigma^2$}
+\begin{itemize}
+\item If $\bm{D}=\bm{I}_n\sigma^2$, (assumption 4*), then we call the error homoskedastic.
+\begin{align*}
+var[\bm{\hat{\beta}}|\bm{X}]&=(\bm{X'X})^{-1}\bm{X'}\bm{D}\bm{X}(\bm{X'X})^{-1}\\ \pause
+&=(\bm{X'X})^{-1}\bm{X'}\bm{I}_n\sigma^2\bm{X}(\bm{X'X})^{-1}\\ \pause
+&=\sigma^2(\bm{X'X})^{-1}\bm{X'}\bm{X}(\bm{X'X})^{-1}\\ \pause
+&=\sigma^2(\bm{X'X})^{-1} \pause
+\end{align*}
+\item Homoskedasticity is a convenient assumption, but it also has played an important role in offering intellectual support for the linear model.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Proof of Gauss Markov Theorem}
+Formal statement: In the homoskedastic linear model, if $\bm{\tilde{\beta}}$ is a linear unbiased estimator of $\bm{\beta}$, then
+$$\text{var}(\bm{\tilde{\beta}}|\bm{X})\geq \sigma^2\bm{(X'X)}^{-1}$$\pause
+\textbf{Proof (4 steps):}\\
+\begin{enumerate}
+\item Let $\bm{A}$ be any $n\times k$ linear function of $\bm{X}$ such that $\bm{A}'\bm{X}=\bm{I}_k$.\\ \pause
+By (A2) and (A3), $\bm{A'Y}=\bm{\tilde{\beta}}$ is an \emph{unbiased} estimator of $\bm{\beta}$, as $E[\bm{\tilde{\beta}}|\bm{X}]=E[\bm{A'Y}|\bm{X}]=\bm{A}'E[\bm{Y}|\bm{X}]=\bm{A}'\bm{X\beta}=\bm{\beta}$.
+
+\item Under (A1) and (A4), the variance of $\bm{\hat{\beta}}$ is $\sigma^2\bm{(X'X)}^{-1}$ and the variance of $\bm{\tilde{\beta}}$ is $\sigma^2 \bm{A'A}\ $. \\ 
+\item Evaluate $\bm{A'A}- \bm{(X'X)}^{-1}$ to show that it is positive semi-definite.  
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{Proof of Gauss Markov Theorem}
+Set $\bm{C}=\bm{A}-\bm{X(X'X)}^{-1}$, and note that $\bm{X}'\bm{C}=0$, \pause
+\begin{align*}
+\bm{A'A}-\bm{(X'X)}^{-1}&=(\bm{C}+\bm{X(X'X)}^{-1})'(\bm{C}+\bm{X(X'X)}^{-1}) -\bm{(X'X)}^{-1}\\\pause
+&=\bm{C}'\bm{C}+\bm{C'X}(\bm{X'X})^{-1}+(\bm{X'X})^{-1}\bm{X'C} +(\bm{X'X})^{-1}\bm{X'X}(\bm{X'X})^{-1}-(\bm{X'X})^{-1} \\\pause
+&=\bm{C}'\bm{C}
+\end{align*}
+\begin{enumerate}[4]\pause
+\item Any matrix that can be written as a product $\bm{C}'\bm{C}$ is positive semi-definite:\\\pause
+If $\bm{M}=\bm{C}'\bm{C}$, then $\bm{x}'\bm{M}\bm{x}=\bm{x'C}'\bm{Cx}=||\bm{Cx}||^2\geq0$.\\\pause
+So $\bm{A'A}- \bm{(X'X)}^{-1}$ is positive semidefinite and \pause
+$$\text{var}(\bm{\tilde{\beta}}|\bm{X})\geq \sigma^2\bm{(X'X)}^{-1} \qed$$
+\end{enumerate}
+No linear estimator will get a lower variance! OLS is the \textbf{b}est among \textbf{l}inear \textbf{u}nbiased \textbf{e}stimators (BLUE).
+\end{frame}
+
+\begin{frame}{What Does BLUE Mean for Applied Work?}
+\begin{itemize}
+\item Under homoskedasticity, OLS gives you the \emph{tightest possible} confidence intervals among linear unbiased estimators.\pause
+\item Practical implication: if $\text{var}[\bm{e}|\bm{X}]=\sigma^2\bm{I}$, there is no reason to search for a cleverer estimator---OLS is already optimal.\pause
+\item What BLUE does \emph{not} guarantee:
+\begin{itemize}
+\item If errors are heteroskedastic, OLS is no longer efficient $\to$ GLS can do better.
+\item If $\mathbb{E}[e|\bm{X}]\neq 0$ (omitted variables, simultaneity), OLS is biased regardless of efficiency.
+\item BLUE says nothing about nonlinear estimators (MLE may dominate if you know the error distribution).
+\end{itemize}\pause
+\item Bottom line: Gauss-Markov tells you \emph{when you can stop looking} for a better estimator, and when you cannot.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Gauss-Markov in Action: OLS vs.\ Alternatives}
+\begin{columns}[T]
+\begin{column}{0.52\textwidth}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize, numbers=none]
+set.seed(42); B <- 5000; n <- 50
+b_ols <- b_split <- numeric(B)
+for (i in 1:B) {
+  x <- rnorm(n); e <- rnorm(n, 0, 2)
+  y <- 2 + 3*x + e
+  b_ols[i] <- coef(lm(y ~ x))[2]
+  h1 <- 1:(n/2); h2 <- (n/2+1):n
+  b_split[i] <- (coef(lm(y[h1]~x[h1]))[2]
+               + coef(lm(y[h2]~x[h2]))[2])/2
+}
+c(var(b_ols), var(b_split))
+# ~ 0.08       ~ 0.16
+\end{lstlisting}
+\end{column}
+\begin{column}{0.45\textwidth}
+\begin{itemize}\setlength{\itemsep}{2pt}
+\item DGP: $Y=2+3X+e$, $e\sim N(0,4)$.
+\item Split-sample: run OLS on each half, average the slopes. Linear, unbiased---but wastes information.
+\item OLS variance $\approx$ half the split-sample variance.
+\end{itemize}
+\end{column}
+\end{columns}
+\smallskip
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, boxsep=2pt, top=2pt, bottom=2pt]
+Under homoskedasticity, OLS uses all the information in the data. Any other linear unbiased estimator wastes some.
+\end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Hansen's Gauss Markov Theorem (Technical)}
+In the homoskedastic linear model, if $\bm{\tilde{\beta}}$ is \cancel{a linear} \emph{any} unbiased estimator of $\bm{\beta}$, then
+$$\text{var}(\bm{\tilde{\beta}}|\bm{X})\geq \sigma^2\bm{(X'X)}^{-1}$$
+This result is derived using the Cram\'{e}r-Rao bound.
+\end{frame}
+
+\begin{frame}{Theoretical Criteria for Estimators}
+\begin{itemize}
+\item Gauss Markov: OLS is "best" by reference to any alternative unbiased linear estimator.
+\item Cram\'{e}r-Rao bound: the precision (inverse of the variance) of any unbiased estimator is bounded by the Fisher information of the estimator.
+\item We will define "information" more formally when we get to Maximum Likelihood Estimation.
+\end{itemize}
+\end{frame}
+
+\section{Method of Moments}
+
+\begin{frame}{Method of Moments Estimation}
+\begin{itemize}
+\item A \textbf{method of moments estimator} (MME) sets sample moments equal to population moments and solves for the parameter.\pause
+\item Population moment condition: $\mathbb{E}[g(\bm{x}_i, Y_i, \theta)]=0$
+\item Sample analog: $\frac{1}{n}\sum_{i=1}^n g(\bm{x}_i, Y_i, \hat{\theta})=0$\pause
+\item OLS is a method of moments estimator:
+\begin{itemize}
+\item Population: $\mathbb{E}[\bm{x}_i(Y_i-\bm{x}_i'\beta)]=0$ \quad (from $\mathbb{E}[\bm{x}_i e_i]=0$)
+\item Sample: $\frac{1}{n}\sum_{i=1}^n \bm{x}_i(Y_i-\bm{x}_i'\hat{\beta})=0$\quad $\Rightarrow$\quad $\bm{X'(Y-X\hat{\beta})}=0$
+\item Solving gives $\hat{\beta}=(\bm{X'X})^{-1}\bm{X'Y}$---the OLS estimator.
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Method of Moments for $\sigma^2$}
+\begin{itemize}
+\item Under homoskedasticity, the population moment is $\mathbb{E}[e_i^2]=\sigma^2$.\pause
+\item The MME replaces $e_i$ with $\hat{e}_i$ and averages:
+$$\hat{\sigma}^2_{MM}=\frac{1}{n}\sum_{i=1}^n\hat{e}_i^2$$\pause
+\item This is biased: $\mathbb{E}[\hat{\sigma}^2_{MM}|\bm{X}]=\frac{n-k}{n}\sigma^2$ (shown later in the residuals section).\pause
+\item The bias-corrected version $s^2=\frac{1}{n-k}\sum \hat{e}_i^2$ is the standard estimator in practice.
+\item Method of moments generalizes to \textbf{GMM} (Generalized Method of Moments) when we have more moment conditions than parameters.
+\end{itemize}
+\end{frame}
+
+\section{GLS}
+\begin{frame}{Spherical Errors}
+\begin{itemize}
+\item The Gauss Markov Theorem assumed that $E(\bm{ee'})=\begin{bmatrix} \sigma^2 & 0 &\cdots & 0 \\ 0 & \sigma^2 & \cdots & 0  \\ \vdots & \vdots& \cdots& \vdots \\0 & 0& \cdots& \sigma^2 \end{bmatrix}=\sigma^2\bm{I}$
+\item In quadratic form, $\sigma^2\bm{I}$ is the formula for a sphere
+\begin{align*}
+\bm{e'}(\sigma^2\bm{I})\bm{e}&=\sigma^2e_1^2+\sigma^2e_2^2+\cdots +\sigma^2e_n^2=q\\
+&=e_1^2+e_2^2+\cdots +e_n^2=q/\sigma^2
+\end{align*}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Non-Spherical Errors}
+\begin{itemize}
+\item More generally we think that errors may exhibit variation: If $E(\bm{ee'})=\begin{bmatrix} \sigma_1^2 & 0 &\cdots & 0 \\ 0 & \sigma_2^2 & \cdots & 0  \\ \vdots & \vdots& \cdots& \vdots \\0 & 0& \cdots& \sigma_N^2 \end{bmatrix}, \sigma_i\neq \sigma_j$, then we say we have heteroskedasticity.
+\item Heteroskedasticity can occur when cases are aggregates of uneven size.
+\item If $E(\bm{ee'})=\begin{bmatrix} \sigma^2 & a &\cdots & b \\ a& \sigma^2 & \cdots & d  \\ \vdots & \vdots& \cdots& \vdots \\b & d& \cdots& \sigma^2 \end{bmatrix}, a\neq b\neq d \neq 0$, then we say we have autocorrelation.
+\item More generally, we will allow for both.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Where Do Non-Spherical Errors Arise?}
+\begin{itemize}
+\item \textbf{Heteroskedasticity:}
+\begin{itemize}
+\item Cross-country regressions: richer countries often have more variable outcomes (GDP growth, trade flows).
+\item Earnings regressions: variance of wages increases with education and experience.
+\item Any regression where the outcome is bounded below (e.g.\ expenditure $\geq 0$): variance shrinks near the bound.
+\end{itemize}\pause
+\item \textbf{Autocorrelation:}
+\begin{itemize}
+\item Time series: an economic shock in one quarter persists into the next.
+\item Panel data: unobserved country or individual traits make errors within a unit correlated.
+\item Spatial data: neighboring counties share unobserved shocks (weather, policy spillovers).
+\end{itemize}\pause
+\item In all these cases, OLS $\hat{\beta}$ is still unbiased, but its variance is \emph{not} $\sigma^2(\bm{X'X})^{-1}$---classical standard errors are wrong.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Generalized Least Squares}
+\begin{itemize}
+\item Consider the following linear regression model:
+$$\bm{y}=\bm{X\beta}+\bm{e}$$
+\item Allow for heteroskedasticity or correlation in the errors:
+$$\mathtt{E}[\bm{e}|\bm{X}]=0$$
+$$\text{var}[\bm{e}|\bm{X}]=\Sigma\sigma^2$$
+\item Here $\Sigma$ is $n\times n$ and may be a function of $\bm{X}$, $\sigma^2$ is the common component to the diagonals (could be 1).
+\item Recall, Gauss-Markov proves we can do no better than OLS when $\text{var}[\bm{e}|\bm{X}]=\sigma^2\bm{I}$.  But now we can do better.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Derivation of Variance (again)}
+\begin{align*}
+var[\bm{\hat{\beta}}]&=E[(\bm{\hat{\beta}}-\bm{\beta})(\bm{\hat{\beta}}-\bm{\beta})']\\ \pause
+&=E[((\bm{\beta}+(\bm{X'X})^{-1}\bm{X'e})-\bm{\beta})((\bm{\beta}+(\bm{X'X})^{-1}\bm{X'e})-\bm{\beta})']\\ \pause
+&=E[((\bm{X'X})^{-1}\bm{X'e})((\bm{X'X})^{-1}\bm{X'e})']\\ \pause
+&=E[(\bm{X'X})^{-1}\bm{X'e}\bm{e'X}(\bm{X'X})^{-1}]\\ \pause
+&=(\bm{X'X})^{-1}\bm{X'}E[\bm{e}\bm{e}']\bm{X}(\bm{X'X})^{-1}\\ \pause
+&=(\bm{X'X})^{-1}\bm{X'}\bm{\Sigma}\sigma^2\bm{X}(\bm{X'X})^{-1}\\ \pause
+&=\sigma^2(\bm{X'X})^{-1}\bm{X'}\bm{\Sigma}\bm{X}(\bm{X'X})^{-1}\\ \pause
+\end{align*}
+\end{frame}
+
+\begin{frame}{Lower Bound on Variance of Estimators}
+Theorem: Given assumptions of linear model, if $\tilde{\beta}$ is an unbiased estimator of $\beta$, then 
+$$\text{var}[\tilde{\beta}]\geq\sigma^2(\bm{X}'\Sigma^{-1}\bm{X})^{-1}$$
+All we need is to know $\Sigma^{-1}$, then correct for it.
+\end{frame}
+
+\begin{frame}{Proof: Efficiency Lower Bound for Linear Estimators (Hansen Ex.\ 4.6)}
+\textbf{Theorem:} If $\tilde{\beta}=\bm{A'Y}$ is linear and unbiased, then $\text{var}(\tilde{\beta}|\bm{X})\geq \sigma^2(\bm{X}'\Sigma^{-1}\bm{X})^{-1}$.\\ \medskip\pause
+\textbf{Proof:} Transform to the spherical model via $\Sigma^{-1/2}$:
+\begin{enumerate}
+\item Define $\bm{\tilde{Y}}=\Sigma^{-1/2}\bm{Y}$, $\bm{\tilde{X}}=\Sigma^{-1/2}\bm{X}$, $\bm{\tilde{e}}=\Sigma^{-1/2}\bm{e}$, so $\text{var}[\bm{\tilde{e}}|\bm{X}]=\sigma^2\bm{I}_n$.\pause
+\item Write $\tilde{\beta}=\bm{A'Y}=\bm{A}'\Sigma^{1/2}\bm{\tilde{Y}}\equiv\bm{\tilde{A}}'\bm{\tilde{Y}}$.\pause
+\item Unbiasedness: $\bm{\tilde{A}}'\bm{\tilde{X}}=\bm{A}'\Sigma^{1/2}\Sigma^{-1/2}\bm{X}=\bm{A'X}=\bm{I}_k$.\pause
+\item Apply Gauss-Markov to the transformed (spherical) model:
+$$\text{var}[\tilde{\beta}|\bm{X}]=\sigma^2\bm{\tilde{A}}'\bm{\tilde{A}}\geq \sigma^2(\bm{\tilde{X}}'\bm{\tilde{X}})^{-1}=\sigma^2(\bm{X}'\Sigma^{-1}\bm{X})^{-1} \qed$$
+\end{enumerate}\pause
+\medskip
+\textbf{Intuition:} $\Sigma^{-1/2}$ converts any non-spherical model into a spherical one.  In the spherical world, OLS (= GLS on original data) is already BLUE.
+\end{frame}
+
+\begin{frame}{Aside: Matrix Decomposition}
+\begin{itemize}
+\item Any matrix $\bm{\Sigma}$ that is positive definite and symmetric can be factored:
+$$\bm{\Sigma}=\bm{C}\bm{\Lambda}\bm{C'}$$
+\item The columns of $\bm{C}$ are the eigenvectors of $\bm{\Sigma}$.
+\item $\bm{\Lambda}$ is a diagonal matrix of the eigenvalues of $\bm{\Sigma}$.
+\item $\bm{\Lambda}^{1/2}$ is a diagonal matrix of the square roots of the eigenvalues of $\bm{\Sigma}$.
+$$\bm{\Sigma}=\bm{C}\bm{\Lambda}\bm{C'}=\bm{C}\bm{\Lambda}^{1/2}\bm{\Lambda}^{1/2}\bm{C'}=\bm{TT'}$$
+$$\bm{\Sigma}^{-1}=\bm{C}\bm{\Lambda}^{-1}\bm{C'}=\bm{C}\bm{\Lambda}^{-1/2}\bm{\Lambda}^{-1/2}\bm{C'}=\bm{\Sigma^{-1/2}(\Sigma^{-1/2}})'$$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Aitken (1935) Generalized Least Squares}
+\begin{itemize}
+\item If we know $\Sigma$, we can do no better than to premultiply our linear model with  $\Sigma^{-1/2}$,
+\begin{align*}
+\bm{y}&=\bm{X\beta}+\bm{e}\\ 
+\Sigma^{-1/2}\bm{y}&=\Sigma^{-1/2}\bm{X\beta}+\Sigma^{-1/2}\bm{e}\\
+\bm{\tilde{y}}&=\bm{\tilde{X}\beta}+\bm{\tilde{e}}\\\pause
+\bm{\tilde{\beta}}_{GLS}&=(\bm{\tilde{X}'\tilde{X}})^{-1}\bm{\tilde{X}'\tilde{y}}\\
+&=((\Sigma^{-1/2}\bm{X})'(\Sigma^{-1/2}\bm{X}))^{-1}(\Sigma^{-1/2}\bm{X})'(\Sigma^{-1/2}\bm{y})\\
+&=(\bm{X}'\Sigma^{-1}\bm{X})^{-1}\bm{X}'\Sigma^{-1}\bm{y}
+\end{align*}
+Here we have $E[\bm{\tilde{\beta}}_{GLS}]=\bm{\beta}$ and 
+$var(\bm{\tilde{\beta}}_{GLS})=\sigma^2(\bm{X}'\Sigma^{-1}\bm{X})^{-1}$
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{GLS is BLUE}
+\begin{itemize}
+\item Suppose b is an alternative linear unbiased estimator that differs by $\bm{A}$
+\begin{align*}
+b&=[(\bm{X'\Sigma^{-1} X})^{-1}\bm{X}'\bm{\Sigma}^{-1}+\bm{A}]\bm{Y}\\\pause
+&=[(\bm{X'\Sigma^{-1} X})^{-1}\bm{X}'\bm{\Sigma}^{-1}+\bm{A}](\bm{X\beta}+\bm{e})\\
+&=[(\bm{X'\Sigma^{-1} X})^{-1}\bm{X}'\bm{\Sigma}^{-1}+\bm{A}]\bm{X\beta}+[(\bm{X'\Sigma^{-1} X})^{-1}\bm{X}'\bm{\Sigma}^{-1}+\bm{A}]\bm{e}\\
+\bm{AX}&=0\tag{Because b is unbiased.}\\ \pause
+var(b)&=\sigma^2[(\bm{X'\Sigma^{-1} X})^{-1}\bm{X}'\bm{\Sigma}^{-1}+\bm{A}]\bm{\Sigma} [(\bm{X'\Sigma^{-1} X})^{-1}\bm{X}'\bm{\Sigma}^{-1}+\bm{A}]'\\\pause
+&=\sigma^2[(\bm{X'\Sigma^{-1} X})^{-1} + \bm{A\Sigma A}'+(\bm{X'\Sigma^{-1} X})^{-1}\bm{X'A'}+\bm{AX}(\bm{X'\Sigma^{-1} X})^{-1}]\\\pause
+&=\sigma^2[(\bm{X'\Sigma^{-1} X})^{-1} + \bm{A\Sigma A}'+\bm{0}+\bm{0}]\\\pause
+&=\sigma^2(\bm{X'\Sigma^{-1} X})^{-1} + \sigma^2\bm{A\Sigma A}'
+\end{align*}
+\item $\Sigma$ is positive definite, so $\sigma^2\bm{A\Sigma A}'\geq 0$; minimum variance requires $\bm{A}=0$ \qed
+\end{itemize}
+\end{frame}
+
+\begin{frame}{GLS Properties}
+\begin{itemize}
+\item GLS estimators are unbiased and efficient
+\item Small difference, $P_*=\bm{X}(\bm{X}'\bm{\Sigma}^{-1}\bm{X})^{-1}\bm{X}'\bm{\Sigma}^{-1}$ is not symmetric, but otherwise, it is OLS.
+\item However, it requires knowing $\Sigma$, which makes it infeasible.
+\item Later we will show how to use a two-step procedure to estimate $\Sigma$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{When GLS Beats OLS: A Two-Group Example}
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item Survey data from two groups: Group A (rich, $n_A=50$, $\sigma_A^2=100$) and Group B (poor, $n_B=50$, $\sigma_B^2=1$).
+\item OLS gives \emph{equal weight} to every observation $\to$ noisy Group A observations inflate variance.
+\item GLS (= WLS here) weights by $w_i=1/\sigma_i^2$: Group A gets weight $1/100$, Group B gets weight $1$.
+\end{itemize}
+\smallskip
+\textbf{Variance comparison} (scalar case, equal group sizes):
+$$\text{var}(\hat{\beta}_{OLS})\propto \frac{\sigma_A^2+\sigma_B^2}{2}=\frac{101}{2}\qquad \text{var}(\hat{\beta}_{GLS})\propto \frac{1}{1/\sigma_A^2+1/\sigma_B^2}=\frac{100}{101}\approx 1$$
+\vspace{-0.5em}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, boxsep=2pt, top=2pt, bottom=2pt]
+GLS is just common sense: trust precise observations more. When you know which observations are noisier, use that information.
+\end{tcolorbox}
+\end{frame}
+
+\begin{frame}[fragile]{Comparing OLS and WLS: R Example}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+set.seed(99); B <- 5000; n <- 100
+b_ols <- b_wls <- numeric(B)
+
+for (i in 1:B) {
+  x <- rnorm(n)
+  # Two groups: first 50 noisy, last 50 precise
+  sigma <- c(rep(10, 50), rep(1, 50))
+  y <- 1 + 2*x + rnorm(n, 0, sigma)
+
+  b_ols[i] <- coef(lm(y ~ x))[2]
+  b_wls[i] <- coef(lm(y ~ x, weights = 1/sigma^2))[2]
+}
+c(sd(b_ols), sd(b_wls))   # WLS SE is smaller
+# ~ 1.01      ~ 0.14
+\end{lstlisting}
+\vspace{0.3em}
+\begin{itemize}
+\item Both estimators are unbiased ($\bar{\hat{\beta}}\approx 2$), but WLS standard errors are $\sim$7$\times$ smaller.
+\item In practice, use \texttt{lm(..., weights = 1/sigma\_hat\^{}2)} when group variances are known or estimable.
+\end{itemize}
+\end{frame}
+
+\section{Residuals}
+
+\begin{frame}{Residuals}
+\begin{itemize}
+\item We will be using estimates of the residuals to construct covariance matrix estimators that do not require homoskedasticity.
+\item The residuals $\hat{e}_i=Y_i-\bm{x}_i\hat{\beta}$ can be written in vector notation as $\bm{\hat{e}}=\bm{Me}$.  
+\item Recall $\bm{M}=\bm{I}-\bm{X(X'X)^{-1}X'}$
+\item Given $\bm{X}$, the expectation of the residuals is zero :
+$$\mathbb{E}[\bm{\hat{e}}|\bm{X}]=\mathbb{E}[\bm{Me}|\bm{X}]=\bm{M}\mathbb{E}[\bm{e}|\bm{X}]=0$$
+\item Given $\bm{X}$, the variance of the residuals is:
+$$\var[\bm{\hat{e}}|\bm{X}]=\var[\bm{Me}|\bm{X}]=\bm{M}\var[\bm{e}|\bm{X}]\bm{M}=\bm{MDM}$$
+
+\end{itemize}
+\end{frame}
+ 
+ 
+\begin{frame}{Homoskedastic Errors}
+\begin{itemize}
+ \item If we assume homoskedasticity, $\bm{E}[e^2|X]=\sigma^2$
+$$\var[\bm{\hat{e}}|\bm{X}]=\var[\bm{Me}|\bm{X}]=\bm{M}\var[\bm{e}|\bm{X}]\bm{M}=\bm{M}\bm{I}\sigma^2 \bm{M}=\bm{M}\sigma^2$$
+\item Note that the $i$th diagonal element of $\bm{M}$ is $1-h_{ii}$, so
+$$\var[\hat{e}_i|\bm{X}]=\mathbb{E}[\hat{e}^2_i|\mathbb{X}]=(1-h_{ii})\sigma^2\neq \sigma^2$$
+\item $\hat{e}^2_i$ is a biased estimator and it is heteroskedastic.
+\end{itemize}
+\end{frame}
+  
+\begin{frame}{Prediction Errors}
+\begin{itemize}
+\item The prediction errors $\tilde{e}_i=Y_i-\bm{x}_i\hat{\beta}_{-i}=(1-h_{ii})^{-1}\hat{e}_i$.
+\item We defined $\bm{M^*}=diag\{(1-h_{11})^{-1},\ (1-h_{22})^{-1},\ldots, (1-h_{nn})^{-1}\}$.
+\item $\bm{\tilde{e}}=\bm{M}^*\bm{\hat{e}}=\bm{M}^*\bm{Me}$
+\item Given $\bm{X}$, the expectation of the prediction errors is zero :
+$$\mathbb{E}[\bm{\tilde{e}}|\bm{X}]=\bm{M^*M}\mathbb{E}[\bm{e}|\bm{X}]=0$$
+\item Given $\bm{X}$, the variance of the prediction errors is:
+ $$\var[\bm{\tilde{e}}|\bm{X}]=\var[\bm{M^*Me}|\bm{X}]=\bm{M^*M}\var[\bm{e}|\bm{X}]\bm{MM^*}=\bm{M^*MDMM^*}$$
+\end{itemize}
+\end{frame}
+ 
+\begin{frame}{Prediction Errors under homoskedasticity}
+\begin{itemize}
+\item Under homoskedasticity, the variance of the prediction errors is:
+ $$\var[\bm{\tilde{e}}|\bm{X}]=\var[\bm{M^*Me}|\bm{X}]=\bm{M^*M}\var[\bm{e}|\bm{X}]\bm{MM^*}=\bm{M^*M}\sigma^2\bm{MM^*}=\bm{M^*MM^*}\sigma^2$$
+\item The variance of the ith prediction error is then:
+ \begin{align*}
+\var[\bm{\tilde{e}}|\bm{X}]&=\mathbb{E}[\tilde{e}_i^2|\bm{X}]\\
+&=(1-h_{ii})^{-1}(1-h_{ii})(1-h_{ii})^{-1}\sigma^2\\
+&=(1-h_{ii})^{-1}\sigma^2\\
+\end{align*}
+\item $\sum \tilde{e}_i^2=\sum ((1-h_{ii})^{-1}\hat{e}_i)^2=PRESS$, "predictive error".
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Standardized Residuals}
+\begin{itemize}
+\item $\var[\bm{\hat{e}}|\bm{X}]=(1-h_{ii})^{-1}\sigma^2$ varies with $\bm{X}$
+\item To make it constant, we can scale the residuals by $(1-h_{ii})^{-1/2}$
+$$\bar{e}_i=(1-h_{ii})^{-1/2}\hat{e}_i$$
+\item $\bm{\bar{e}}=\bm{M}^{*1/2}\bm{Me}$
+\item $\var[\bar{e}_i|\bm{X}]=\mathbb{E}[\bar{e}_i^2|\bm{X}]=\sigma^2$
+\item If the error is homoskedastic, $\bar{e}_i$ has the same bias and variance as the original errors.
+\item If the error is heteroskedastic, these standardized residuals are not.
+\item In R, these are recovered by ``rstandard(lmmod)'': sometimes compared to $-2$, $2$.
+\end{itemize}
+\end{frame}  
+
+
+
+\begin{frame}{Estimating $\hat{\sigma}^2$, $s^2$, $\bar{\sigma}^2$}
+\begin{itemize}
+\item The error variance $\sigma^2$ measures the unexplained part of the regression.
+\item Three estimators:
+\begin{enumerate}
+\item The method of moments estimator is $\hat{\sigma}^2=\frac{1}{n}\sum\hat{e}_i^2$ (Biased)
+\item The bias-corrected estimator is $s^2=\frac{1}{n-k}\sum\hat{e}_i^2$ (sigma in R.)
+\item The standardized estimator $\bar{\sigma}^2=\frac{1}{n}\sum_{i=1}^n\bar{e}_i^2=\frac{1}{n}\sum_{i=1}(1-h_{ii})^{-1}\hat{e}^2$
+\end{enumerate}
+\end{itemize}
+\end{frame}  
+
+
+\begin{frame}{Estimating $\hat{\sigma}^2$}
+\begin{itemize}
+\item Estimator (1) $\hat{\sigma}^2$ takes the average of the squared residuals: $\hat{\sigma}^2=\frac{1}{n}\sum_{i=1}^n \hat{e}^2$
+
+\item The expectation of the estimator uses the following fact:
+$$\hat{\sigma}^2=\frac{1}{n}\bm{e'}\bm{M}\bm{e}=\frac{1}{n}tr(\bm{e'}\bm{M}\bm{e})=tr(\bm{Mee'})$$
+\begin{align*}
+\mathbb{E}[\hat{\sigma}^2|\bm{X}]&=\frac{1}{n}tr(\mathbb{E}[\bm{Mee'}|\bm{X}])\\
+&=\frac{1}{n}tr(\bm{M}\mathbb{E}[\bm{ee'}|\bm{X}])\\ \pause
+&=\frac{1}{n}tr(\bm{M}\bm{D})\\\pause
+&=\frac{1}{n}\sum_{i=1}^n(1-h_{ii})\sigma^2_i
+\end{align*}
+\end{itemize}
+\end{frame}  
+
+\begin{frame}{Estimating $\hat{\sigma}^2$}
+\begin{itemize}
+\item Under conditional homoskedasticity
+\begin{align*}
+\mathbb{E}[\hat{\sigma}^2|\bm{X}]&=\frac{1}{n}tr(\mathbb{E}[\bm{Mee'}|\bm{X}])\\\pause
+&=\frac{1}{n}tr(\bm{M}\mathbb{E}[\bm{ee'}|\bm{X}])\\\pause
+&=\frac{1}{n}tr(\bm{M}\bm{I}_n\sigma^2)\\\pause
+&=\sigma^2\frac{n-k}{n}
+\end{align*}
+\end{itemize}
+\end{frame}
+ 
+\begin{frame}{What should I report?}
+\begin{itemize}
+\item The bias-corrected error variance estimator $s^2$ is used throughout applied work.
+\item It is used to calculate standard errors, F-tests, t-test, and confidence intervals.
+\item It is typically reported as the RMSE = $\sqrt{s^2}$
+\item However, $s^2$ assumes homoskedasticity:
+\begin{itemize}
+\item You will use robust sandwich estimators like HC2 and HC3 (more on that later),
+\item you can report $\bar{\sigma}^2$, which is unbiased under heteroskedasticity.
+\end{itemize}
+\end{itemize}
+\end{frame}
+ 
+ 
+\end{document}

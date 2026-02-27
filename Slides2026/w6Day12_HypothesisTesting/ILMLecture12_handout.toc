@@ -1,0 +1,9 @@
+\beamer@sectionintoc {1}{Constrained LS}{3}{0}{1}
+\beamer@sectionintoc {2}{The F Test}{6}{0}{2}
+\beamer@sectionintoc {3}{Score Tests}{11}{0}{3}
+\beamer@sectionintoc {4}{The Trinity}{14}{0}{4}
+\beamer@sectionintoc {5}{Test Inversion}{16}{0}{5}
+\beamer@sectionintoc {6}{Bonferroni}{20}{0}{6}
+\beamer@sectionintoc {7}{Power}{24}{0}{7}
+\beamer@sectionintoc {8}{Practical Advice}{32}{0}{8}
+\beamer@sectionintoc {9}{Summary}{35}{0}{9}

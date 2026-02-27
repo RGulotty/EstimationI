@@ -1,0 +1,4 @@
+\beamer@sectionintoc {1}{Variance Corrections}{3}{0}{1}
+\beamer@sectionintoc {2}{Clustered Data}{23}{0}{2}
+\beamer@sectionintoc {3}{Practical Recommendations}{67}{0}{3}
+\beamer@sectionintoc {4}{Multicollinearity}{72}{0}{4}

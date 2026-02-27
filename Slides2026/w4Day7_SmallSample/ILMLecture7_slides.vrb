@@ -1,0 +1,24 @@
+\frametitle{R Example: $\chi ^2$ Distribution of $s^2$}
+\begin{lstlisting}[style=Rstyle]
+set.seed(1); n <- 50; k <- 3; sigma2 <- 4
+X <- cbind(1, matrix(rnorm(n*(k-1)), n, k-1))
+beta <- c(2, -1, 0.5)
+scaled_s2 <- replicate(10000, {
+  y <- X %*% beta + rnorm(n, sd = sqrt(sigma2))
+  ehat <- resid(lm(y ~ X - 1))
+  sum(ehat^2) / sigma2   # (n-k)*s^2 / sigma^2
+})
+\end{lstlisting}\pause
+\begin{columns}
+\begin{column}{0.55\textwidth}
+\begin{lstlisting}[style=Rstyle]
+# Compare to chi-squared(n-k)
+mean(scaled_s2)    # ~47 (= n-k)
+var(scaled_s2)     # ~94 (= 2*(n-k))
+\end{lstlisting}
+\end{column}
+\begin{column}{0.42\textwidth}
+Theory: $\mathbb{E}[\chi^2_{47}]=47$,\\ $\text{Var}[\chi^2_{47}]=94$.\\[4pt]
+The simulation matches.
+\end{column}
+\end{columns}

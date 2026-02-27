@@ -1,0 +1,925 @@
+\documentclass[aspectratio=169]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+\usepackage{booktabs}
+%  \usetheme{Pittsburgh}
+%\usefonttheme[2]{sans}
+\renewcommand{\familydefault}{cmss}
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+%\usepackage{palatino}
+%\usepackage{cmbright}
+
+\useinnertheme{rectangles}
+}
+\usepackage{bm}
+\usepackage{amsmath}
+\usepackage{stackrel}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\usepackage{array}
+ \usepackage{listings}
+\definecolor{darkpurple}{rgb}{0.4, 0, 0.6}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=darkpurple}
+\usepackage{tcolorbox}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+%\usepackage[all]{xy}
+
+\usepackage{lipsum}
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+
+% Define the color and style for the code block
+\usepackage{color}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models: CEF and Best Linear Predictor}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+
+\begin{document}
+
+
+\begin{frame}
+\maketitle
+\end{frame}
+
+
+\begin{frame}{Populations, Projections, and Structure}
+\begin{itemize}
+\item Today we study relationships between random variables 
+      $Y$ and $X = (X_1, \ldots, X_k)$ in the population.
+
+\item The \textbf{Conditional Expectation Function (CEF)}:
+      $m(X) = \mathbb{E}[Y \mid X]$.
+      \\ \quad A potentially non-linear expectation of $Y$ based on $X$.
+
+\item The \textbf{Best Linear Predictor (BLP)}:
+      $\beta^* = \arg\min_b \mathbb{E}[(Y - X'b)^2]$.
+      \\ \quad The linear projection of $Y$ onto $X$ in the population.
+
+\item Later we will use algebra to fit a line in the sample and use probability theory to estimate the BLP.
+
+\item Structural (exogeneity) assumptions determine whether the BLP coincides with the CEF.
+\end{itemize}
+\end{frame}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{CEF}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Properties of Conditional Expectation}
+\begin{itemize}
+  \item $m(X) \equiv \mathbb{E}[Y \mid X]$ \hfill (Definition)
+  \item[-] Note: $\mathbb{E}[Y|X]$ is a random variable (a function of $X$), not a number!
+  \bigskip
+  \item $\mathbb{E}[\mathbb{E}[Y \mid X] \mid X] = \mathbb{E}[Y \mid X]$ \hfill (Idempotence)
+  \bigskip
+  \item $\mathbb{E}[\mathbb{E}[Y \mid X]] = \mathbb{E}[Y]$ \hfill (Law of Iterated Expectations)
+  \bigskip
+  \item $m(X) = \arg\min_{g} \mathbb{E}[(Y - g(X))^2]$ \hfill (Best predictor of $Y$ using $X$)
+
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{CEF Error and Mean Independence}
+\begin{itemize}
+\item Define the CEF error: $e=Y-m(X)$, so $Y=m(X)+e$.
+\item The CEF error has conditional mean zero (by construction):
+\begin{align*}
+\mathbb{E}[e|X]&=\mathbb{E}[Y-m(X)|X]=m(X)-m(X)=0
+\end{align*}
+\item And unconditional mean zero (by LIE):
+\begin{align*}
+\mathbb{E}[e]&=\mathbb{E}[\mathbb{E}[e|X]]=0
+\end{align*}
+\item $\mathbb{E}[e|X]=0$ is called \emph{mean independence}---true by construction, this is \textbf{not} full independence.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Hansen Theorem 2.4: Properties of the CEF Error $e$}
+\begin{enumerate}
+\item $\mathbb{E}[e|X]=0$
+\item $\mathbb{E}[e]=0$
+\item If the rth moment of Y exists, the rth moment of $e$ exists. [Technical]
+\item For \emph{any measurable function} h(X) where the expected covariance with $e$ exists [$\mathbb{E}[|h(X)e|]< \infty$], then, $\mathbb{E}[h(X)e]=0$
+\end{enumerate}
+\bigskip
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=Key Point]
+These are properties, not assumptions; they follow from LIE and the definition of the CEF.
+\end{tcolorbox}
+\end{frame}
+
+
+
+\begin{frame}{Covariance of  Estimator and Disturbance}
+$e$ is a random variable, so we can calculate its covariance with $m(X)$:
+\begin{align*}
+\mathbb{E}[e m(X)] & =  \mathbb{E}[\mathbb{E}[e m(X)|X]]=\mathbb{E}[m(X)\mathbb{E}[e|X]]=\mathbb{E}[m(X)*0]=0
+\end{align*}\pause
+because $\mathbb{E}(Y|X)=m(X)$ is a measurable function of $X$, 2.4.4 applies.\pause
+\begin{align*}
+Cov(e , m(X)) & =  \mathbb{E}[ e m(X)]- \mathbb{E}[e ] \mathbb{E}[m(X)]=0- 0*m(X)=0
+\end{align*}\pause
+The disturbance is uncorrelated with the conditional expectation.  This is what allows us to separate the signal from the noise.
+\end{frame}
+
+
+\begin{frame}{Mean Independence $\neq$ Independence}
+
+Let
+\[
+X \sim \text{Uniform}(-1,1), 
+\qquad
+Y = X^2 + X\varepsilon,
+\]
+where $\varepsilon \sim \mathcal{N}(0,1)$ and $\varepsilon \perp X$.
+
+\bigskip
+
+\textbf{Step 1: Compute the CEF}
+\[
+m(X)=\mathbb{E}[Y|X]
+= X^2 + X\mathbb{E}[\varepsilon|X]
+= X^2.
+\]
+
+\textbf{Step 2: CEF error}
+\[
+e = Y - m(X) = X\varepsilon.
+\]
+
+\pause
+
+\textbf{Step 3: Mean independence holds}
+\[
+\mathbb{E}[e|X]
+= \mathbb{E}[X\varepsilon|X]
+= X\mathbb{E}[\varepsilon|X]
+= 0.
+\]
+
+\pause
+
+\textbf{But independence fails:}
+\[
+\operatorname{Var}(e|X)
+= \operatorname{Var}(X\varepsilon|X)
+= X^2.
+\]
+
+
+\end{frame}
+
+
+\begin{frame}{Variance of the CEF Error}
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Unconditional:}
+$$\sigma^2 \equiv Var[e]=\mathbb{E}[e^2]$$
+A measure of variation in $Y$ not explained by $m(X)$.\\
+\bigskip
+\textbf{Conditional:}
+$$\sigma^2(x)=Var[e|X=x]=\mathbb{E}[e^2|X=x]$$
+Averaging: $\sigma^2=\mathbb{E}[\sigma^2(X)]$
+\end{column}
+\begin{column}{0.48\textwidth}
+\textbf{Mean-variance representation:}\\
+Define $u=\frac{e}{\sigma(X)}$, with $\mathbb{E}[u|X]=0$, $Var[u|X]=1$.
+\begin{align*}
+Y&=m(X)+\sigma(X)u
+\end{align*}
+If $\sigma(X)$ is constant: homoskedastic.\\
+\bigskip
+$X$ matters in two ways: through the mean and through the variance.
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{Hansen Theorem 2.6}
+Call $e_1=Y-m(X_1)$, $e_{12}=Y-m(X_1, X_2)$,
+\bigskip
+$$var[Y]\geq var[e_1]\geq var[e_{12}]$$
+\bigskip
+You will always explain (weakly) more of the variance with more variables.\\
+This is why $R^2$ is a poor measure of model fit.
+\end{frame}
+
+\begin{frame}{Proof of Theorem 2.6: Setup}
+\textbf{Goal:} Show $\mathbb{E}[m(X_1)^2] \leq \mathbb{E}[m(X_1,X_2)^2]$, where $m(\cdot)$ denotes the relevant CEF.\\ \medskip\pause
+\textbf{Step 1.} By LIE, the coarser CEF is a conditional expectation of the finer one:
+$$m(X_1) \;=\; \mathbb{E}[Y|X_1] \;=\; \mathbb{E}\!\big[\,\mathbb{E}[Y|X_1,X_2]\;\big|\;X_1\big] \;=\; \mathbb{E}\!\big[\,m(X_1,X_2)\;\big|\;X_1\big]$$
+\pause
+\textbf{Step 2.} Jensen's inequality: for any convex function $\varphi$ (such as $z\mapsto z^2$),
+$$\varphi\!\big(\mathbb{E}[Z|X_1]\big) \;\leq\; \mathbb{E}\!\big[\varphi(Z)\;\big|\;X_1\big]$$
+\pause
+Apply with $Z = m(X_1,X_2)$ and $\varphi(z)=z^2$:
+$$\Big(\mathbb{E}\!\big[m(X_1,X_2)\;\big|\;X_1\big]\Big)^{\!2} \;\leq\; \mathbb{E}\!\big[m(X_1,X_2)^2\;\big|\;X_1\big]$$
+\pause
+The left side is $m(X_1)^2$ by Step 1, so:
+$$m(X_1)^2 \;\leq\; \mathbb{E}\!\big[m(X_1,X_2)^2\;\big|\;X_1\big]$$
+\end{frame}
+
+\begin{frame}{Proof of Theorem 2.6: Conclusion}
+\textbf{Step 3.} Take unconditional expectations of both sides:
+$$\mathbb{E}\!\big[m(X_1)^2\big] \;\leq\; \mathbb{E}\!\big[m(X_1,X_2)^2\big]$$
+\pause
+\textbf{Step 4.} Convert to variances. Recall $\operatorname{Var}[Z]=\mathbb{E}[Z^2]-(\mathbb{E}[Z])^2$, and by LIE:
+$$\mathbb{E}[m(X_1)]=\mathbb{E}[m(X_1,X_2)]=\mathbb{E}[Y]$$
+so $(\mathbb{E}[Z])^2$ is the same for both.  Subtracting it from the inequality above:
+$$\operatorname{Var}[m(X_1)] \;\leq\; \operatorname{Var}[m(X_1,X_2)]$$
+\pause
+\textbf{Step 5.} Since $\operatorname{Var}[Y]=\operatorname{Var}[m]+\operatorname{Var}[e]$ (by the CEF decomposition), larger $\operatorname{Var}[m]$ means smaller $\operatorname{Var}[e]$:
+$$\operatorname{Var}[e_1] \;\geq\; \operatorname{Var}[e_{12}] \qquad \square$$
+\end{frame}
+
+
+\begin{frame}{Hansen Theorem 2.7: CEF as Best Predictor}
+\begin{itemize}
+\item Goal: Minimize mean squared prediction error: $(Y-g(X))^2$. Assumption: $\mathbb{E}[Y^2]<\infty$.\pause
+\begin{align*}
+\mathbb{E}\left[(Y-g(X))^2\right]&=\mathbb{E}\left[(e+m(X)-g(X))^2\right] \tag{b/c $Y= e+m(X)$}\\ \pause
+&=\mathbb{E}[e^2]+2\mathbb{E}[e(m(X)-g(X))]+\mathbb{E}[(m(X)-g(X))^2]\\\pause
+ &=\mathbb{E}[e^2]+2\times0+\mathbb{E}[(m(X)-g(X))^2] \tag{by thm 2.4.4.}\\\pause
+  &\geq \mathbb{E}[e^2] \tag{b/c squares are positive.}\\\pause
+  &=\mathbb{E}[(Y-m(X))^2]\neq \infty \tag{by thm 2.4.3.}
+ \end{align*}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Implications of Theorem 2.7}
+\begin{itemize}
+\item Regardless of the distribution of $X$ and $Y$, the best predictor is the CEF $m(X)$.
+\begin{itemize}
+\item For example: Consider the intercept only model $\mu=\mathbb{E}[Y]$.
+\item The best predictor for $Y$, among constants, is $\mu$.
+\end{itemize}
+\item Since the CEF is the best predictor, anything else must be identical or worse.
+\item We don't know what the joint distribution is, so we don't generally know the CEF, we have to use an estimator.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Linear CEF and Best Prediction}
+
+If m(x) is \emph{linear} in X, we can write $m(X)=X'\beta$.  The \textbf{linear regression model} is:
+\begin{align*}
+Y&=X'\beta+e, \quad \mathbb{E}[e|X]=0
+\end{align*}
+If homoskedastic: $\mathbb{E}[e^2|X]=\sigma^2$.\\
+\bigskip\pause
+\textbf{Best prediction property:}
+\begin{itemize}
+\item If the CEF is linear, the solution to $\beta=\arg \min_b \mathbb{E}[(Y-X'b)^2]$ gives the right formula for $\beta$.
+\item If the CEF is nonlinear, the solution gives the best linear approximation to the true CEF.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{From CEF to Linear Predictors}
+\begin{itemize}
+\item The CEF provides: summarization, MMSE prediction, and ANOVA decomposition.\pause
+\item But the CEF requires knowing the conditional distribution $f_{Y|x}(y|x)$.
+\begin{itemize}
+\item Exception: CEF is always linear if X is discrete and all interactions are included.
+\end{itemize}\pause
+\item We will instead approximate the CEF using a \textbf{Best Linear Predictor} (BLP).
+\item Later we will show that OLS estimates are optimal \textbf{if} the CEF is linear and the residuals are homogeneous.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The CEF in Political Science}
+\begin{itemize}
+\item \textbf{Voter turnout and age:} $\mathbb{E}[\text{Turnout}|\text{Age}]$ is nonlinear---turnout rises steeply from 18--30, plateaus in middle age, and rises again among retirees.\pause
+\item \textbf{Income and party ID:} $\mathbb{E}[\text{Income}|\text{Party}]$ differs across categories---the CEF is just group means when $X$ is discrete.\pause
+\item \textbf{Conflict and GDP:} $\mathbb{E}[\text{Conflict}|\text{GDP}]$ may be highly nonlinear, with sharp thresholds at low GDP.
+\end{itemize}
+\bigskip
+\textbf{Takeaway:} The CEF is the target. But when the relationship is complex, we approximate it with a linear predictor and interpret accordingly.
+\end{frame}
+
+\begin{frame}{What Have We Learned About the CEF?}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=CEF Summary]
+\begin{enumerate}
+\item $m(X)=\mathbb{E}[Y|X]$ is the \textbf{best predictor} of $Y$ given $X$ (Thm 2.7).
+\item The CEF error $e=Y-m(X)$ satisfies $\mathbb{E}[e|X]=0$ \textbf{by construction}---not an assumption (Thm 2.4).
+\item Signal and noise are uncorrelated: $\text{Cov}(m(X), e)=0$.
+\item More variables $\Rightarrow$ (weakly) smaller error variance (Thm 2.6).
+\item $Y = m(X) + \sigma(X)u$: $X$ shapes both the mean \emph{and} the variance.
+\end{enumerate}
+\end{tcolorbox}
+\medskip
+\textbf{Next:} We approximate $m(X)$ with a \emph{linear} function---the Best Linear Predictor.
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Linear Predictors}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{(Best) Linear Predictors (bivariate case)}
+
+\begin{itemize}
+\item Suppose we want a predictor $ \mathbb{E}^{*}(Y|X)$ that is \textbf{linear}:
+$$f(X)=a+bX$$\pause
+Our standard for prediction is to minimize the mean-square error (best): \\
+\item Whereas the CEF might be infinitely complex, the BLP is characterized just by two numbers, $a$ and $b$.\\
+\pause
+Choose $a$ and $b$ to minimize
+$$M= \mathbb{E}[(Y-(a+bX))^2]$$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Solving for Best Linear Predictor ($a$ and $b$)}
+\textbf{FOC w.r.t.\ $a$:}\pause
+\begin{align*}
+0&=  -2 \mathbb{E}[Y]+2 \mathbb{E}(a+bX) \implies a= \mathbb{E}(Y)-b \mathbb{E}(X)
+\end{align*}
+\pause
+\textbf{FOC w.r.t.\ $b$:}\pause
+\begin{align*}
+0&= -2 \mathbb{E}[YX]+2 \mathbb{E}[(a+bX)(X)]\\
+ \mathbb{E}(YX)&= [ \mathbb{E}(Y)-b \mathbb{E}(X)] \mathbb{E}(X)+b \mathbb{E}(X^2)\\\pause
+ \mathbb{E}(YX)- \mathbb{E}(Y)E(X)&= b[ \mathbb{E}(X^2)- \mathbb{E}(X)^2]\\\pause
+b&=\frac{Cov(X,Y)}{Var(X)}\\
+\end{align*}
+\end{frame}
+
+
+\begin{frame}{Best Linear Predictor}
+The best linear predictor is the population linear projection:
+\begin{align*}
+ \mathbb{E}^{*}[Y|X]&=\beta_0+\beta_1X\\ \pause
+Y&=\beta_0+\beta_1X+e
+\end{align*}
+\pause
+\begin{itemize}
+\item Parameters (in Greek)
+\begin{itemize}
+\item The slope $\beta =\frac{Cov(X,Y)}{Var(X)}$
+\item The intercept $\alpha=\mathbb{E}(Y)-\beta \mathbb{E}(X)$
+\end{itemize}
+\item $\mathcal{P}(Y|X)= \mathbb{E}(Y)+\frac{Cov(X,Y)}{Var(X)}*(X-\mathbb{E}(X))$
+\end{itemize}
+\end{frame}
+
+
+
+
+\begin{frame}{Deriving Variance of BLP at Minimized Values}
+\begin{align*}
+\beta &=\frac{Cov(X,Y)}{Var(X)}&&  \beta Var(X)=Cov(X,Y)
+\end{align*}  \pause
+\begin{align*}
+\mathbb{E}[(Y-(\alpha+\beta X))^2]-\mathbb{E}[Y-(\alpha+\beta X)]^2 &=Var(Y-(\alpha+\beta X))\\\pause
+&=Var(Y-\beta X)\\\pause
+&=Var(Y)+\beta^2Var(X)-2\beta Cov(X,Y)\\\pause
+ &=Var(Y)+\beta^2Var(X)-2\beta^2 Var(X)\\\pause
+  &=Var(Y)-\beta^2 Var(X)\\\pause
+  \sigma^2_\epsilon  &=\sigma^2_Y-\beta^2 \sigma^2_X\\
+\end{align*}
+\end{frame}
+
+
+
+\begin{frame}{Example: Population Linear Projection is not the CEF}
+Example: $Y=X+X^2$, $X\sim N(0,1)$, $\mathbb{E}[X]=\mathbb{E}[X^3]=0$, $\mathbb{E}[X^2]=1$\\
+True CEF: $m(X)=X+X^2$\\
+ Population Linear Projection: $Y=\alpha+\beta X+e$.
+\begin{align*}
+\alpha&=E(Y)-\beta E(X)=E(X+X^2)-\beta*0=0+1-0\\
+\beta&=Cov(X,Y)/Var(X)=Cov(X,X+X^2)/1=1/1\\
+\mathcal{P}(Y|X)&=1+1*X\\\pause
+e&=m(X)-\mathcal{P}(Y|X)=X^2-1\\
+\mathbb{E}[eX]&=\mathbb{E}[(X^2-1)X]=\mathbb{E}[X^3-X]=0
+\end{align*}
+The projection error $e$ is a function of X, and $\mathbb{E}[e|X]\neq 0$.
+\end{frame}
+
+
+
+\begin{frame}{CEF vs Linear Predictors / Projection}
+\begin{itemize}
+\item CEF ($m(X)$)
+\begin{itemize}
+\item Best prediction, the prediction that minimizes squared error.
+\item Can be non-linear.
+\item Requires knowing joint distribution.
+\item Prediction Errors are uncorrelated with any function of X. ($E(e|X)=0$.)
+\end{itemize}
+
+\item Linear Predictor/ Projection ($\mathcal{P}(Y|X)$)
+\begin{itemize}
+\item Draws a line (plane/hyperplane)
+\item Requires knowing variances and covariances.
+\item Prediction Errors are uncorrelated with X ($E(Xe)=0$.)
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{CEF vs BLP: The Big Picture}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=Why Settle for Linear?]
+\begin{itemize}
+\item The CEF is the \emph{best possible} predictor---but we rarely know it.
+\item The BLP is the best \emph{linear} predictor---and we only need $\text{Cov}(X,Y)$ and $\text{Var}(X)$.
+\item When the CEF is actually linear (e.g., jointly normal $X,Y$), BLP $=$ CEF.
+\item When the CEF is nonlinear, BLP gives the best linear approximation.
+\end{itemize}
+\end{tcolorbox}
+\medskip\pause
+\textbf{Key insight:}  $\mathbb{E}[Xe]=0$ (BLP errors uncorrelated with $X$) is \emph{weaker} than $\mathbb{E}[e|X]=0$ (CEF errors mean-independent of $X$).  The BLP projection ``uses up'' the linear information in $X$, but may leave nonlinear patterns in the residual.
+\end{frame}
+
+\begin{frame}{BLP in R: From Formula to Code}
+\begin{lstlisting}[language=R]
+# Population formula: beta = Cov(X,Y) / Var(X)
+beta_formula <- cov(x, y) / var(x)
+alpha_formula <- mean(y) - beta_formula * mean(x)
+
+# OLS estimates the same thing from a sample
+mod <- lm(y ~ x)
+coef(mod)  # compare to c(alpha_formula, beta_formula)
+
+# With multiple regressors: beta = solve(Q_XX) %*% Q_XY
+X <- cbind(1, x1, x2)
+beta_matrix <- solve(t(X) %*% X) %*% t(X) %*% y
+coef(lm(y ~ x1 + x2))  # same answer
+\end{lstlisting}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Dummy Variables}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\setcounter{subsection}{1}
+\begin{frame}{Indicator (Dummy) Variables}
+\begin{itemize}
+\item Our event space $\Omega$ is often binary or categorical (or coded to be so).
+\item[-] Examples: Age bins (18-34), Party (R, D), Country (USA, Japan).
+\end{itemize}
+\bigskip
+\begin{defn}
+Suppose $A$ is an event.  Define $\mathbb{I}= 1$ if outcome in $A$, $\mathbb{I} =0$ otherwise.  Then $E[\mathbb{I}(\omega \in A)] = P(A)$.
+\end{defn}
+\medskip
+CEF with a dummy variable:
+$$\mathbb{E}[Y|A]=\alpha+\delta D_i+e$$
+\end{frame}
+
+\begin{frame}{Indicator Variables: Interpretation}
+
+\begin{align*}
+\mathbb{E}[y_i|\omega_i \in A] & =\beta_0+\beta_1 \\
+\mathbb{E}[y_i|\omega_i \notin A] & =\beta_0 \\
+\mathbb{E}[y_i|\omega_i \in A]-E[y_i|\omega_i \notin A]&=\beta_1
+\end{align*}
+
+\end{frame}
+
+\begin{frame}{Parallel Slopes}
+\begin{itemize}
+\item With a continuous independent variable, adding an indicator control variable is called the "parallel slopes" model.
+\begin{align*}
+y_i&=\beta_0+\delta d_i+\beta_1x_i+e_i
+\end{align*}
+\item The effect of $x_i$ is the same for each group.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Unordered Categorical Variables}
+\begin{itemize}
+\item Suppose we have a model of multi-category data.
+\item For example, ethnic identification $x_i\in \{ \text{Kazakh, Russian, Other}\}$
+$$d_{2i}=\begin{cases} 1 \text{ if } x_i=\text{Kazakh} \\ 0 \text{ otherwise}\end{cases} \quad d_3=\begin{cases} 1 \text{ if } x_i=\text{Russian}\\ 0 \text{ otherwise} \end{cases}$$
+\item Our estimation becomes
+\begin{align*}
+y_i&=b_1+b_2 d_{2i}+b_3 d_{3i}+e_i
+\end{align*}
+\item We can interpret $b_1,\ b_2,\ b_3$ as the difference in means relative to baseline.
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Dummies and Interactions in R}
+\begin{lstlisting}[language=R]
+# R handles dummies automatically with factor()
+df$party <- factor(df$party)  # R, D, I
+mod <- lm(approval ~ party, data = df)
+# Intercept = mean for baseline (alphabetically first)
+# Coefficients = differences from baseline
+
+# Interaction: does party moderate the economy effect?
+mod2 <- lm(approval ~ party * economy, data = df)
+# party * economy expands to: party + economy + party:economy
+
+# Marginal effect of economy for Democrats:
+coef(mod2)["economy"] + coef(mod2)["partyD:economy"]
+\end{lstlisting}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Interaction Terms}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\setcounter{subsection}{1}
+\begin{frame}{Interactions with Dummy Variables}
+\begin{itemize}
+\item Suppose now we have a model with different averages and different responses to $x$
+\begin{align*}
+\text{Group 1: }y_i&=\mu+\beta_1x_i+e_i,\\
+\text{Group 2: }y_i&=\mu+\delta+(\beta_1+\gamma)x_i+e_i,\\
+\end{align*}
+\item Again, we can use a dummy variable $d_i=0$ if $i$ is in group 1, $d_i=1$ if $i$ is in group 2.
+\begin{align*}
+y_i&=\mu+\delta d_i+ \beta_1x_i+  \gamma d_i x_i+e_i
+\end{align*}
+\item $d_ix_i$ is called an interaction term.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Interactions Generally and Interpretation}
+\begin{itemize}
+\item With continuous moderator $z$:
+\begin{align*}
+y_i&=\mu+ \delta z_i +\beta_1 x_i+  \gamma z_i*x_i+e_i
+\end{align*} \pause
+\item An interaction conditions the effect of $x$ with $z$:
+\begin{align*}
+\frac{\partial E[y_i|X]}{\partial x_i}&=\beta_1 +  \gamma z_i
+\end{align*}
+\item A one unit increase in $x_i$ produces a $\beta_1 +  \gamma z_i$ unit increase in $y_i$.
+\item $\beta_1$ is the effect when $z_i=0$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Data Transformations to Ease Interpretation}
+\begin{itemize}
+\item You can demean continuous variables.
+\begin{align*}
+\frac{\partial E[y_i|X]}{\partial x_i}&=\frac{\partial}{\partial x_i}[\mu+ \delta (z_i-\bar{z})+\beta_1(x_i-\bar{x})+  \gamma (z_i-\bar{z})*(x_i-\bar{x})]\\
+&=\beta_1 +  \gamma (z_i-\bar{z})
+\end{align*}
+\item A one unit increase in $x_i$ produces a $\beta_1 +  \gamma (z_i-\bar{z})$ unit increase in $y_i$.
+\item But now $\beta_1$ is the average marginal effect (when $z_i=\bar{z}_i)$
+\end{itemize}
+\end{frame}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Best Linear Predictor}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Regularity Conditions and MSPE}
+\begin{itemize}
+\item Given Y and $X=\begin{pmatrix} X_1\\ X_2\\X_3\\1 \end{pmatrix}$, we need:
+\begin{enumerate}
+\item $\mathbb{E}[Y^2]<\infty$
+\item $\mathbb{E}||X||^2<\infty$
+\item $\mathbf{Q}_{XX}=\mathbb{E}[XX']$ is positive definite.
+\end{enumerate}\pause
+\item A linear predictor: $X'\beta=X_1 \beta_1+X_2 \beta_2+X_3 \beta_3+\beta_4$
+\item The mean square prediction error is $S(\beta)=\mathbb{E}[(Y-X'\beta)^2]$.
+\item The \textbf{best linear predictor} $\mathcal{P}[Y|X]$ minimizes $S(\beta)$.
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Deriving the Linear Projection Coefficient $\beta$}
+\begin{align*}
+S(\beta)&=\mathbb{E}[(Y-X'\beta)(Y-X'\beta)]\\\pause
+&=\mathbb{E}[Y^2]-2\beta'\mathbb{E}[XY]+\beta'\mathbb{E}[XX']\beta\\\pause
+0&=\frac{\partial}{\partial \beta} S(\beta)=-2\mathbb{E}[XY]+2\mathbb{E}[XX']\beta\\\pause
+\mathbf{Q}_{XY}&=\mathbf{Q}_{XX}\beta\\\pause
+\mathbf{Q}_{XX}^{-1}\mathbf{Q}_{XY}&=\beta\\\pause
+\mathbb{E}[XX']^{-1}\mathbb{E}[XY]&=\beta
+\end{align*}
+\end{frame}
+
+\begin{frame}{Linear Projection and Projection Error}
+\begin{align*}
+\mathcal{P}[Y|X]&=X'\beta=X'\mathbb{E}[XX']^{-1}\mathbb{E}[XY]
+\end{align*}\pause
+The projection error is $e=Y-X'\beta$, so $Y=X'\beta+e$.\\
+\medskip
+The error is uncorrelated with $X$:
+\begin{align*}
+\mathbb{E}[Xe]&=\mathbb{E}[XY]-\mathbb{E}[XX']\mathbb{E}[XX']^{-1}\mathbb{E}[XY]=0\\
+\begin{pmatrix}\mathbb{E}[X_1e]\\\mathbb{E}[X_2e] \\ \vdots \\\mathbb{E}[1*e] \end{pmatrix}&=\begin{pmatrix}0\\0\\ \vdots \\ 0\end{pmatrix}
+\end{align*}
+This is $k$ equations, the last of which is $\mathbb{E}[e]=0$ when there is a constant.
+\end{frame}
+
+\begin{frame}{The Design Matrix}
+
+$\beta = \mathbb{E}[XX']^{-1}\mathbb{E}[XY]$ exists and is unique \emph{if} $\mathbf{Q}_{XX}=\mathbb{E}[XX']$ is invertible.\\
+\bigskip
+$\mathbf{Q}_{XX}$ is called the design matrix.\\
+\bigskip
+For any non-zero $\alpha \in \mathbb{R}^k$
+$$\alpha'\bm{Q}_{XX}\alpha=\mathbb{E}[\alpha'XX'\alpha]=\mathbb{E}[(\alpha'X)^2] \geq 0$$
+This must be strictly $>0$ to be invertible, if not, there is no unique solution to $\mathbf{Q}_{XY}=\mathbf{Q}_{XX}\beta$, and we say $\beta$ is not identified.
+\end{frame}
+
+
+\begin{frame}{Application: Linear Probability Model (Binary $Y$)}
+\begin{align*}
+P(Y=1|X)&=\beta_0+\beta_1X
+\end{align*}
+\begin{itemize}
+\item Suppose we have a binary outcome: $Y=\mathbb{I}(\omega\in B)$
+\item $\beta_0$ is the probability that $Y=1$ if $X=0$
+\item $\beta_1$ is the the change in probability that $Y=1$ given a one unit change in $X$.
+\item The BLP is still the best linear predictor: $\beta=\mathbb{E}[XX']^{-1}\mathbb{E}[XY]$.
+\item However, it is an approximation to a probability, not itself a probability.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Linear Predictor Error Variance}
+\begin{itemize}
+\item Hansen defines $\sigma^2=\mathbb{E}[e^2]$, $Q_{YY}=\mathbb{E}[Y^2]$ and $\mathbf{Q}_{YX}=\mathbb{E}[YX']$, a $1\times k$ vector.
+\item Recall, $X$ and  $\beta$ are $k\times 1$ vectors.
+\begin{align*}
+\sigma^2&=\mathbb{E}[(Y-X'\beta)^2]\\ \pause
+&=\mathbb{E}[Y^2]-2\mathbb{E}[YX']\beta+\beta'\mathbb{E}[XX']\beta\\\pause
+&=Q_{YY}-2\bm{Q}_{YX}\bm{Q}^{-1}_{XX}\bm{Q}_{XY}+\bm{Q}_{YX}\bm{Q}^{-1}_{XX}\bm{Q}_{XX}\bm{Q}^{-1}_{XX}\bm{Q}_{XY}\\\pause
+&=Q_{YY}-\bm{Q}_{YX}\bm{Q}^{-1}_{XX}\bm{Q}_{XY}\\\pause
+&\equiv Q_{YY\cdot X}
+\end{align*}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Intercepts and Slopes}
+\begin{itemize}
+\item We will often exclude the 1 from X and write the linear projection as:
+$$Y=X'\beta+\alpha+e$$
+\item Demeaning we have a useful reinterpretation of the projection coefficient:
+\begin{align*}
+Y-\mu_Y&=(X-\mu_X)'\beta+e\\
+\beta&=(\mathbb{E}[(X-\mu_X)(X-\mu_X)'])^{-1}\mathbb{E}[(X-\mu_X)(Y-\mu_Y)]\\
+\beta&=var[X]^{-1}cov(X,Y)\\
+\end{align*}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Omitted Variable Bias}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Partitions and Regression Sub-Vectors}
+\begin{itemize}
+\item Divide our regressors into $X=\begin{pmatrix} X_1\\ X_2\end{pmatrix}$, so the linear projection is:
+\begin{align*}
+Y&=X_1'\beta_1+X_2'\beta_2+e, \quad \mathbb{E}[Xe]=0
+\end{align*}
+\item We can partition $\mathbf{Q}_{XX}$ and $\mathbf{Q}_{XY}$:
+\begin{align*}
+\mathbf{Q}_{XX}&=\begin{bmatrix} \mathbf{Q}_{11} &\mathbf{Q}_{12}\\\mathbf{Q}_{21}&\mathbf{Q}_{22}\end{bmatrix} \quad
+\mathbf{Q}_{XY}=\begin{bmatrix} \mathbf{Q}_{1Y}\\\mathbf{Q}_{2Y}\end{bmatrix}
+\end{align*}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{A Useful Formula}
+\begin{itemize}
+\item Recall the error variance was: $Q_{YY\cdot X}\equiv Q_{YY}-\bm{Q}_{YX}\bm{Q}^{-1}_{XX}\bm{Q}_{XY}$
+\item Analogously $\mathbf{Q}_{11\cdot 2}\equiv \mathbf{Q}_{11}-\bm{Q}_{12}\bm{Q}^{-1}_{22}\bm{Q}_{21}$,and $\mathbf{Q}_{22\cdot 1}\equiv \mathbf{Q}_{22}-\bm{Q}_{21}\bm{Q}^{-1}_{11}\bm{Q}_{12}$, etc.
+\item In each case, $\mathbf{Q}_{a\cdot b}$ is the variation in $a$ not predicted by the linear projection of $b$.
+\end{itemize}
+\end{frame}
+
+%
+%\begin{frame}{Schur Complement}
+%\begin{align}
+%\bm{Mz}\equiv \begin{bmatrix} \bm{A} & \bm{B}\\\bm{C} & \bm{D}\end{bmatrix}\begin{bmatrix} x\\y\end{bmatrix}&=0 \iff \nonumber\\\pause
+%\bm{A}x+\bm{B}y&=0 \\
+%\bm{C}x+\bm{D}y&=0\\\pause
+%-\bm{CA}^{-1}(\bm{A}x+\bm{B}y)&=0 \tag{Multiply (5.1) by $-\bm{CA}^{-1}$}\\\pause
+%\bm{C}x+\bm{D}y-\bm{CA}^{-1}(\bm{A}x+\bm{B}y)&=0 \tag{Add to (5.2)}\\\pause
+%(\bm{D}-\bm{CA}^{-1}\bm{B})y&=0 \nonumber
+%\end{align}\pause
+%$\bm{D}-\bm{CA}^{-1}\bm{B}$ is the Schur complement of $\bm{A}$ in $\bm{M}$.
+%\end{frame}
+
+
+\begin{frame}{Partitioned Matrix Inversion and Regression}
+\begin{itemize}
+\item By similar reasoning:
+$$\bm{Q}_{XX}^{-1}=\begin{bmatrix} \mathbf{Q}_{11\cdot 2}^{-1} &-\mathbf{Q}_{11\cdot 2}^{-1}\mathbf{Q}_{12}\mathbf{Q}_{22}^{-1}\\ -\mathbf{Q}_{22\cdot 1}^{-1}\mathbf{Q}_{21}\mathbf{Q}_{11}^{-1}&\mathbf{Q}_{22\cdot 1}^{-1}\end{bmatrix}$$
+\item As a result:
+\begin{align*}
+\begin{bmatrix}\beta_1\\\beta_2\end{bmatrix}&=\begin{bmatrix} \mathbf{Q}_{11\cdot 2}^{-1} \mathbf{Q}_{1Y\cdot 2}\\ \mathbf{Q}_{22\cdot 1}^{-1} \mathbf{Q}_{2Y\cdot 1} \end{bmatrix}
+\end{align*}
+\item We can use $\beta_1=\mathbf{Q}_{11\cdot 2}^{-1} \mathbf{Q}_{1Y\cdot 2}$ to understand multivariate regression.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Interpreting Multivariate Regression}
+\begin{itemize}
+\item The multivariate projection equation is $Y=X_1'\beta_1+X_2'\beta_2+e$
+\item $X_1$ consists of a part explainable by a linear projection of $X_2$ and a part that is not.  Call the latter $u_1$.
+\item $\beta_1$ is the projection of $Y$ on $u_1$
+\item This is the idea behind the Ballantine diagram.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Demonstration: Iterated Projection}
+Divide $X$ into a single variable in $X_1$, with all the other variables in $X_2$, so that
+$$Y=X_1'\beta_1+X_2'\beta_2+e$$
+Regress $X_1$ on $X_2$:
+\begin{align*}
+X_1&=X_2'\gamma_2+u_1\\
+\mathbb{E}[X_2u_1]&=0\\
+\gamma_2&=\mathbf{Q}_{22}^{-1} \mathbf{Q}_{21}\\
+\mathbb{E}[u_1^2]&=\mathbf{Q}_{11\cdot 2}\\
+\mathbb{E}[u_1Y]&=\mathbf{Q}_{1Y}-\mathbf{Q}_{12}\mathbf{Q}^{-1}_{22}\mathbf{Q}_{2Y}=\mathbf{Q}_{1Y\cdot2}\\
+\beta_1&=\mathbf{Q}_{11\cdot 2}^{-1} \mathbf{Q}_{1Y\cdot 2}=\frac{\mathbb{E}[u_1Y]}{\mathbb{E}[u_1^2]}
+\end{align*}
+\end{frame}
+
+\begin{frame}{Omitted Variable Bias}
+\begin{itemize}
+\item Begin with $Y=X'\beta+e=X_1'\beta_1+X_2'\beta_2+e$
+\item Suppose that we failed to include $X_2$ in our model, so we actually estimate a \textbf{short regression}:
+$$Y=X_1'\gamma_1+u, \quad E[X_1u]=0$$
+\item We can study the components of $\gamma_1$.
+\begin{align*}
+\gamma_1&=(\mathbb{E}[X_1X_1'])^{-1}\mathbb{E}[X_1Y]\\
+&=(\mathbb{E}[X_1X_1'])^{-1}\mathbb{E}[X_1(X_1'\beta_1+X_2'\beta_2+e)]\\
+&=\beta_1+\Gamma_{12}\beta_2\\
+\end{align*}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{OVB is Not Solved by Adding Variables}
+\begin{itemize}
+\item Suppose $Y=X'\beta+e=X_1'\beta_1+X_2'\beta_2+X_3'\beta_3+e$
+\item Suppose we cannot measure $X_3$.  Instead, we can choose either:
+$$Y=X_1'\gamma_1+u_1$$
+$$Y=X_1'\delta_1+X_2'\delta_2+u_2$$
+\item $\gamma_1=\beta_1+\Gamma_{12}\beta_2+\Gamma_{13}\beta_3$.
+\item $\delta_1=\beta_1+\Gamma_{13\cdot 2}\beta_3$.
+\item Which is better depends on the signs and sizes of these terms!
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{OVB in Practice: Does Democracy Cause Growth?}
+\begin{itemize}
+\item Barro (1996) regresses GDP growth on a democracy index:
+$$\text{Growth}_i = \beta_1 \text{Democracy}_i + e_i$$
+\item But countries that democratize also tend to have stronger property rights, higher education, and colonial histories that affect growth.\pause
+\item The OVB formula tells us:
+$$\gamma_1 = \beta_1 + \underbrace{\Gamma_{12}}_{\substack{\text{correlation of}\\\text{democracy with}\\\text{institutions}}}\underbrace{\beta_2}_{\substack{\text{effect of}\\\text{institutions}\\\text{on growth}}}$$\pause
+\item If institutions are positively correlated with democracy ($\Gamma_{12}>0$) and positively affect growth ($\beta_2>0$), then $\gamma_1$ \alert{overstates} the effect of democracy.
+\item Adding controls can help---but only if they reduce the bias term, not increase it.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Where We Stand}
+\small
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=Recap: From Population to Practice]
+\begin{enumerate}
+\item \textbf{CEF} ($m(X)=\mathbb{E}[Y|X]$): Best predictor, but requires the full joint distribution.
+\item \textbf{BLP} ($\mathcal{P}[Y|X]=X'\beta$): Best \emph{linear} predictor, requiring only means, variances, and covariances.
+\item \textbf{Partitioned regression}: Each coefficient captures the effect of a variable \emph{after removing} what other variables predict.
+\item \textbf{OVB}: Omitting a correlated variable biases coefficients; adding variables doesn't always help.
+\end{enumerate}
+\end{tcolorbox}
+\medskip
+\textbf{Next:} All of this is in the \emph{population}. Starting next lecture, we move to \emph{samples}---using OLS to estimate $\beta$ and studying when OLS does a good job.
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Causal Interpretation of Regression}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{What Causal Effect Does Regression Recover?}
+\begin{itemize}
+\item Causal inference is interested in:\\
+$$\delta_{X}\equiv E[Y|X, D=1]-E[Y|X, D=0]$$
+That is, given some value of X, what is the expected difference in outcomes between treatment and control?
+\item Suppose we have the following regression:
+$$Y=\delta_R D+X'\beta+e$$
+\item It turns out $\delta_R$ is a weighted average of $\delta_X$, where the weights depend on the variance of X.
+\item We can use partitions to explain those weights.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Applying Partitions to Treatment Dummy}
+\begin{align*}
+\delta_R&=\frac{Cov(Y, \tilde{D})}{Var (\tilde{D})} \\ \pause
+&=\frac{E[(D-E[D|X])Y]}{E[(D-E[D|X])^2]}\\\pause
+&=\frac{E\{(D-E[D|X])E[Y|D,X]\}}{E[(D-E[D|X])^2]} \tag{By LIE}\\
+\end{align*}
+\end{frame}
+
+\begin{frame}{Notational Trick}
+\begin{align*}
+E[Y|X, D]&=E[Y|X, D=0](1-D)+E[Y|X, D=1]D\\\pause
+&=E[Y|X, D=0]+(E[Y|X, D=1]-E[Y|X, D=0])D\\\pause
+&=E[Y|X, D=0]+\delta_XD
+\end{align*}
+\end{frame}
+
+\begin{frame}{Regression as Weighted Average of Causal Effects}
+\begin{align*}
+&=\frac{E\{(D-E[D|X])E[Y|D,X]\}}{E[(D-E[D|X])^2]}\\\pause
+&=\frac{E\{(D-E[D|X])E[Y|X, D=0]\}+E\{(D-E[D|X])D\delta_X\}}{E[(D-E[D|X])^2]} \\\pause
+&=\frac{0+E\{(D-E[D|X])D\delta_X\}}{E[(D-E[D|X])^2]} \tag{X and $\tilde{D}$ are uncorrelated.}\\\pause
+&=\frac{E[\sigma^2_{D|X}\delta_X]}{E[\sigma^2_{D|X}]} \tag{Where $\sigma^2_{D|X}$ is the conditional variance of D given X.}
+\end{align*}
+Regression puts the most weight on values of X with the highest variance in D.  Those have the closest to an even split between treatment and control and are most precisely estimated.
+\end{frame}
+
+
+\end{document}

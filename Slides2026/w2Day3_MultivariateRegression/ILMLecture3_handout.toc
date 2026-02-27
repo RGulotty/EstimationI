@@ -1,0 +1,2 @@
+\beamer@sectionintoc {1}{Derivation of OLS}{2}{0}{1}
+\beamer@sectionintoc {2}{Estimation of $\sigma ^2_{e}$}{19}{0}{2}

@@ -1,0 +1,547 @@
+
+\documentclass[aspectratio=169, handout]{beamer}
+
+%\usepackage[table]{xcolor}
+\mode<presentation> {
+\setbeamercovered{transparent}
+  \usetheme{Boadilla}
+
+%  \usetheme{Pittsburgh}
+%\usefonttheme[2]{sans}
+\renewcommand{\familydefault}{cmss}
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+%\usepackage{palatino}
+%\usepackage{cmbright}
+\usepackage{bm}
+\usepackage{listings}
+\useinnertheme{rectangles}
+}
+\lstset{%
+  language=R,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{darkpurple},
+  breaklines=true,
+  numbers=left,
+  numberstyle=\tiny,
+  frame=single,
+  framerule=0.5pt,
+}
+\usepackage{amsmath}
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{structure}{fg= blue}
+\definecolor{trial}{cmyk}{1,0,0, 0}
+\definecolor{trial2}{cmyk}{0.00,0,1, 0}
+\definecolor{darkgreen}{rgb}{0,.4, 0.1}
+\definecolor{darkpurple}{rgb}{0.4, 0, 0.6}
+\usepackage{array}
+\beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
+text}{fg=darkpurple}
+\usepackage{tcolorbox}
+\setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
+
+\font\domino=domino
+\def\die#1{{\domino#1}}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usepackage{colortbl}
+
+\renewcommand{\familydefault}{cmss}
+%\usepackage[all]{xy}
+
+\usepackage{tikz}
+\usepackage{lipsum}
+
+ \newenvironment{changemargin}[3]{%
+ \begin{list}{}{%
+ \setlength{\topsep}{0pt}%
+ \setlength{\leftmargin}{#1}%
+ \setlength{\rightmargin}{#2}%
+ \setlength{\topmargin}{#3}%
+ \setlength{\listparindent}{\parindent}%
+ \setlength{\itemindent}{\parindent}%
+ \setlength{\parsep}{\parskip}%
+ }%
+\item[]}{\end{list}}
+\usetikzlibrary{arrows}
+
+\usecolortheme{lily}
+
+\newtheorem{com}{Comment}
+\newtheorem{lem} {Lemma}
+\newtheorem{prop}{Proposition}
+\newtheorem{condition}{Condition}
+\newtheorem{thm}{Theorem}
+\newtheorem{defn}{Definition}
+\newtheorem{cor}{Corollary}
+\newtheorem{obs}{Observation}
+ \numberwithin{equation}{section}
+ 
+\makeatletter
+\def\beamerorig@set@color{%
+  \pdfliteral{\current@color}%
+  \aftergroup\reset@color
+}
+\def\beamerorig@reset@color{\pdfliteral{\current@color}}
+\makeatother
+\setbeamertemplate{navigation symbols}{}
+
+\useoutertheme{miniframes}
+\title[PLSC 30700]{Linear Models Lecture 3: Estimation of the Linear Projection Model}
+
+\author{Robert Gulotty}
+\institute[Chicago]{University of Chicago}
+\vspace{0.3in}
+
+
+\begin{document}
+
+\begin{frame}
+\maketitle
+\end{frame}
+
+
+
+
+
+\section{Derivation of OLS}
+
+\begin{frame}{Deriving the OLS estimator}
+\begin{itemize}
+\item Recall, geometry can work in populations or samples.
+\item In the following slides we will derive 
+\begin{itemize} 
+\item the OLS slope estimator $\bm{\hat{\beta}}$,
+\item the OLS estimator for error variance,
+\item Decomposition of OLS (Analysis of Variance), with $R^2$
+\end{itemize}
+\item Next time, the FWL Theorem.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Review: Modeling the Stochastic Element in the Population}
+\begin{itemize}
+\item The CEF is the regression of $Y$ on $X$, but requires knowing the distribution of $(Y,X)$, a fact about Populations. \pause
+\item The linear projection model predicts $Y$ as a linear function of $X=(X_1,\ X_2, \ldots, 1)$, approximating the CEF, but still a fact about Populations.
+$$\beta=[\mathbb{E}(XX')]^{-1}\mathbb{E}[XY]$$\pause
+\item Estimation involves using a model of a sample to make inferences about the population. \pause
+\item A statistic is random variable constructed from the sample, can be used for description or inference.\pause
+\item An estimator is a statistic used to estimate population parameters.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Samples}
+\begin{itemize}
+\item We estimate the projection coefficient $\beta$ with measurements of $(Y,X)$, a \emph{sample}.\pause
+\item $\{(Y_i, X_i):\ i\in1,\ldots,\ n\}$, is the sample, governed by the distribution of $(Y,X)$.\pause
+\item From the next slide forward, $\bm{X}$ is going to be a matrix, and we will use lower case for vectors e.g. $\bm{e}$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Identically Distributed.}
+\begin{itemize}
+\item Main approach is to assume homogeneity: $\{(Y_i, \bm{x}_i):\ i\in1,\ldots,\ n\}$ are identically distributed.
+\begin{align*}
+\begin{bmatrix}Y_1\\ \vdots \\Y_n\end{bmatrix}&=\beta_1\begin{bmatrix}1 \\\vdots\\1\end{bmatrix}+\beta_2 \begin{bmatrix}X_{21} \\ \vdots \\ X_{2n}\end{bmatrix}+\beta_3 \begin{bmatrix}X_{31} \\\vdots\\ X_{3n} \end{bmatrix}+\begin{bmatrix}e_1 \\ \vdots \\ e_n\end{bmatrix}
+\\
+&=\begin{bmatrix}1 &X_{21}& X_{31} \\\vdots &\vdots& \vdots  \\1  &X_{2n}& X_{3n} \end{bmatrix} \begin{bmatrix} \beta_1\\ \beta_2 \\ \beta_3 \end{bmatrix}+\begin{bmatrix}e_1 \\ \vdots \\ e_n\end{bmatrix}\\
+\bm{y}&=\bm{X}\bm{\beta}+\bm{e}
+\end{align*}
+\item Note, $E(Y_1)\neq E(Y_2)$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Least Squares Estimator}
+\begin{itemize}
+\item The linear projection coefficient $\beta$ is the minimizer of the expected squared error 
+$$S(\beta)=\mathbb{E}[(Y-X'\beta)^2]$$
+\item The \emph{moment estimator} of $S(\beta)$ is the sample average:
+$$\hat{S}(\beta)=\frac{1}{n}\sum_{i=1}^{n}(Y_i-\bm{x}_i'\beta)^2$$
+\item $\sum_{i=1}^{n}(Y_i-\bm{x}_i'\beta)^2$ is called SSE($\beta$), the \textbf{sum of squared errors}.
+\item The estimator $\hat{\beta}$ is the minimizer of $\hat{S}(\beta)$, as well as the minimizer of the SSE.
+\item $\hat{\beta}$ is called the least squares estimator, sometimes written $\hat{\beta}_n$.
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Solving the minimization problem}
+\begin{itemize}
+\item The form of $\hat{\beta}$ is the sample analogue to the population linear projection coefficient $\beta$.
+\item The solution will require some additional concepts associated with matrix/multivariate calculus.
+\begin{itemize}
+\item Quadratic form of a matrix, connecting matrices with polynomial equations.
+\item Definiteness of matrices, connecting matrices to convex functions.
+\item Generalizing derivatives to cover matrices.
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Finite Sample Assumptions of OLS estimator}
+\begin{itemize}
+\item Assumption 1: The random variables $\{(Y_1,\ X_1),\ (Y_2,\ X_2), \ldots, (Y_n,\ X_n)$ are independent and identically distributed.
+\item Assumption 2: $Y=\bm{X}'\beta+e$, where $\mathbb{E}(e|\bm{X})=0$. 
+\item Assumption 3: $\mathbb{E}(\bm{X}\bm{X}')>0$ is invertible (with probability 1).
+\item Assumption 4*: $\mathbb{E}[e^2|\bm{X}]=\sigma^2(\bm{X})=\sigma^2$. 
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Derivation of Least Squares Estimator}
+\begin{itemize}
+\item The functional form of the least squares estimator can be derived via multivariate calculus.
+\item We look for a minimum of SSE($\beta$).
+\item Take first derivatives to calculate first-order conditions and locate the critical values.
+\item Then we check we have the global minimum, by using the fact that positive definite matrices represent convex functions.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Calculus Derivation of Least Squares Estimator}
+\begin{align*}
+SSE(\beta)&=(\bm{y}-\bm{X\beta})'(\bm{y}-\bm{X\beta}) \tag{Definition of $\bm{e}$}\\
+&=(\bm{y}'-\bm{\beta'X'})(\bm{y}-\bm{X\beta}) \tag{Transpose rules}\\
+&=\bm{y}'\bm{y}-\bm{\beta'X'y}-\bm{y}'\bm{X\beta}+\bm{\beta'X'X\beta}  \tag{Distributive property}\\
+\min_{\bm{\beta}} SSE(\beta)&=\min_{\bm{\beta}}\ \underbrace{\bm{y}'\bm{y}}_{\text{constant}}\,-\,\underbrace{2\bm{y}'\bm{X\beta}}_{\text{linear in }\bm{\beta}}\,+\,\underbrace{\bm{\beta'X'X\beta}}_{\text{quadratic form}}
+\end{align*}
+\end{frame}
+
+\begin{frame}{Calculus Derivation of Least Squares Estimator}
+\begin{align*}
+\frac{\partial\bm{y}'\bm{y}-\bm{\beta'X'Y}-\bm{y}'\bm{X\beta}+\bm{\beta'X'X\beta}}{\partial\bm{\beta}}&=\bm{0}-\bm{X'Y}-\bm{Y'X}+(\bm{X'X+X'X})\bm{\hat{\beta}}\\
+&=-2\bm{X}'\bm{y}+2\bm{X}'\bm{X}\bm{\hat{\beta}} \tag{Symmetric}\\
+-2\bm{X}'\bm{y}+2\bm{X}'\bm{X}\bm{\hat{\beta}}&=\bm{0} \tag{find critical point}\\
+\bm{X}'\bm{X}\bm{\hat{\beta}}&=\bm{X}'\bm{y}. \tag{normal equations}\\
+\bm{\hat{\beta}}&=(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{y} \tag{If $\bm{X}'\bm{X}$ can be inverted (A3).}
+\end{align*}
+\end{frame}
+
+\begin{frame}{Second order condition}
+Take second derivative, and check that it is positive
+\begin{align*}
+\frac{\partial -2\bm{X}'\bm{y}+2\bm{X}'\bm{X}\bm{\hat{\beta}}}{\partial \bm{\hat{\beta}'}}&=2(\bm{X}'\bm{X})'
+\end{align*}
+Which is positive so long as $\bm{X}'\bm{X}$ is positive definite (same assumption as A1).\\
+$\bm{\hat{\beta}}$ minimizes the sum of squared errors, assuming $\bm{X}$ is of full rank.
+\end{frame}
+
+\begin{frame}[fragile]{OLS in R: The Formula in Action}
+\begin{lstlisting}
+library(carData)
+X <- cbind(1, Prestige$education, Prestige$income)
+y <- Prestige$prestige
+
+# The matrix formula from the slides:
+solve(t(X) %*% X) %*% t(X) %*% y
+
+# What lm() computes:
+coef(lm(prestige ~ education + income, data=Prestige))
+\end{lstlisting}
+\vspace{1ex}
+The two are identical: \texttt{lm()} implements $\hat{\beta}=(\bm{X'X})^{-1}\bm{X'y}$.
+\end{frame}
+
+\begin{frame}{Projection Matrix}
+\begin{itemize}
+\item There is a geometric interpretation for the minimization problem that uses the idea of ``projection''.
+\item The following matrix is called a "projection matrix"
+$$\bm{P}=\bm{X}(\bm{X}'\bm{X})^{-1}\bm{X}'$$
+\item Properties of $\bm{P}$ 
+\begin{itemize}
+\item $\bm{P}\bm{X}=\bm{X}(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{X}=\bm{X}$
+\item If $\bm{X}=[\bm{X}_1\ \bm{X}_2]$, then $\bm{P}\bm{X}_1=\bm{X}_1$.
+\item $\bm{P}=\bm{P}'$, that is, $\bm{P}$ is symmetric.
+\item $\bm{P}\bm{P}=\bm{P}$, that is, $\bm{P}$ is idempotent.
+\item $\bm{P}\bm{y}=\bm{X}\bm{\hat{\beta}}=\bm{\hat{y}}$, called the fitted value. This is why $\bm{P}$ is called the ``hat matrix''.
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+
+
+
+\begin{frame}{Projection onto column of 1}
+\begin{itemize}
+\item If $\bm{X}=\bm{1}$, then
+$\bm{P}_1=\bm{1}(\bm{1}'\bm{1})^{-1}\bm{1}'=\frac{1}{n}\bm{1}\bm{1}'$
+\item So if we project $\bm{y}$ onto $\bm{P}_1$, we get a vector repeating the sample mean:
+\begin{align*}
+\bm{P}_1\bm{y}&=\frac{1}{n}\bm{1}\bm{1}'\bm{y}=\bm{1}\cdot\frac{1}{n}\sum_{i=1}^nY_i=\bm{1}\bar{Y}
+\end{align*}
+\item \textbf{Takeaway:} The simplest regression (intercept only) projects $\bm{y}$ onto the sample mean. Every additional regressor refines this projection.
+\item The annihilator $\bm{M}_1\bm{y}=\bm{y}-\bm{1}\bar{Y}$ \emph{demeans} $\bm{y}$---it removes the part explained by the intercept.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Orthogonal Projection}
+\begin{itemize}
+\item The following matrix is called an "orthogonal projection matrix", or the Annihilator Matrix.
+\begin{align*}
+\bm{M}&=\bm{I}_n-\bm{P}\\
+&=\bm{I}_n-\bm{X}(\bm{X}'\bm{X})^{-1}\bm{X}'
+\end{align*}
+\item $\bm{M}$ and $\bm{X}$ are orthogonal:
+\begin{align*}
+\bm{MX}&=(\bm{I}_n-\bm{P})\bm{X}\\
+&=\bm{X}-\bm{P}\bm{X}\\
+&=\bm{X}-\bm{X}\\
+&=0
+\end{align*}
+\item We can define the residuals from projecting onto a column of 1s: $\bm{M}_1\bm{y}=\bm{y}-\bm{1}\bar{Y}$, this demeans $\bm{y}$.
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Relationship between residuals and disturbances}
+
+\begin{align*}
+\bm{\hat{e}}&=\bm{y}-\bm{\hat{y}}\\
+&=\bm{y}-\bm{X\hat{\beta}}\\
+&=\bm{y}-\bm{Py}\\
+&=\bm{My}\\
+&=\bm{M}(\bm{X\beta}+\bm{e})\\
+&=\bm{M}\bm{X\beta}+\bm{M}\bm{e}\\
+&=\bm{M}\bm{e}
+\end{align*}
+
+\end{frame}
+
+\begin{frame}[fragile]{Projection and Residuals in R}
+\begin{lstlisting}
+mod <- lm(prestige ~ education + income, data=Prestige)
+X <- cbind(1, Prestige$education, Prestige$income)
+P <- X %*% solve(t(X) %*% X) %*% t(X)
+M <- diag(nrow(X)) - P
+
+# P*y = fitted values
+all.equal(as.vector(P %*% y), fitted(mod))  # TRUE
+
+# M*y = residuals
+all.equal(as.vector(M %*% y), resid(mod))   # TRUE
+\end{lstlisting}
+\vspace{1ex}
+$\bm{P}$ and $\bm{M}$ are not abstract notation---they are the matrices R uses to compute \texttt{fitted()} and \texttt{resid()}.
+\end{frame}
+
+\section{Estimation of $\sigma^2_{e}$}
+
+
+\begin{frame}{Why Does Projection Help?}
+\begin{itemize}
+\item We want to estimate the systematic part $\bm{X\beta}$. Two candidates:
+\begin{enumerate}
+\item Use $\bm{y}$ itself (just report the raw data).
+\item Use $\bm{Py}=\bm{\hat{y}}$ (the projection onto the column space of $\bm{X}$).
+\end{enumerate}\pause
+\item Compare their variances as estimators of $\bm{X\beta}$:
+\begin{align*}
+\text{Var}(\bm{y}|\bm{X})&=\sigma^2\bm{I}\\
+\text{Var}(\bm{Py}|\bm{X})&=\sigma^2\bm{P}
+\end{align*}\pause
+\item The difference is $\sigma^2(\bm{I}-\bm{P})=\sigma^2\bm{M}$, which is positive semi-definite.
+\item So $\text{Var}(\bm{y})\geq \text{Var}(\bm{Py})$: projection \emph{removes noise} without distorting the signal, because $\bm{PX\beta}=\bm{X\beta}$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Variance of the regression errors}
+\begin{itemize}
+\item We want to measure the precision of our regression estimates.
+\item The error (or disturbance) of an observation is the deviation of a value from its theoretical mean, cannot be observed.
+\item The coefficients inherit that uncertainty from the theoretical model.
+\item Our estimates have additional uncertainty, related to the fact we only have a sample.
+\item Residuals are the difference between observations and estimates, can be observed.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{The bane of statistics}
+\begin{itemize}
+\item The mean squared error, or MSE, is calculated on the computed residuals, not the unobservable errors.
+\item Residuals, although observed, have a distribution that is not identical to the population disturbances.
+\item We will try to stick to disturbances and residuals to make distinctions.
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Estimation of Error Variance}
+\small
+\begin{itemize}
+\item Natural estimator: plug residuals $\hat{e}_i$ into the sample variance formula:
+$$\hat{\sigma}^2=n^{-1}\bm{\hat{e}'\hat{e}}=n^{-1}(\bm{My})'(\bm{My})=n^{-1}\bm{y'My}=n^{-1}\bm{e'Me}$$
+where the last step uses $\bm{M}=\bm{M'M}$ and $\bm{MX}=0$.
+\item But $\hat{\sigma}^2$ underestimates the true variance $\tilde{\sigma}^2=n^{-1}\bm{e'e}$:
+\begin{align*}
+\tilde{\sigma}^2-\hat{\sigma}^2&=n^{-1}\bm{e'e}-n^{-1}\bm{e'Me}=n^{-1}\bm{e'Pe}\geq 0
+\end{align*}
+because $\bm{P}$ is positive semi-definite.
+\item Projection ``absorbs'' some of the error into fitted values, so residuals understate the true noise.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Estimation of $\sigma^2_e$}
+\small
+\begin{itemize}
+\item Our estimator will be $s^2_{\hat{e}}=\bm{\hat{e}}'\bm{\hat{e}}/(N-K)$.
+\item Proof of unbiasedness of $s^2_{\hat{e}}$:
+\begin{align*}
+\bm{\hat{e}}'\bm{\hat{e}}&=\bm{e'M'Me}=\bm{e'Me} \tag{$\bm{M}$ symmetric, idempotent}\\
+E[\bm{\hat{e}}'\bm{\hat{e}}|\bm{X}]&=E[\bm{e'Me}|\bm{X}]\\
+&=E[\text{tr}(\bm{e'Me})|\bm{X}] \tag{scalar $=$ its own trace}\\
+&=E[\text{tr}(\bm{Mee'})|\bm{X}] \tag{tr($\bm{ABC}$)=tr($\bm{CAB)}$}\\
+&=\text{tr}(\bm{M}\, E[\bm{ee'}|\bm{X}]) \tag{$\bm{M}$ fixed given $\bm{X}$}\\
+&=\text{tr}(\bm{M}\sigma^2\bm{I})=\sigma^2\text{tr}(\bm{M})=\sigma^2_e (N-K) \tag{A4, tr($\bm{M}$)=$N-K$}
+\end{align*}
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Standard Deviation and Standard Error}
+\begin{itemize}
+\item Random variables have a mean and a standard deviation, the latter quantifies variability.
+\item Statistics (like the sample mean) are calculated from a random sample to make inferences.
+\item Statistics have a sampling distribution with a mean and standard deviation.  
+\item The standard deviation of an estimated statistic is called the "standard error".
+\item $\sqrt{s^2_e}$ is called the (computed) standard error of the regression
+\item $\sqrt{s^2_e}$ is a biased estimator for $\sigma$, but it is \textbf{consistent}.
+\item Similarly, the standard deviation of $\hat{\beta}$ is estimated using the standard errors.
+\item[] That is, we have a tool for estimating parameters which itself has parameters to estimate!
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Interpretation of Residual Standard Error}
+\begin{itemize}
+\item summary(lm()) reports $s_e$ as the Residual standard error or "sigma"
+\item STATA reports this quantity as "Root Mean Squared Error".
+\item $s_e$ is on the same scale as the outcome. 
+\item If $y>0$, it can make sense to calculate an \emph{average prediction error rate}: $\frac{s_e}{\bar{y}}$.
+\item Example: if we are predicting houses that are on average 1 million dollars, being generally off by \$50k is less bad than if we are predicting houses that are \$100k.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Variance of $\bm{\hat{\beta}}$}
+\begin{align*}
+V(\bm{\hat{\beta}}|\bm{X})&=V(\bm{(X'X)}^{-1}\bm{X'y}|\bm{X}) \tag{Normal Equation}\\
+&=V(\bm{A}\bm{y}|\bm{X})  \tag{Pick $\bm{A}$ as placeholder}\\
+&=\bm{A}V(\bm{y}|\bm{X})\bm{A}' \tag{$\text{Var}(cX)=c^2\text{Var}(X)$}\\
+&=\bm{A}\bm{\Sigma}\bm{A}'\\
+&=\bm{A}(\sigma^2\bm{I})\bm{A}' \tag{Assumption A4}\\
+&=\sigma^2\bm{A}\bm{A}'\\
+&=\sigma^2\bm{(X'X)}^{-1}\bm{X'X}\bm{(X'X)}^{-1}\\
+&=\sigma^2\bm{(X'X)}^{-1}\\
+\hat{V}(\bm{\hat{\beta}}|\bm{X})&=s_e^2\bm{(X'X)}^{-1} \tag{Standard Error of $\bm{\hat{\beta}}$}
+\end{align*}
+\end{frame}
+
+\begin{frame}[fragile]{Standard Errors in R: Connecting to the Formula}
+\begin{lstlisting}
+mod <- lm(prestige ~ education + income, data=Prestige)
+
+# The formula from the slides: s^2 (X'X)^{-1}
+sigma(mod)^2 * solve(t(X) %*% X)
+
+# What R reports:
+vcov(mod)
+
+# Standard errors = sqrt of the diagonal
+sqrt(diag(vcov(mod)))
+coef(summary(mod))[, "Std. Error"]  # identical
+\end{lstlisting}
+\vspace{1ex}
+Every standard error in \texttt{summary(lm())} comes from $\sqrt{\text{diag}(s^2_e(\bm{X'X})^{-1})}$.
+\end{frame}
+
+
+\begin{frame}{Decomposition}
+\begin{itemize}
+\item $\bm{M}$ makes the least squares residuals:
+\begin{align*}
+\bm{My}&=\bm{y}-\bm{Py}=\bm{y}-\bm{X\hat{\beta}}=\bm{\hat{e}}
+\end{align*}
+\item We can rewrite $\bm{y}$ in terms of
+\begin{align*}
+\bm{y}&=\bm{Py}+\bm{My}=\bm{\hat{y}}+\bm{\hat{e}}
+\end{align*}
+\item This decomposition is orthogonal, 
+\begin{align*}
+\bm{\hat{y}}'\bm{\hat{e}}&=(\bm{PY})'(\bm{MY})=\bm{y}'\bm{PMY}=0
+\end{align*}
+\begin{align*}
+\bm{Y'Y}&=(\bm{\hat{y}}+\bm{\hat{e}})'(\bm{\hat{y}}+\bm{\hat{e}})=(\bm{\hat{Y}'\hat{Y}}+\bm{\hat{Y}'\hat{e}}+\bm{\hat{e}'\hat{Y}}+\bm{\hat{e}'\hat{e}})\\
+&=\bm{\hat{Y}'\hat{Y}}+\bm{\hat{e}'\hat{e}}\\
+\sum_{i=1}^n Y_i^2&= \sum_{i=1}^n \hat{Y}_i^2+\sum_{i=1}^n \hat{e}_i^2
+\end{align*}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Analysis of Variance}
+\begin{itemize}
+\item Subtract $\bar{Y}$ from both sides of the decomposition:
+\begin{align*}
+\bm{y}-\bm{1}\bar{Y}&=(\bm{\hat{y}}-\bm{1}\bar{Y})+\bm{\hat{e}}
+\end{align*}
+\item Take inner products. The cross terms vanish when $\bm{X}$ contains a constant:
+$$(\bm{\hat{y}}-\bm{1}\bar{Y})'\bm{\hat{e}}=\bm{\hat{y}}'\bm{\hat{e}}-\bar{Y}\bm{1}'\bm{\hat{e}}=0-0=0$$
+\item So we get the \textbf{analysis of variance} (ANOVA) decomposition:
+\begin{align*}
+\|\bm{y}-\bm{1}\bar{Y}\|^2&=\|\bm{\hat{y}}-\bm{1}\bar{Y}\|^2+\|\bm{\hat{e}}\|^2\\
+\underbrace{\textstyle\sum (Y_i-\bar{Y})^2}_{\text{SST}}&=\underbrace{\textstyle\sum (\hat{Y}_i-\bar{Y})^2}_{\text{SSR (regression)}}+\underbrace{\textstyle\sum \hat{e}_i^2}_{\text{SSE (error)}}
+\end{align*}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Goodness-of-Fit: $R^2$}
+\begin{itemize}
+\item Dividing through by SST:
+\begin{align*}
+1 &= \frac{\text{SSR}}{\text{SST}}+ \frac{\text{SSE}}{\text{SST}}\\
+R^2&\equiv \frac{\text{SSR}}{\text{SST}}= 1-\frac{\text{SSE}}{\text{SST}}
+\end{align*}
+\item $R^2$ is the proportion of the variance in $Y$ that is linearly explained by $\bm{X}$.
+\item $0\leq R^2\leq 1$: equals 0 when $\bm{X}$ explains nothing; equals 1 when $\hat{e}_i=0$ for all $i$.
+\item We can always make $R^2=1$ by adding enough linearly independent columns to $\bm{X}$ (one per observation). This does not mean the model is good.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{$R^2$ in Practice}
+\begin{itemize}
+\item $R^2$ measures \emph{descriptive fit}, not causal validity. A high $R^2$ does not mean the coefficients are unbiased; a low $R^2$ does not mean the model is useless.\pause
+\item Typical values vary by field:
+\begin{itemize}
+\item Cross-sectional micro data (e.g.\ earnings regressions): $R^2\approx 0.2$--$0.4$
+\item Aggregate time-series (e.g.\ GDP growth models): $R^2\approx 0.7$--$0.9$
+\item Experimental data with noisy outcomes: $R^2$ can be very low and the treatment effect still precisely estimated.
+\end{itemize}\pause
+\item In R: \texttt{summary(lm(y \~{} x))\$r.squared} reports $R^2$.
+\item The \textbf{adjusted} $R^2=1-\frac{n-1}{n-k}(1-R^2)$ penalizes adding regressors and can decrease when a variable adds no explanatory power.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Naming Conventions: A Warning}
+\begin{itemize}
+\item Different textbooks use SSE and SSR with \emph{opposite} meanings:
+\begin{center}
+\begin{tabular}{lll}
+& \textbf{Hansen / this course} & \textbf{Some other texts}\\
+\hline
+$\sum(\hat{Y}_i-\bar{Y})^2$ & SSR (regression) & ESS or SSR\\
+$\sum \hat{e}_i^2$ & SSE (error) & RSS or SSE\\
+\end{tabular}
+\end{center}\pause
+\item The underlying math is always the same: $\text{SST}=\text{(explained)} + \text{(unexplained)}$.
+\item When reading papers or other textbooks, check which convention is in use.
+\end{itemize}
+\end{frame}
+
+
+\end{document}
+

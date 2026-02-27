@@ -1,0 +1,20 @@
+\frametitle{Scheve \& Stasavage: R Implementation}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+library(plm); library(haven); library(fixest)
+dta <- read_dta("progressTax.dta")
+pdta <- subset(dta, year >= 1900 & year <= 1930)
+
+# Fixed effects with plm
+fe_mod <- plm(topratep ~ wwihighmobaft,
+              data = pdta,
+              index = c("ccode", "year"),
+              model = "within")
+summary(fe_mod)
+
+# Equivalent with fixest (+ Newey-West SEs)
+fe_mod2 <- feols(topratep ~ wwihighmobaft +
+    gdppcp + leftseatshp + munsuff + ratiop
+    | country,
+    data = pdta, panel.id = ~country + year,
+    vcov = NW(1) ~ country + year)
+\end{lstlisting}

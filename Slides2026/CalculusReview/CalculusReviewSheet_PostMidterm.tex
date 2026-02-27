@@ -1,0 +1,381 @@
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+
+\setlength{\headheight}{13.6pt}
+\addtolength{\topmargin}{-1.6pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{PLSC 30700: Estimation I}
+\rhead{Calculus \& Convergence Review (Post-Midterm)}
+\cfoot{\thepage}
+
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\plim}{plim}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\diag}{diag}
+
+\title{Calculus and Convergence for Estimation\\[4pt]\large PLSC 30700 --- Post-Midterm Review (Lectures 9--18)}
+\author{Robert Gulotty \\ University of Chicago}
+\date{Winter 2026}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\noindent This sheet collects the calculus skills and convergence concepts used in Lectures 9--18 (after the midterm). The pre-midterm calculus review is a separate document. Each section lists key definitions and results, then indicates where they appear in the course.
+
+\medskip
+\begin{tcolorbox}[colback=gray!5, colframe=gray!50, title=\textbf{Abbreviations}]
+\small
+\begin{tabular}{@{}ll@{\quad}ll@{}}
+FOC & First-Order Condition & SOC & Second-Order Condition\\
+CLT & Central Limit Theorem & WLLN & Weak Law of Large Numbers\\
+CMT & Continuous Mapping Theorem & CDF & Cumulative Distribution Function\\
+MLE & Maximum Likelihood Estimation & GMM & Generalized Method of Moments\\
+AME & Average Marginal Effect & MTE & Marginal Treatment Effect\\
+\end{tabular}
+\end{tcolorbox}
+
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\part{Calculus Skills}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Derivative Rules (Review and New Applications)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The pre-midterm review covered the power rule, product rule, and partial derivatives for OLS derivations. Post-midterm lectures apply these same rules in new settings (nonlinear models, likelihood functions, transformations of estimators) and add several new derivative techniques.
+
+\subsection{Chain Rule}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+If $y = f(g(x))$, then:
+$$\frac{dy}{dx} = f'(g(x)) \cdot g'(x)$$
+Multivariate version: if $y = f(\bm{g}(\bm{x}))$, then $\frac{\partial y}{\partial x_j} = f'(\bm{g}) \cdot \frac{\partial g}{\partial x_j}$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 9 (Probit):} Marginal effects require differentiating $\Phi(X'\beta)$:
+$$\frac{\partial}{\partial x_j}\Phi(X'\beta) = \phi(X'\beta)\cdot \beta_j$$
+Here $f = \Phi$ (the normal CDF) and $g = X'\beta$ (the index). Its derivative $\Phi'(\cdot) = \phi(\cdot)$ is the normal PDF.
+\item \textbf{Day 9 (Score):} The Probit score involves differentiating $\log\Phi(X'\beta)$:
+$$\frac{\partial}{\partial \beta}\log\Phi(X'\beta) = \frac{\phi(X'\beta)}{\Phi(X'\beta)}\cdot X$$
+This is the chain rule applied twice: first the log derivative ($1/u$), then the CDF derivative ($\phi$).
+\item \textbf{Day 10 (Delta Method):} Approximating a nonlinear function $f(\hat\beta)$ via Taylor expansion uses the chain rule to compute $\nabla f$.
+\end{itemize}
+
+\subsection{Quotient Rule}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+If $y = \frac{u(x)}{v(x)}$, then:
+$$\frac{dy}{dx} = \frac{u'v - uv'}{v^2}$$
+Equivalently, write $u/v = u \cdot v^{-1}$ and use the product rule with the power rule on $v^{-1}$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 10--11 (Delta Method):} The long-run elasticity $\theta = \beta_2/(1-\beta_4)$ requires the gradient:
+$$\frac{\partial \theta}{\partial \beta_2} = \frac{1}{1-\beta_4}, \qquad \frac{\partial \theta}{\partial \beta_4} = \frac{\beta_2}{(1-\beta_4)^2}$$
+The second component is a quotient-rule application.
+\item \textbf{Day 11:} Peak experience in a log-wage equation: $\theta_3 = -50\beta_2/\beta_3$ yields gradient entries $-50/\beta_3$ and $50\beta_2/\beta_3^2$.
+\end{itemize}
+
+\subsection{Logarithmic and Exponential Derivatives}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$\frac{d}{dx}\ln(x) = \frac{1}{x}, \qquad \frac{d}{dx}e^x = e^x, \qquad \frac{d}{dx}e^{f(x)} = f'(x)\,e^{f(x)}$$
+For the normal PDF: $\phi(x) = \frac{1}{\sqrt{2\pi}}e^{-x^2/2}$, so $\phi'(x) = -x\,\phi(x)$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 9:} The Probit log-likelihood is $\ell(\beta) = \sum_i [Y_i\log\Phi(X_i'\beta) + (1-Y_i)\log(1-\Phi(X_i'\beta))]$. Differentiating uses $\frac{d}{du}\log u = 1/u$ and the chain rule.
+\item \textbf{Day 9:} The Hessian involves $\phi'(X'\beta) = -X'\beta\cdot\phi(X'\beta)$, a derivative of the normal PDF.
+\item \textbf{Day 17:} The airline cost regression uses a log-linear specification, relying on $\ln(x^a) = a\ln x$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Partial Derivatives and Gradients}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+For $f:\mathbb{R}^k\to\mathbb{R}$, the \textbf{gradient} is the $k\times 1$ vector:
+$$\nabla f(\bm{x}) = \begin{pmatrix}\frac{\partial f}{\partial x_1}\\ \vdots \\ \frac{\partial f}{\partial x_k}\end{pmatrix}$$
+For $\bm{f}:\mathbb{R}^k\to\mathbb{R}^J$ (a vector-valued function), the \textbf{Jacobian} is the $J\times k$ matrix:
+$$\bm{C} = \frac{\partial \bm{f}(\bm{b})}{\partial \bm{b}'} = \begin{pmatrix}\frac{\partial f_1}{\partial b_1} & \cdots & \frac{\partial f_1}{\partial b_k}\\ \vdots & \ddots & \vdots\\ \frac{\partial f_J}{\partial b_1} & \cdots & \frac{\partial f_J}{\partial b_k}\end{pmatrix}$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 9:} The score vector $S_n(\beta) = \partial \ell_n/\partial \beta$ is a gradient of the log-likelihood.
+\item \textbf{Day 10--11 (Delta Method):} The Jacobian $\bm{C}(\bm{b})$ maps the asymptotic variance of $\hat{\bm{\beta}}$ to the asymptotic variance of $\bm{f}(\hat{\bm{\beta}})$ via $\bm{C}\,\widehat{\Var}(\hat{\bm{\beta}})\,\bm{C}'$.
+\item \textbf{Day 15--16 (GMM):} The expected Jacobian $Q = \mathbb{E}\!\left[\frac{\partial g_i(\beta)}{\partial \beta'}\right]$ determines the asymptotic variance of GMM.
+\item \textbf{Day 17--18:} Panel data variance decomposition uses partial derivatives to separate within- and between-group variation.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Optimization}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Unconstrained Optimization (FOC and SOC)}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+At a maximum $\hat\theta$ of $f(\theta)$:
+\begin{itemize}[nosep]
+\item \textbf{FOC:} $\nabla f(\hat\theta) = \bm{0}$ \quad (score $= 0$ at the optimum)
+\item \textbf{SOC:} $H(\hat\theta) = \frac{\partial^2 f}{\partial\theta\partial\theta'}$ is negative definite (Hessian confirms it is a maximum)
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 9:} Probit MLE: $S_n(\hat\beta) = 0$ (score equation). The Hessian $H_n(\hat\beta)$ must be negative definite for a maximum.
+\item \textbf{Day 9:} Newton--Raphson uses both the score and Hessian: $\beta^{(t+1)} = \beta^{(t)} - H_n^{-1}S_n$.
+\item \textbf{Day 15:} GMM minimizes a quadratic criterion $J(\beta) = n\,\bar{g}_n(\beta)'\bm{W}\bar{g}_n(\beta)$. The FOC yields $\hat\beta_{GMM}$.
+\end{itemize}
+
+\subsection{Constrained Optimization (Lagrange Multipliers)}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+To minimize $f(\bm{x})$ subject to $g(\bm{x}) = c$, form the Lagrangian:
+$$\mathcal{L}(\bm{x},\lambda) = f(\bm{x}) - \lambda\left[g(\bm{x}) - c\right]$$
+FOCs: $\frac{\partial \mathcal{L}}{\partial x_j} = 0$ for all $j$, and $g(\bm{x}) = c$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 12:} Constrained Least Squares (CLS): minimize $(\bm{y}-\bm{X}\bm{\beta})'(\bm{y}-\bm{X}\bm{\beta})$ subject to $\bm{R}'\bm{\beta}=\bm{r}$, yielding the restricted estimator.
+\item \textbf{Day 12:} The CLS Lagrangian above is the main constrained optimization example in this course.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Taylor Series and Linear Approximation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{First-order Taylor expansion} of $f$ around $a$:
+$$f(b) \approx f(a) + f'(a)(b-a)$$
+Multivariate version: $\bm{f}(\bm{b}) \approx \bm{f}(\bm{a}) + \bm{\Gamma}(\bm{b}-\bm{a})$, where $\bm{\Gamma} = \frac{\partial\bm{f}(\bm{a})}{\partial\bm{a}'}$ is the Jacobian at $\bm{a}$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 9 (Asymptotic Normality):} Taylor-expanding the score at $\beta_0$:
+$$0 = S_n(\hat\beta) \approx S_n(\beta_0) + H_n(\beta_0)(\hat\beta - \beta_0)$$
+Rearranging gives $\sqrt{n}(\hat\beta-\beta_0) \approx \left[-\tfrac{1}{n}H_n\right]^{-1}\tfrac{1}{\sqrt{n}}S_n(\beta_0)$.
+\item \textbf{Day 10--11 (Delta Method):} If $\sqrt{n}(\hat{\bm{\beta}}-\bm{\beta})\overset{d}{\to}N(\bm{0},\bm{V})$, then for any smooth function $\bm{f}$:
+$$\sqrt{n}(\bm{f}(\hat{\bm{\beta}})-\bm{f}(\bm{\beta})) \overset{d}{\to} N(\bm{0},\;\bm{\Gamma}\bm{V}\bm{\Gamma}')$$
+The Taylor approximation is the entire justification for the delta method.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Integration}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Definite integral:} $\int_a^b f(x)\,dx$ computes the area under $f$ from $a$ to $b$.\\[4pt]
+Key rules:
+\begin{itemize}[nosep]
+\item $\int_a^b c\,f(x)\,dx = c\int_a^b f(x)\,dx$ \quad (constant factor)
+\item $\int_a^b x^n\,dx = \frac{x^{n+1}}{n+1}\Big|_a^b$ for $n\neq -1$ \quad (power rule)
+\item $\int_{-\infty}^{\infty} f(x)\,dx = 1$ if $f$ is a PDF \quad (normalization)
+\end{itemize}
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 9 (IRT):} Integrating out the latent trait $\theta$ in the marginal likelihood:
+$$L_i(a,b) = \int \prod_j \Phi(a_j\theta-b_j)^{Y_{ij}}(1-\Phi(a_j\theta-b_j))^{1-Y_{ij}}\,\phi(\theta)\,d\theta$$
+\item \textbf{Day 10 (Markov's Inequality):} The proof splits $\mathbb{E}[X]=\int_0^\infty xf(x)\,dx$ into two parts at $a$ and bounds the tail.
+\item \textbf{Day 14, 16 (MTE):} Treatment parameters are weighted integrals of the MTE:
+$$\Delta^j(x) = \int_0^1 \text{MTE}(x,u_D)\,\omega_j(x,u_D)\,du_D$$
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Series}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Geometric series:} For $|\gamma|<1$:
+$$\sum_{k=0}^{\infty}\gamma^k = \frac{1}{1-\gamma}$$
+Partial sum: $\sum_{k=0}^{N}\gamma^k = \frac{1-\gamma^{N+1}}{1-\gamma}$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 10:} The long-run multiplier for a lagged dependent variable model $y_t = \beta_0 + \beta_1 x_t + \gamma y_{t-1} + \varepsilon_t$. A one-unit increase in $x$ has cumulative effect:
+$$\beta_1 + \gamma\beta_1 + \gamma^2\beta_1 + \cdots = \beta_1\sum_{k=0}^\infty \gamma^k = \frac{\beta_1}{1-\gamma}$$
+The long-run elasticity $\beta_1/(1-\gamma)$ is a nonlinear function of parameters --- requiring the delta method for standard errors.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\part{Convergence Concepts}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Convergence of Random Variables}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{The Convergence Hierarchy}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$$X_n \overset{\text{a.s.}}{\longrightarrow} X \quad\Rightarrow\quad X_n \overset{p}{\longrightarrow} X \quad\Rightarrow\quad X_n \overset{d}{\longrightarrow} X$$
+\begin{itemize}[nosep]
+\item \textbf{Almost sure (a.s.):} $\mathbb{P}\!\left(\lim_{n\to\infty}X_n = X\right) = 1$. For almost every ``path,'' the sequence converges.
+\item \textbf{In probability ($p$):} For all $\delta>0$, $\mathbb{P}(|X_n-X|>\delta)\to 0$. The probability of being far from $X$ vanishes.
+\item \textbf{In distribution ($d$):} $F_{X_n}(t)\to F_X(t)$ at all continuity points of $F_X$. The CDFs converge.
+\end{itemize}
+Each arrow is strict: the converse does not hold in general.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 10:} The full hierarchy is developed. Convergence in probability is used for \emph{consistency} (WLLN). Convergence in distribution is used for \emph{asymptotic normality} (CLT).
+\item \textbf{Days 11--18:} Every asymptotic result in the course uses one of these modes.
+\end{itemize}
+
+\subsection{Convergence in Probability ($\plim$)}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$X_n\overset{p}{\to}c$ means: for all $\delta>0$,
+$$\lim_{n\to\infty}\mathbb{P}(|X_n-c|\leq\delta) = 1$$
+Written $\plim X_n = c$. Key properties:
+\begin{itemize}[nosep]
+\item $\plim(X_n + Y_n) = \plim X_n + \plim Y_n$
+\item $\plim(X_n Y_n) = (\plim X_n)(\plim Y_n)$
+\item $\plim(X_n/Y_n) = (\plim X_n)/(\plim Y_n)$ if $\plim Y_n\neq 0$
+\end{itemize}
+Unlike expectations, $\plim$ passes through continuous functions (including division).
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 10:} Definition and examples. The contrast with expectation: $\mathbb{E}[X/Y]\neq \mathbb{E}[X]/\mathbb{E}[Y]$, but $\plim(X/Y) = (\plim X)/(\plim Y)$.
+\item \textbf{Day 11:} OLS consistency: $\plim\hat{\bm\beta} = \bm\beta + \plim\left[\left(\frac{\bm{X'X}}{n}\right)^{-1}\frac{\bm{X'e}}{n}\right] = \bm\beta$.
+\item \textbf{Day 13:} IV consistency: $\plim\hat\beta_{IV} = \beta + (\mathbb{E}[ZX'])^{-1}\mathbb{E}[Ze] = \beta$ under exogeneity.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Probability Inequalities}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Markov's Inequality:} For $X\geq 0$ and $a>0$:
+$$\mathbb{P}(X\geq a) \leq \frac{\mathbb{E}[X]}{a}$$
+\textbf{Chebyshev's Inequality:} For any $X$ with mean $\mu$ and variance $\sigma^2$, and $k>0$:
+$$\mathbb{P}(|X-\mu|\geq k) \leq \frac{\sigma^2}{k^2}$$
+Chebyshev follows from Markov by setting $Y=(X-\mu)^2$ and $a=k^2$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 10:} Both inequalities are proved. Chebyshev is the key step in the WLLN proof:
+$$\mathbb{P}\!\left(|\bar{X}_n-\mu|\geq\varepsilon\right) \leq \frac{\Var(\bar{X}_n)}{\varepsilon^2} = \frac{\sigma^2}{n\varepsilon^2} \to 0$$
+\item \textbf{Day 10:} Chebyshev sample size calculation: to ensure $|\bar{X}_n-\mu|<1$ with probability 99\%, need $n\geq \sigma^2/0.01$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Laws of Large Numbers}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Weak Law of Large Numbers (WLLN):} If $X_1,\ldots,X_n$ are iid with $\mathbb{E}[X_i]=\mu$ and $\Var(X_i)=\sigma^2<\infty$, then:
+$$\bar{X}_n = \frac{1}{n}\sum_{i=1}^n X_i \overset{p}{\longrightarrow} \mu$$
+More generally, any sample moment converges to its population counterpart:
+$$\frac{1}{n}\sum_{i=1}^n X_iX_i' \overset{p}{\to} \mathbb{E}[X_iX_i']$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 10:} WLLN proved via Chebyshev. Counterexample: if observations share a common component ($X_i = Z + U_i$), then $\bar{X}_n\overset{p}{\to} Z$, a random variable, not a constant.
+\item \textbf{Day 11 (OLS Consistency):} $\frac{1}{n}\bm{X'X}\overset{p}{\to} Q_{XX}$ and $\frac{1}{n}\bm{X'e}\overset{p}{\to}\bm{0}$.
+\item \textbf{Day 9, 11 (MLE):} $\frac{1}{n}H_n(\beta_0)\overset{p}{\to}-\mathcal{I}(\beta_0)$ (Hessian converges to negative Fisher information).
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Continuous Mapping Theorem and Slutsky's Theorem}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Continuous Mapping Theorem (CMT):} If $X_n\overset{p}{\to} c$ and $g$ is continuous at $c$, then:
+$$g(X_n) \overset{p}{\to} g(c)$$
+\textbf{Slutsky's Theorem:} If $X_n\overset{d}{\to}X$ and $Y_n\overset{p}{\to}c$ (a constant), then:
+$$X_n + Y_n \overset{d}{\to} X + c, \qquad Y_n X_n \overset{d}{\to} cX$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 10--11 (OLS):} CMT gives $\left(\frac{1}{n}\bm{X'X}\right)^{-1}\overset{p}{\to} Q_{XX}^{-1}$ (matrix inversion is continuous at nonsingular matrices). Slutsky then combines this with $\frac{1}{\sqrt{n}}\bm{X'e}\overset{d}{\to}N(\bm{0},\Omega)$.
+\item \textbf{Day 11:} Ridge regression: $((\bm{X'X}+\lambda\bm{I})/n)^{-1}\overset{p}{\to}Q_{XX}^{-1}$ when $\lambda/n\to 0$.
+\item \textbf{Day 13:} IV consistency: $\plim\hat\beta_{IV} = \plim[(\bm{X'Z}/n)(\bm{Z'Z}/n)^{-1}(\bm{Z'X}/n)]^{-1}\cdots$ uses CMT for each component.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Central Limit Theorem}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{Lindeberg--L\'evy CLT:} If $X_1,\ldots,X_n$ are iid with $\mathbb{E}[X_i]=\mu$ and $\Var(X_i)=\sigma^2<\infty$:
+$$\sqrt{n}(\bar{X}_n-\mu) \overset{d}{\to} N(0,\sigma^2)$$
+Equivalently: $\frac{\bar{X}_n-\mu}{\sigma/\sqrt{n}}\overset{d}{\to}N(0,1)$.\\[4pt]
+\textbf{Multivariate CLT:} If $\bm{W}_i$ are iid $k$-vectors with mean $\bm\mu$ and variance $\bm\Sigma$:
+$$\sqrt{n}(\bar{\bm{W}}_n - \bm\mu) \overset{d}{\to} N(\bm{0},\bm\Sigma)$$
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 10:} CLT proved intuitively via moment matching. Comparison: CLT sample size (2,862) vs.\ Chebyshev sample size (43,000) for the same precision.
+\item \textbf{Day 9, 11:} Score CLT: $\frac{1}{\sqrt{n}}S_n(\beta_0)\overset{d}{\to}N(\bm{0},\mathcal{I}(\beta_0))$.
+\item \textbf{Day 11 (OLS):} $\frac{1}{\sqrt{n}}\sum X_i e_i \overset{d}{\to} N(\bm{0},\Omega)$. Combined with Slutsky:
+$$\sqrt{n}(\hat{\bm\beta}-\bm\beta)\overset{d}{\to}N(\bm{0},\;Q_{XX}^{-1}\Omega\, Q_{XX}^{-1})$$
+\item \textbf{Day 15:} GMM: $\frac{1}{\sqrt{n}}\sum g(W_i,\theta_0)\overset{d}{\to}N(\bm{0},\Omega)$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The Delta Method}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+If $\sqrt{n}(\hat{\bm\beta}-\bm\beta)\overset{d}{\to}N(\bm{0},\bm{V})$ and $\bm{f}:\mathbb{R}^k\to\mathbb{R}^J$ is differentiable with Jacobian $\bm\Gamma = \frac{\partial\bm{f}(\bm\beta)}{\partial\bm\beta'}$, then:
+$$\sqrt{n}\!\left(\bm{f}(\hat{\bm\beta})-\bm{f}(\bm\beta)\right) \overset{d}{\to} N(\bm{0},\;\bm\Gamma\bm{V}\bm\Gamma')$$
+\textbf{Estimated standard error:} $\widehat{\text{se}}(f(\hat\beta)) = \sqrt{\bm{R}'\,\widehat{\Var}(\hat\beta)\,\bm{R}}$ where $\bm{R}=\nabla f(\hat\beta)$.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 10:} Gas consumption example: long-run elasticity $\theta = \beta_2/(1-\beta_4)$ with gradient vector $\bm{R}$. Standard error via $\sqrt{\bm{R}'\widehat{V}\bm{R}}$.
+\item \textbf{Day 11:} Peak experience in log-wage equation: $\theta = -50\beta_2/\beta_3$.
+\item \textbf{Day 9, 16:} Average marginal effects for Probit: AME$_j = \frac{1}{n}\sum\phi(X_i'\hat\beta)\hat\beta_j$ with standard errors via the delta method.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Chi-Squared Distribution and Hypothesis Testing}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+If $\bm{z}\sim N(\bm{0},\bm{I}_q)$, then $\bm{z}'\bm{z}\sim\chi^2_q$.\\[4pt]
+More generally, if $\sqrt{n}(\hat{\bm\theta}-\bm\theta_0)\overset{d}{\to}N(\bm{0},\bm{V})$, the \textbf{Wald statistic} is:
+$$W = n(\hat{\bm\theta}-\bm\theta_0)'\hat{\bm{V}}^{-1}(\hat{\bm\theta}-\bm\theta_0) \overset{d}{\to}\chi^2_q$$
+This is a quadratic form in an asymptotically normal vector.
+\end{tcolorbox}
+\textbf{Where it appears:}
+\begin{itemize}
+\item \textbf{Day 11--12:} Wald test for linear and nonlinear restrictions on $\bm\beta$.
+\item \textbf{Day 12:} Three equivalent tests: Wald ($W$), Score/LM ($S$), and $F$-test. All converge to $\chi^2_q$ under $H_0$.
+\item \textbf{Day 14:} Hausman test: $H = (\hat\beta_{IV}-\hat\beta_{OLS})'\widehat{V}^{-1}(\hat\beta_{IV}-\hat\beta_{OLS})\overset{d}{\to}\chi^2_{k_2}$.
+\item \textbf{Day 15--16 (GMM):} Hansen's J-test for overidentification: $J = n\,\bar{g}_n'\hat\Omega^{-1}\bar{g}_n \overset{d}{\to}\chi^2_{l-k}$.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Summary: Concepts by Lecture Day}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{center}
+\small
+\begin{tabular}{lp{10.5cm}}
+\toprule
+\textbf{Lecture} & \textbf{Calculus and Convergence Concepts}\\
+\midrule
+Day 9 (Probit) & Chain rule (differentiating $\Phi(X'\beta)$); log derivatives (log-likelihood); product of chain rules (score and Hessian); Taylor expansion of the score (asymptotic normality sketch); integration over latent variables (IRT likelihood)\\[6pt]
+Day 10 (Asymptotics) & convergence in probability and in distribution; Markov and Chebyshev inequalities; WLLN (proof via Chebyshev); CLT; Taylor series and the delta method; geometric series (long-run multiplier); quotient rule and Jacobians for the delta method\\[6pt]
+Day 11 (Asymptotics II) & WLLN and CMT for OLS consistency; multivariate CLT and Slutsky for asymptotic normality; delta method for nonlinear functions of $\hat\beta$ (quotient rule, gradient vectors); Wald statistic ($\chi^2$ from normal quadratic form)\\[6pt]
+Day 12 (Hypothesis Testing) & Constrained optimization (Lagrangian for CLS); score as gradient of log-likelihood; Wald, Score, and $F$ tests ($\chi^2$ convergence); test power as a function of $\sqrt{n}$\\[6pt]
+Day 13 (IV) & Probability limits of ratios (CMT/Slutsky); algebraic manipulation of variance ratios (attenuation bias)\\[6pt]
+Day 14 (2SLS) & Approximate bias via Taylor-like reasoning; no finite moments for just-identified IV; definite integrals (MTE as weighted integral); probability integral transform ($U_D\sim U[0,1]$); Hausman and Sargan $\chi^2$ tests\\[6pt]
+Day 15 (GMM I) & FOC for quadratic criterion; Jacobian $Q = \mathbb{E}[\partial g/\partial\beta']$; sandwich collapse under optimal weighting; PSD ordering for efficiency; two-step consistency\\[6pt]
+Day 16 (GMM II) & Jacobian for Wald test; $J$-test ($\chi^2$ convergence); integrals (MTE/PRTE as weighted integrals); semiparametric efficiency bound\\[6pt]
+Day 17 (Panel) & Log-linear specification (stated); within vs.\ between variance decomposition\\[6pt]
+Day 18 (Fixed Effects) & Variance/covariance algebra; GLS transformation ($\Sigma^{-1/2}$); Hausman test ($\chi^2$); Nickell bias ($O(1/T)$); Arellano-Bond moment conditions; dynamic panel GMM\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

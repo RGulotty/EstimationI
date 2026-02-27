@@ -1,0 +1,22 @@
+\frametitle{Clustered SEs in R}
+\textbf{Option 1: \texttt{estimatr}} (simplest)
+\begin{lstlisting}
+library(estimatr)
+lm_robust(y ~ x1 + x2, data=dta, clusters=cluster_id, se_type="CR2")
+\end{lstlisting}\pause
+\vspace{-2pt}
+\textbf{Option 2: \texttt{sandwich} + \texttt{lmtest}}
+\begin{lstlisting}
+library(sandwich); library(lmtest)
+model <- lm(y ~ x1 + x2, data = dta)
+coeftest(model, vcov = vcovCL(model, cluster = dta$cluster_id))
+\end{lstlisting}\pause
+\vspace{-2pt}
+\textbf{Option 3: Manual construction} (Hansen Ch.\ 4 R code)
+\begin{lstlisting}
+xe <- x * rep(e, times = k)       # X_i * e_i
+xe_sum <- rowsum(xe, cluster_id)  # sum within clusters
+G <- nrow(xe_sum); omega <- t(xe_sum) %*% xe_sum
+scale <- G/(G-1) * (n-1)/(n-k)
+V_cl <- scale * invx %*% omega %*% invx
+\end{lstlisting}
