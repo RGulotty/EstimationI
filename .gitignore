@@ -1,6 +1,23 @@
 # Quizzes and exams
 **/Quiz_*
 **/quiz_*
+ExamBank/
+FinalExam/
+Midterm/
+Quizzes/
+
+# Homeworks
+Homeworks/
+Homeworks2026/
+HomeworksOld/
+
+# Other sensitive or non-slide content
+Dataprojects/
+DoingProofs/
+Papers/
+Readings/
+GitPassword.rtf
+CLAUDE.md
 
 # macOS
 .DS_Store
