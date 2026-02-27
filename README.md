@@ -1,3 +1,3 @@
-# IntroLM-W22
+# Estimation I
 
-Materials for the 2022 Winter Quarter Introduction to Linear Models, taught with Mark Hansen.
+Lecture slides for Estimation I (PLSC 30700), University of Chicago. Taught by Robert Gulotty and Mark Hansen.
