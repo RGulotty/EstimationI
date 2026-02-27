@@ -1,0 +1,21 @@
+# Quizzes and exams
+**/Quiz_*
+**/quiz_*
+
+# macOS
+.DS_Store
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.synctex.gz
+*.synctex(busy)
+texput.log
+
+# R history
+.Rapp.history
