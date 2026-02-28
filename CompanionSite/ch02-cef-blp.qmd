@@ -1,0 +1,394 @@
+---
+title: "2. The CEF and Best Linear Predictor"
+subtitle: "Why regression approximates the CEF"
+---
+
+```{r}
+#| label: setup
+#| message: false
+library(ggplot2)
+options(digits = 3)
+```
+
+The conditional expectation function $m(X) = \mathbb{E}[Y|X]$ is the best predictor of $Y$ given $X$ — but we rarely know it. The best linear predictor (BLP) is the next best thing: a linear approximation that only requires knowing means, variances, and covariances. This chapter explores the gap between the two and what we gain (and lose) by going linear.
+
+**Questions this chapter answers:**
+
+1. What is the best predictor of $Y$ given $X$, and why is it the conditional expectation function?
+2. How does the best linear predictor (BLP) approximate a nonlinear CEF?
+3. When does the BLP equal the CEF, and why does joint normality guarantee linearity?
+4. How does omitted variable bias arise, and why don't additional controls always help?
+
+## CEF error: mean independence is not independence
+
+Define the CEF error as $e = Y - m(X)$. By construction, $\mathbb{E}[e|X] = 0$ — this is called mean independence. But mean independence is weaker than full independence: the *variance* of $e$ can still depend on $X$.
+
+Here's the lecture's example: $X \sim \text{Uniform}(-1, 1)$ and $Y = X^2 + X\varepsilon$, where $\varepsilon \sim N(0,1)$ is independent of $X$.
+
+::: {#def-cef}
+## Conditional Expectation Function
+The CEF is $m(X) = \mathbb{E}[Y|X]$, the function that gives the mean of $Y$ for each value of $X$. The CEF error $e = Y - m(X)$ satisfies mean independence: $\mathbb{E}[e|X] = 0$.
+:::
+
+```{r}
+#| label: mean-independence
+set.seed(307)
+n <- 5000
+x <- runif(n, -1, 1)
+eps <- rnorm(n)
+y <- x^2 + x * eps
+
+# CEF is m(X) = X^2
+m_x <- x^2
+e <- y - m_x
+
+# Mean independence: E[e|X] ≈ 0 in every bin
+bins <- cut(x, breaks = 20)
+bin_means <- tapply(e, bins, mean)
+round(bin_means, 3)
+```
+
+The conditional means of $e$ are all near zero. But the conditional *variance* grows with $|X|$:
+
+```{r}
+#| label: heteroskedastic-errors
+df <- data.frame(x = x, e = e)
+
+ggplot(df, aes(x, e)) +
+  geom_point(alpha = 0.15, size = 0.8) +
+  geom_smooth(method = "loess", se = FALSE, color = "steelblue", linewidth = 1) +
+  labs(x = "X", y = "CEF error (e)",
+       title = "Mean independence holds, but errors are heteroskedastic",
+       subtitle = "Var(e|X) = X², so spread increases with |X|") +
+  theme_minimal()
+```
+
+The smooth line hovers at zero (mean independence), but the spread fans out. This pattern — $\text{Var}(e|X) = X^2$ — is heteroskedasticity. The CEF decomposes $Y$ into signal and noise, but doesn't guarantee the noise is uniform.
+
+## The CEF is the best predictor {#sec-cef-best}
+
+Among *all* functions of $X$, the CEF minimizes mean squared prediction error. Let's demonstrate by comparing the CEF to some alternatives for the same DGP.
+
+```{r}
+#| label: cef-best-predictor
+# True CEF: m(X) = X^2
+# Competitor 1: the unconditional mean
+# Competitor 2: a linear predictor
+# Competitor 3: a cubic predictor
+
+mse_cef <- mean((y - x^2)^2)
+mse_mean <- mean((y - mean(y))^2)
+mse_linear <- mean(residuals(lm(y ~ x))^2)
+mse_cubic <- mean(residuals(lm(y ~ x + I(x^2) + I(x^3)))^2)
+
+data.frame(
+  predictor = c("Unconditional mean", "Linear (BLP)", "Cubic", "CEF (X²)"),
+  MSE = round(c(mse_mean, mse_linear, mse_cubic, mse_cef), 4)
+)
+```
+
+The CEF has the lowest MSE. The cubic comes close because $X^3$ has mean zero for symmetric $X$, so the cubic approximation is nearly $X^2$. The linear predictor does worse — it can't capture the curvature.
+
+## CEF vs. BLP: when the line misses the curve
+
+The BLP minimizes $\mathbb{E}[(Y - a - bX)^2]$ and yields $b = \text{Cov}(X,Y)/\text{Var}(X)$. When the CEF is nonlinear, the BLP draws the best straight line through a curved relationship.
+
+::: {#def-blp}
+## Best Linear Predictor
+The BLP of $Y$ given $X$ is $\alpha + \beta'X$ where $\beta = \text{Var}(X)^{-1}\text{Cov}(X, Y)$. The BLP error satisfies $\mathbb{E}[Xe] = 0$ (uncorrelated with $X$) but not necessarily $\mathbb{E}[e|X] = 0$.
+:::
+
+```{r}
+#| label: cef-vs-blp
+#| fig-cap: "The BLP is the best line through a curved CEF"
+# Same DGP: Y = X^2 + X*eps
+df <- data.frame(x = x, y = y)
+
+ggplot(df, aes(x, y)) +
+  geom_point(alpha = 0.1, size = 0.5) +
+  stat_function(fun = function(x) x^2, aes(color = "CEF: X²"),
+                linewidth = 1.2) +
+  geom_smooth(method = "lm", se = FALSE, aes(color = "BLP"),
+              linewidth = 1.2) +
+  scale_color_manual(values = c("CEF: X²" = "tomato", "BLP" = "steelblue"),
+                     name = "") +
+  labs(x = "X", y = "Y",
+       title = "The BLP is the best line through a curved CEF") +
+  theme_minimal()
+```
+
+The BLP residual $e = Y - X'\beta$ satisfies $\mathbb{E}[Xe] = 0$ (uncorrelated with $X$), but *not* $\mathbb{E}[e|X] = 0$. The residual still contains nonlinear structure: the BLP intercept absorbs $\mathbb{E}[X^2] = 1/3$, so the conditional mean of the residual traces out $X^2 - 1/3$ rather than zero:
+
+```{r}
+#| label: blp-residual-pattern
+mod <- lm(y ~ x)
+df$blp_resid <- residuals(mod)
+
+ggplot(df, aes(x, blp_resid)) +
+  geom_point(alpha = 0.1, size = 0.5) +
+  geom_smooth(method = "loess", se = FALSE, color = "tomato", linewidth = 1) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(x = "X", y = "BLP residual",
+       title = "BLP residuals still contain nonlinear structure",
+       subtitle = "E[e|X] ≠ 0, but E[Xe] = 0") +
+  theme_minimal()
+```
+
+## When does BLP = CEF?
+
+The BLP equals the CEF when the CEF is actually linear. An important sufficient condition: if $(X, Y)$ are jointly normal, the CEF is linear. Let's verify.
+
+```{r}
+#| label: blp-equals-cef
+library(MASS)
+set.seed(42)
+
+# Jointly normal (X, Y)
+Sigma <- matrix(c(1, 0.7, 0.7, 1), 2, 2)
+joint <- mvrnorm(5000, mu = c(0, 0), Sigma = Sigma)
+x_norm <- joint[, 1]
+y_norm <- joint[, 2]
+
+df_norm <- data.frame(x = x_norm, y = y_norm)
+
+ggplot(df_norm, aes(x, y)) +
+  geom_point(alpha = 0.1, size = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, aes(color = "BLP"), linewidth = 1.2) +
+  geom_smooth(method = "loess", se = FALSE, aes(color = "CEF (loess)"), linewidth = 1.2) +
+  scale_color_manual(values = c("BLP" = "steelblue", "CEF (loess)" = "tomato"),
+                     name = "") +
+  labs(title = "Jointly normal: the BLP and CEF coincide",
+       x = "X", y = "Y") +
+  theme_minimal()
+```
+
+The two lines overlap because the CEF is genuinely linear when the data are jointly normal.
+
+::: {.callout-note}
+## Joint Normality Implies Linear CEF
+If $(X, Y)$ are jointly normal, the conditional expectation $\mathbb{E}[Y|X]$ is exactly linear in $X$, and the BLP equals the CEF. This is a sufficient but not necessary condition — other distributions can also produce linear CEFs.
+:::
+
+## The BLP in formulas and code
+
+The population BLP coefficient is $\beta = \text{Var}(X)^{-1}\text{Cov}(X, Y)$. In a sample, OLS estimates this:
+
+```{r}
+#| label: blp-formulas
+# Bivariate: beta = Cov(X,Y) / Var(X)
+beta_formula <- cov(x_norm, y_norm) / var(x_norm)
+alpha_formula <- mean(y_norm) - beta_formula * mean(x_norm)
+
+# OLS gives the same thing
+beta_ols <- coef(lm(y_norm ~ x_norm))
+
+cbind(formula = c(alpha_formula, beta_formula),
+      OLS = beta_ols)
+```
+
+## Dummy variables: the CEF for discrete X
+
+When $X$ is a categorical variable, the CEF is just group means. Regression with dummies recovers these exactly.
+
+```{r}
+#| label: dummies
+set.seed(2026)
+n <- 300
+party <- sample(c("Dem", "Rep", "Ind"), n, replace = TRUE,
+                prob = c(0.4, 0.35, 0.25))
+approval <- 50 + 10 * (party == "Dem") - 5 * (party == "Rep") + rnorm(n, sd = 8)
+
+df_party <- data.frame(party = factor(party), approval = approval)
+
+# Group means = the CEF
+tapply(df_party$approval, df_party$party, mean)
+
+# Regression with dummies (R does this automatically)
+coef(lm(approval ~ party, data = df_party))
+```
+
+The intercept is the mean for the baseline group (alphabetically first: Dem), and the coefficients are differences from that baseline.
+
+## Interactions: when the slope depends on a group
+
+An interaction term $D_i \times x_i$ allows the effect of $x$ to differ by group. This is a richer model than parallel slopes.
+
+```{r}
+#| label: interactions
+set.seed(2026)
+n_int <- 400
+group <- sample(0:1, n_int, replace = TRUE)
+x_int <- rnorm(n_int)
+# Group 0: slope = 2, Group 1: slope = -1
+y_int <- 3 + 1.5 * group + 2 * x_int - 3 * group * x_int + rnorm(n_int)
+
+df_int <- data.frame(x = x_int, y = y_int, group = factor(group))
+
+# Parallel slopes (no interaction)
+mod_parallel <- lm(y ~ group + x, data = df_int)
+
+# Interaction model
+mod_interact <- lm(y ~ group * x, data = df_int)
+
+ggplot(df_int, aes(x, y, color = group)) +
+  geom_point(alpha = 0.3, size = 0.8) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 1) +
+  scale_color_manual(values = c("steelblue", "tomato"), name = "Group") +
+  labs(title = "Interaction: different slopes for each group",
+       x = "X", y = "Y") +
+  theme_minimal()
+```
+
+```{r}
+#| label: interaction-coefficients
+coef(mod_interact)
+```
+
+The `group1:x` coefficient ($\approx -3$) is the *difference* in slopes between group 1 and group 0. The marginal effect of $x$ for group 1 is `x` + `group1:x`.
+
+## Omitted variable bias {#sec-ovb}
+
+If the true model is $Y = X_1'\beta_1 + X_2'\beta_2 + e$ but we only regress on $X_1$, we get $\gamma_1 = \beta_1 + \Gamma_{12}\beta_2$, where $\Gamma_{12}$ is the regression of $X_2$ on $X_1$. The bias has a clear direction when we know the signs.
+
+```{r}
+#| label: ovb-simulation
+set.seed(2026)
+n_ovb <- 1000
+
+# X2 (institutions) is correlated with X1 (democracy)
+x1 <- rnorm(n_ovb)                        # democracy
+x2 <- 0.6 * x1 + rnorm(n_ovb, sd = 0.8)  # institutions (correlated)
+y_ovb <- 1 + 0.5 * x1 + 2 * x2 + rnorm(n_ovb)  # growth
+
+# True model
+coef(lm(y_ovb ~ x1 + x2))
+
+# Short regression (omit x2)
+coef(lm(y_ovb ~ x1))
+```
+
+The true effect of democracy ($\beta_1$) is 0.5, but the short regression gives $\gamma_1 \approx 1.7$. The bias is $\Gamma_{12} \times \beta_2 \approx 0.6 \times 2 = 1.2$, inflating the estimate because institutions are positively correlated with democracy and positively affect growth.
+
+```{r}
+#| label: ovb-formula
+# Verify the OVB formula
+gamma_12 <- coef(lm(x2 ~ x1))[2]  # regression of X2 on X1
+beta_2 <- coef(lm(y_ovb ~ x1 + x2))[3]
+
+c(short_coef = coef(lm(y_ovb ~ x1))[2],
+  long_coef_plus_bias = coef(lm(y_ovb ~ x1 + x2))[2] + gamma_12 * beta_2)
+```
+
+The OVB formula $\gamma_1 = \beta_1 + \Gamma_{12}\beta_2$ matches exactly.
+
+::: {#thm-ovb}
+## Omitted Variable Bias
+If the true model is $Y = X_1'\beta_1 + X_2'\beta_2 + e$ and we regress $Y$ on $X_1$ alone, the short regression coefficient is $\gamma_1 = \beta_1 + \Gamma_{12}\beta_2$, where $\Gamma_{12}$ is the coefficient from regressing $X_2$ on $X_1$. The bias $\Gamma_{12}\beta_2$ depends on both the correlation between $X_1$ and $X_2$ and the effect of $X_2$ on $Y$.
+:::
+
+::: {.callout-warning}
+## OVB Is About Population, Not Sample
+The omitted variable bias formula $\gamma_1 = \beta_1 + \Gamma_{12}\beta_2$ is an exact population relationship between projection coefficients. It does not require large samples, normality, or any distributional assumption — it follows purely from the algebra of linear projection.
+:::
+
+### Adding variables doesn't always help
+
+A subtlety from the lecture: if the true model has three variables and you can't observe $X_3$, adding $X_2$ can make the bias on $\beta_1$ worse, depending on the correlation structure.
+
+```{r}
+#| label: ovb-worse
+set.seed(2026)
+n_ow <- 1000
+z1 <- rnorm(n_ow)
+z2 <- 0.3 * z1 + rnorm(n_ow)
+z3 <- -0.8 * z1 + 0.5 * z2 + rnorm(n_ow)
+y_ow <- 1 + 1 * z1 + 0.5 * z2 + 3 * z3 + rnorm(n_ow)
+
+# True beta_1 = 1
+c(true = coef(lm(y_ow ~ z1 + z2 + z3))[2],
+  short = coef(lm(y_ow ~ z1))[2],
+  medium = coef(lm(y_ow ~ z1 + z2))[2])
+```
+
+Why does adding $X_2$ make things worse? Apply the OVB formula to the medium regression: omitting $X_3$ biases $\hat\beta_1$ by $\Gamma_{13\cdot 2}\beta_3$, where $\Gamma_{13\cdot 2}$ is the coefficient on $X_1$ in the regression of $X_3$ on $(X_1, X_2)$. Conditioning on $X_2$ can change the partial correlation between $X_1$ and $X_3$, amplifying the bias.
+
+```{r}
+#| label: ovb-worse-decomposition
+# OVB decomposition for the medium model
+gamma_13_2 <- coef(lm(z3 ~ z1 + z2))[2]  # partial effect of z1 on z3, controlling for z2
+beta_3 <- coef(lm(y_ow ~ z1 + z2 + z3))[4]
+
+c(medium_bias = coef(lm(y_ow ~ z1 + z2))[2] - 1,
+  ovb_formula = gamma_13_2 * beta_3)
+```
+
+Depending on the correlation structure, the "medium" model (with $X_2$ but not $X_3$) may be further from the truth than the "short" model. More controls are not automatically better.
+
+## Causal interpretation: regression as a weighted average
+
+The lecture ends with a deep result: when you regress $Y$ on a treatment dummy $D$ and controls $X$, the regression coefficient is a weighted average of the group-specific treatment effects $\delta_X = \mathbb{E}[Y|X, D=1] - \mathbb{E}[Y|X, D=0]$, with weights proportional to the conditional variance of $D$ given $X$.
+
+$$\delta_R = \frac{\mathbb{E}[\sigma^2_{D|X} \cdot \delta_X]}{\mathbb{E}[\sigma^2_{D|X}]}$$ {#eq-blp}
+
+Groups where treatment is most variable (closest to a 50/50 split) get the most weight.
+
+```{r}
+#| label: causal-weights
+set.seed(2026)
+n_cw <- 5000
+
+# X determines both treatment probability and treatment effect
+x_cw <- runif(n_cw, 0, 1)
+prob_treat <- x_cw^2  # treatment rare for low X, common for high X
+D <- rbinom(n_cw, 1, prob_treat)
+
+# Heterogeneous treatment effect: large for low X, negative for high X
+delta_x <- 10 - 16 * x_cw   # ranges from +10 at X=0 to -6 at X=1
+y_cw <- 2 + 3 * x_cw + delta_x * D + rnorm(n_cw)
+
+# Regression coefficient
+delta_R <- coef(lm(y_cw ~ D + x_cw))[2]
+
+# Weighted average with weights = Var(D|X) = p(1-p)
+wt <- prob_treat * (1 - prob_treat)
+delta_weighted <- sum(wt * delta_x) / sum(wt)
+
+c(regression = delta_R, weighted_avg = delta_weighted,
+  unweighted_avg = mean(delta_x))
+```
+
+The unweighted average treatment effect is about 2, but the regression coefficient is near 0. That's because treatment assignment $p(X) = X^2$ is most variable around $X \approx 0.7$ (where $p(1-p)$ peaks), and at that point the treatment effect $\delta(X) = 10 - 16(0.7) \approx -1$ is near zero or negative. The regression upweights these observations and downweights the large positive effects at low $X$, where treatment is rare and $\text{Var}(D|X)$ is small.
+
+```{r}
+#| label: causal-weights-plot
+df_cw <- data.frame(x = x_cw, delta = delta_x, weight = wt)
+
+ggplot(df_cw, aes(x)) +
+  geom_line(aes(y = delta, color = "Treatment effect δ(X)"), linewidth = 1.2) +
+  geom_line(aes(y = weight * 40, color = "Weight: Var(D|X) (rescaled)"),
+            linewidth = 1.2) +
+  scale_y_continuous(
+    name = "Treatment effect δ(X)",
+    sec.axis = sec_axis(~ . / 40, name = "Var(D|X)")
+  ) +
+  scale_color_manual(values = c("Treatment effect δ(X)" = "tomato",
+                                "Weight: Var(D|X) (rescaled)" = "steelblue"),
+                     name = "") +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
+  labs(x = "X", title = "Regression weights favor where treatment is most variable") +
+  theme_minimal()
+```
+
+This is why a randomized experiment with $p = 0.5$ for everyone gives equal weight to all subgroups: when $\text{Var}(D|X)$ is constant, the variance-weighted average reduces to the simple average.
+
+## Summary
+
+- The **CEF** $m(X) = \mathbb{E}[Y|X]$ is the best predictor, but the CEF error can be heteroskedastic (mean independence $\neq$ independence).
+- The **BLP** $X'\beta$ is the best *linear* approximation. It equals the CEF when the CEF is linear (e.g., jointly normal data).
+- BLP residuals satisfy $\mathbb{E}[Xe] = 0$ (weaker than $\mathbb{E}[e|X] = 0$), so nonlinear patterns can remain.
+- **Dummy variables** make the CEF discrete: the regression recovers group means.
+- **Interactions** allow slopes to vary by group or by the value of a moderator.
+- **Omitted variable bias** has a precise formula: $\gamma_1 = \beta_1 + \Gamma_{12}\beta_2$. Adding controls doesn't always reduce bias.
+- **Causal interpretation**: regression weights treatment effects by the conditional variance of treatment assignment.
+
+Next: [Multivariate OLS](ch03-ols.qmd) — moving from population quantities to sample estimation.

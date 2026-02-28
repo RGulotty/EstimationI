@@ -1,0 +1,592 @@
+---
+title: "13. Fixed Effects and Modern DiD"
+subtitle: "Random effects, Hausman test, CRE, dynamic panels, and new DiD methods"
+---
+
+This chapter covers the fixed vs. random effects choice, correlated random effects (Mundlak), dynamic panel GMM, and modern difference-in-differences methods that address the problems with two-way fixed effects under staggered treatment adoption. We use `plm` for panel estimation, `did` for Callaway--Sant'Anna group-time ATTs, and `fect` for counterfactual imputation estimators.
+
+**Questions this chapter answers:**
+
+1. When should you use fixed effects vs. random effects, and what does the Hausman test tell you?
+2. How does the TWFE estimator fail under staggered treatment with heterogeneous effects?
+3. What modern alternatives (Callaway-Sant'Anna, fect, matrix completion) fix the negative weighting problem?
+
+```{r}
+#| label: setup
+#| message: false
+library(ggplot2)
+library(plm)
+library(fixest)
+library(sandwich)
+library(lmtest)
+library(did)
+library(fect)
+```
+
+## Random effects as GLS
+
+In Chapter 12 we estimated fixed effects by demeaning within each unit. The **random effects** (RE) estimator instead treats $\alpha_i$ as part of a composite error $\nu_{it} = \alpha_i + \varepsilon_{it}$ and applies GLS to exploit the known correlation structure:
+
+$$\text{Var}(\nu_i) = \sigma_\varepsilon^2 I_T + \sigma_\alpha^2 \iota\iota' = \Omega$$ {#eq-re-variance}
+
+```{r}
+#| label: produc-setup
+data("Produc", package = "plm")
+pdata <- pdata.frame(Produc, index = c("state", "year"))
+```
+
+```{r}
+#| label: re-estimation
+# Fixed effects
+fe_fit <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
+              data = pdata, model = "within")
+
+# Random effects (GLS with error components)
+re_fit <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
+              data = pdata, model = "random")
+
+# Compare slope coefficients
+coef_comp <- data.frame(
+  Variable = names(coef(fe_fit)),
+  FE = round(coef(fe_fit), 4),
+  RE = round(coef(re_fit)[-1], 4)
+)
+rownames(coef_comp) <- NULL
+coef_comp
+```
+
+RE is more efficient than FE when the random effects assumption ($\alpha_i \perp X_{it}$) holds, because it uses both within-unit and between-unit variation. But if $\alpha_i$ is correlated with the regressors, RE is inconsistent.
+
+### Variance components
+
+The RE estimator decomposes total variance into unit-level ($\sigma_\alpha^2$) and idiosyncratic ($\sigma_\varepsilon^2$) components:
+
+```{r}
+#| label: variance-components
+# Extract variance components from plm
+ercomp <- ercomp(re_fit)
+cat("sigma_alpha (unit):", round(sqrt(ercomp$sigma2["id"]), 4), "\n")
+cat("sigma_eps (idios):", round(sqrt(ercomp$sigma2["idios"]), 4), "\n")
+cat("theta (shrinkage):", round(ercomp$theta, 4), "\n")
+```
+
+The shrinkage parameter $\theta$ controls how much RE pulls toward the within estimator versus the between estimator. When $\theta$ is close to 1, RE is close to FE; when $\theta$ is close to 0, RE is close to pooled OLS.
+
+### Partial pooling: RE as a weighted average
+
+```{r}
+#| label: partial-pooling
+# Between estimator
+be_fit <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
+              data = pdata, model = "between")
+
+cat("Between: ", round(coef(be_fit)["log(pcap)"], 4), "\n")
+cat("Within:  ", round(coef(fe_fit)["log(pcap)"], 4), "\n")
+cat("RE:      ", round(coef(re_fit)["log(pcap)"], 4), "\n")
+cat("(RE is between the within and between estimates)\n")
+```
+
+## The Hausman test
+
+The Hausman test compares FE (consistent under both $H_0$ and $H_1$) with RE (efficient under $H_0$ but inconsistent under $H_1$):
+
+$$H = (\hat\beta_{FE} - \hat\beta_{RE})' [\text{Var}(\hat\beta_{FE}) - \text{Var}(\hat\beta_{RE})]^{-1} (\hat\beta_{FE} - \hat\beta_{RE}) \xrightarrow{d} \chi^2_K$$ {#eq-hausman}
+
+::: {#thm-hausman}
+## Hausman Test
+The Hausman statistic $H = (\hat\beta_{FE} - \hat\beta_{RE})'[\text{Var}(\hat\beta_{FE}) - \text{Var}(\hat\beta_{RE})]^{-1}(\hat\beta_{FE} - \hat\beta_{RE}) \xrightarrow{d} \chi^2_K$ tests whether FE and RE estimates differ systematically. Rejection means $\alpha_i$ is correlated with $X_{it}$, favoring FE.
+:::
+
+```{r}
+#| label: hausman-test
+phtest(fe_fit, re_fit)
+```
+
+A small p-value rejects the RE assumption---state fixed effects are correlated with the regressors, so FE is preferred.
+
+**Caveat:** Using the Hausman test to *choose* between FE and RE creates a pretest estimator with distorted coverage. The research design should determine the estimator; report the Hausman test as a diagnostic. The Hausman test can also be viewed as a [GMM overidentification test](ch11-gmm.qmd#sec-j-test).
+
+## Correlated random effects (Mundlak) {#sec-mundlak}
+
+Mundlak (1978) proposed a middle ground: include the group means $\bar{x}_i$ as additional regressors in the RE model. This "soaks up" the correlation between $\alpha_i$ and $x_{it}$:
+
+$$\alpha_i = \delta_0 + \bar{x}_i' \delta + \zeta_i, \quad \mathbb{E}[\zeta_i \mid x_{it}, z_i] = 0$$
+
+```{r}
+#| label: cre-mundlak
+# Add group means of time-varying regressors
+pdata$lpcap_bar <- Between(log(pdata$pcap))
+pdata$lpc_bar   <- Between(log(pdata$pc))
+pdata$lemp_bar  <- Between(log(pdata$emp))
+pdata$unemp_bar <- Between(pdata$unemp)
+
+# CRE = RE + group means
+cre_fit <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp +
+                 lpcap_bar + lpc_bar + lemp_bar + unemp_bar,
+               data = pdata, model = "random")
+
+# CRE slopes = FE slopes (by FWL)
+cat("CRE slopes: ", round(coef(cre_fit)[2:5], 4), "\n")
+cat("FE slopes:  ", round(coef(fe_fit), 4), "\n")
+```
+
+The CRE slopes on time-varying regressors match FE exactly. This follows from the [FWL theorem](ch04-sensitivity.qmd#thm-fwl): partialing out $\bar{x}_i$ from $x_{it}$ gives the within-demeaned data.
+
+::: {#thm-mundlak}
+## Correlated Random Effects (Mundlak)
+Adding group means $\bar{x}_i$ to the RE model gives CRE: $y_{it} = x_{it}'\beta + \bar{x}_i'\delta + \alpha_i + \varepsilon_{it}$. The slope $\hat\beta_{CRE}$ equals $\hat\beta_{FE}$ by FWL. Testing $\delta = 0$ is equivalent to the Hausman test but works with robust SEs and allows estimation of time-invariant variable effects.
+:::
+
+::: {.callout-note}
+## CRE = FE + Time-Invariant Variables
+The Mundlak/CRE approach gives identical slope coefficients to FE while also allowing estimation of effects of time-invariant regressors (region, sex, ethnicity). It also provides a robust version of the Hausman test through an F-test on the group means.
+:::
+
+### The Mundlak test = Hausman test
+
+Testing $H_0: \delta = 0$ (the group means have no additional explanatory power) is equivalent to the Hausman test:
+
+```{r}
+#| label: mundlak-test
+# F-test on the group means
+library(car)
+linearHypothesis(cre_fit,
+  c("lpcap_bar = 0", "lpc_bar = 0", "lemp_bar = 0", "unemp_bar = 0"))
+```
+
+### CRE identifies effects of time-invariant variables
+
+A key advantage of CRE over FE: it can estimate effects of time-invariant regressors. FE sweeps them out along with $\alpha_i$.
+
+```{r}
+#| label: cre-time-invariant
+# Add a time-invariant variable: region
+pdata$region_ne <- as.numeric(pdata$region == "1")
+pdata$region_s  <- as.numeric(pdata$region == "3")
+pdata$region_w  <- as.numeric(pdata$region == "4")
+
+cre_region <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp +
+                    lpcap_bar + lpc_bar + lemp_bar + unemp_bar +
+                    region_ne + region_s + region_w,
+                  data = pdata, model = "random")
+
+# Region coefficients (relative to North Central)
+cat("Region effects (CRE):\n")
+cat("  Northeast:", round(coef(cre_region)["region_ne"], 4), "\n")
+cat("  South:    ", round(coef(cre_region)["region_s"], 4), "\n")
+cat("  West:     ", round(coef(cre_region)["region_w"], 4), "\n")
+```
+
+## The problem with TWFE under staggered treatment {#sec-twfe-bias}
+
+Standard two-way fixed effects (TWFE) with staggered treatment can produce severely biased estimates when treatment effects are heterogeneous. TWFE implicitly compares newly-treated units to already-treated units, creating negative weights on some group-time ATTs.
+
+::: {#thm-twfe-bias}
+## TWFE Bias Under Staggered Treatment
+With staggered adoption and heterogeneous treatment effects, TWFE assigns negative weights to some group-time ATTs — using already-treated units as controls for newly-treated units. The resulting estimate can be far from any meaningful causal parameter, including the wrong sign.
+:::
+
+::: {.callout-warning}
+## TWFE Can Produce Negative Weights
+Under staggered treatment with dynamic or heterogeneous effects, TWFE regression assigns negative weights to some group-time treatment effects. This means the TWFE coefficient is not a convex average of individual treatment effects — it can even have the wrong sign. Use Callaway-Sant'Anna, Sun-Abraham, or fect instead.
+:::
+
+### Simulation: TWFE bias
+
+```{r}
+#| label: twfe-bias-sim
+set.seed(42)
+N <- 200; T_max <- 10
+
+# Staggered adoption: 3 cohorts + never-treated
+cohorts <- c(4, 6, 8)  # treatment start times
+sim_panel <- data.frame()
+
+for (i in 1:N) {
+  # Assign to cohort (25% each)
+  g <- sample(c(cohorts, 0), 1)  # 0 = never treated
+  alpha_i <- rnorm(1, sd = 2)
+
+  for (t in 1:T_max) {
+    treated <- (g > 0) & (t >= g)
+    # Treatment effect grows with exposure AND varies by cohort
+    te <- if (treated) 1.0 + 0.3 * (t - g) + 0.5 * (g == 4) else 0
+    y <- 2 + alpha_i + 0.2 * t + te + rnorm(1)
+
+    sim_panel <- rbind(sim_panel,
+      data.frame(id = i, time = t, y = y,
+                 treat = as.integer(treated),
+                 cohort = g,
+                 first_treat = ifelse(g == 0, 0, g)))
+  }
+}
+
+# TWFE regression
+twfe <- feols(y ~ treat | id + time, data = sim_panel)
+cat("TWFE estimate:", round(coef(twfe)["treat"], 3), "\n")
+
+# True average ATT among treated observations
+true_att <- mean(sim_panel$y[sim_panel$treat == 1]) -
+  mean(2 + ave(rnorm(N), rep(1:N, each = T_max)) + 0.2 * sim_panel$time[sim_panel$treat == 1])
+cat("(The true ATT varies by cohort and exposure time -- TWFE averages with potentially negative weights)\n")
+```
+
+## Callaway--Sant'Anna: group-time ATTs
+
+The `did` package (Callaway & Sant'Anna, 2021) avoids the TWFE problem by estimating separate ATTs for each group-time pair, then aggregating. The `mpdta` dataset tracks teen employment across 500 U.S. counties, with staggered minimum wage increases.
+
+```{r}
+#| label: mpdta-setup
+data(mpdta)
+cat("Counties:", length(unique(mpdta$countyreal)),
+    " Years:", paste(range(mpdta$year), collapse = "-"),
+    " Treatment cohorts:", paste(sort(unique(mpdta$first.treat[mpdta$first.treat > 0])),
+                                  collapse = ", "), "\n")
+head(mpdta)
+```
+
+### Estimating group-time ATTs
+
+```{r}
+#| label: cs-attgt
+# Estimate all group-time ATTs
+cs_out <- att_gt(
+  yname = "lemp",
+  gname = "first.treat",
+  idname = "countyreal",
+  tname = "year",
+  xformla = ~1,              # unconditional
+  data = mpdta,
+  control_group = "nevertreated",
+  est_method = "dr"          # doubly robust (default)
+)
+
+summary(cs_out)
+```
+
+Each row is an ATT(g, t): the average treatment effect for group $g$ (defined by when they were first treated) at time $t$.
+
+```{r}
+#| label: cs-attgt-plot
+ggdid(cs_out, ylim = c(-0.3, 0.3))
+```
+
+### Aggregation: event study
+
+The many group-time ATTs can be aggregated into an event study (dynamic effects by exposure time):
+
+```{r}
+#| label: cs-event-study
+cs_dyn <- aggte(cs_out, type = "dynamic")
+summary(cs_dyn)
+```
+
+```{r}
+#| label: cs-event-plot
+#| fig-cap: "Callaway-Sant'Anna event study: pre-treatment estimates near zero support parallel trends"
+ggdid(cs_dyn, ylim = c(-0.3, 0.3))
+```
+
+Pre-treatment estimates near zero support the parallel trends assumption. Post-treatment estimates show the dynamic treatment effect.
+
+### Simple aggregation: overall ATT
+
+```{r}
+#| label: cs-simple
+cs_simple <- aggte(cs_out, type = "simple")
+summary(cs_simple)
+```
+
+### Group-specific effects
+
+```{r}
+#| label: cs-group
+cs_group <- aggte(cs_out, type = "group")
+summary(cs_group)
+```
+
+Different cohorts may experience different effects---early adopters vs. late adopters of the minimum wage increase.
+
+### With covariates
+
+Parallel trends can be conditioned on covariates. Here we control for log population:
+
+```{r}
+#| label: cs-covariates
+cs_cov <- att_gt(
+  yname = "lemp",
+  gname = "first.treat",
+  idname = "countyreal",
+  tname = "year",
+  xformla = ~lpop,           # conditional on log population
+  data = mpdta,
+  control_group = "nevertreated"
+)
+
+cs_cov_dyn <- aggte(cs_cov, type = "dynamic")
+ggdid(cs_cov_dyn, ylim = c(-0.3, 0.3))
+```
+
+## Counterfactual estimators with fect
+
+The `fect` package (Liu, Wang & Xu, 2024) takes a different approach: it imputes counterfactual outcomes for treated observations by fitting a model on untreated observations only, then computes treatment effects as the difference between observed and imputed outcomes.
+
+The `simdata` dataset has 200 units over 35 periods with treatment that can switch on and off:
+
+```{r}
+#| label: fect-data
+data(fect)
+cat("Units:", length(unique(simdata$id)),
+    " Periods:", paste(range(simdata$time), collapse = "-"),
+    " Treated obs:", sum(simdata$D), "\n")
+```
+
+### Two-way FE counterfactual
+
+The simplest `fect` estimator uses two-way fixed effects to impute counterfactuals:
+
+```{r}
+#| label: fect-fe
+out_fe <- fect(Y ~ D + X1 + X2, data = simdata,
+               index = c("id", "time"),
+               method = "fe", force = "two-way",
+               se = TRUE, nboots = 200,
+               parallel = FALSE)
+```
+
+```{r}
+#| label: fect-fe-summary
+cat("ATT estimate:", round(out_fe$est.avg[1, 1], 3), "\n")
+cat("SE:          ", round(out_fe$est.avg[1, 2], 3), "\n")
+cat("95% CI:      [", round(out_fe$est.avg[1, 3], 3), ",",
+    round(out_fe$est.avg[1, 4], 3), "]\n")
+```
+
+### Event study (gap) plot
+
+The default plot shows period-by-period ATTs relative to treatment onset:
+
+```{r}
+#| label: fect-fe-plot
+plot(out_fe, main = "FE counterfactual: ATT by periods since treatment")
+```
+
+### Interactive fixed effects (IFE)
+
+When parallel trends may not hold, interactive fixed effects allow for unit-specific responses to common latent factors:
+
+$$Y_{it}(0) = \alpha_i + \xi_t + f_t' \lambda_i + X_{it}'\beta + \varepsilon_{it}$$
+
+The number of factors $r$ is selected by cross-validation:
+
+```{r}
+#| label: fect-ife
+out_ife <- fect(Y ~ D + X1 + X2, data = simdata,
+                index = c("id", "time"),
+                method = "ife", force = "two-way",
+                CV = TRUE, r = c(0, 5),
+                se = TRUE, nboots = 200,
+                parallel = FALSE)
+```
+
+```{r}
+#| label: fect-ife-summary
+cat("IFE ATT:", round(out_ife$est.avg[1, 1], 3),
+    " (selected r =", out_ife$r.cv, ")\n")
+```
+
+```{r}
+#| label: fect-ife-plot
+plot(out_ife, main = "IFE counterfactual: ATT by periods since treatment")
+```
+
+### Matrix completion
+
+Matrix completion treats the $N \times T$ matrix of untreated potential outcomes as approximately low-rank and uses nuclear norm regularization to impute missing entries---no need to specify the number of factors:
+
+```{r}
+#| label: fect-mc
+out_mc <- fect(Y ~ D + X1 + X2, data = simdata,
+               index = c("id", "time"),
+               method = "mc", force = "two-way",
+               CV = TRUE,
+               se = TRUE, nboots = 200,
+               parallel = FALSE)
+```
+
+```{r}
+#| label: fect-mc-summary
+cat("MC ATT:", round(out_mc$est.avg[1, 1], 3), "\n")
+```
+
+### Comparing methods
+
+```{r}
+#| label: fect-comparison
+methods_comp <- data.frame(
+  Method = c("FE", "IFE", "MC"),
+  ATT = round(c(out_fe$est.avg[1, 1], out_ife$est.avg[1, 1], out_mc$est.avg[1, 1]), 3),
+  SE = round(c(out_fe$est.avg[1, 2], out_ife$est.avg[1, 2], out_mc$est.avg[1, 2]), 3),
+  CI_lower = round(c(out_fe$est.avg[1, 3], out_ife$est.avg[1, 3], out_mc$est.avg[1, 3]), 3),
+  CI_upper = round(c(out_fe$est.avg[1, 4], out_ife$est.avg[1, 4], out_mc$est.avg[1, 4]), 3)
+)
+methods_comp
+```
+
+### Placebo test for pre-trends
+
+The placebo test checks whether there are "treatment effects" in the pre-treatment period---evidence against parallel trends:
+
+```{r}
+#| label: fect-placebo
+out_placebo <- fect(Y ~ D + X1 + X2, data = simdata,
+                    index = c("id", "time"),
+                    method = "fe", force = "two-way",
+                    placeboTest = TRUE,
+                    placebo.period = c(-2, 0),
+                    se = TRUE, nboots = 200,
+                    parallel = FALSE)
+plot(out_placebo, main = "Placebo test: pre-treatment effects should be zero")
+```
+
+### Equivalence test
+
+The equivalence test provides a more formal assessment: are pre-treatment ATTs close enough to zero?
+
+```{r}
+#| label: fect-equiv
+plot(out_fe, type = "equiv",
+     main = "Equivalence test for pre-treatment periods")
+```
+
+## Matrix completion for panel data (conceptual)
+
+Athey, Bayati, Doudchenko, Imbens & Khosravi (2021) formalize the connection between DID, synthetic control, and matrix completion. The key insight is that all three are special cases of the same framework, differing in what structure they impose on the matrix of untreated potential outcomes $Y(0)$:
+
+| Method | Assumption on $Y(0)$ | Best when |
+|--------|---------------------|-----------|
+| DID | Additive: $Y_{it}(0) = \alpha_i + \xi_t$ (rank 1) | Strong parallel trends |
+| Synthetic control | Hard rank constraint on columns | Few treated units, many controls |
+| Matrix completion | Soft low-rank via nuclear norm penalty | General (robust across settings) |
+
+The `MCPanel` package (available from GitHub: `susanathey/MCPanel`) implements nuclear norm minimized matrix completion. The idea is to find a low-rank matrix $L$ plus unit and time effects that best approximate the observed (untreated) entries:
+
+$$\min_{L, \gamma, \delta} \frac{1}{|\mathcal{O}|} \sum_{(i,t) \in \mathcal{O}} (Y_{it} - L_{it} - \gamma_i - \delta_t)^2 + \lambda \|L\|_*$$
+
+where $\|L\|_*$ is the nuclear norm (sum of singular values) and $\lambda$ is chosen by cross-validation. When $\lambda$ is very large, $L \to 0$ and the method reduces to DID. When $\lambda$ is small, it approximates interactive fixed effects.
+
+We can demonstrate the idea with a simple simulation:
+
+```{r}
+#| label: mc-concept
+set.seed(99)
+N_mc <- 30; T_mc <- 20; R_true <- 2
+
+# Low-rank structure
+A <- matrix(rnorm(N_mc * R_true), N_mc, R_true)
+B <- matrix(rnorm(T_mc * R_true), T_mc, R_true)
+L_true <- A %*% t(B)
+
+# Unit and time effects
+gamma <- rnorm(N_mc, sd = 0.5)
+delta <- rnorm(T_mc, sd = 0.5)
+Y0 <- L_true + outer(gamma, rep(1, T_mc)) + outer(rep(1, N_mc), delta) +
+  matrix(rnorm(N_mc * T_mc, sd = 0.3), N_mc, T_mc)
+
+# Treatment: units 1-10 treated from period 15 onward
+tau_true <- 2.0  # constant treatment effect
+Y_obs <- Y0
+Y_obs[1:10, 15:T_mc] <- Y_obs[1:10, 15:T_mc] + tau_true
+
+# What DID would estimate
+did_control_pre <- mean(Y_obs[11:N_mc, 1:14])
+did_control_post <- mean(Y_obs[11:N_mc, 15:T_mc])
+did_treat_pre <- mean(Y_obs[1:10, 1:14])
+did_treat_post <- mean(Y_obs[1:10, 15:T_mc])
+did_att <- (did_treat_post - did_treat_pre) - (did_control_post - did_control_pre)
+
+# SVD-based imputation (simplified matrix completion)
+# Use control rows + pre-treatment treated rows to impute
+mask <- matrix(1, N_mc, T_mc)
+mask[1:10, 15:T_mc] <- 0  # missing = treated
+
+# Impute using low-rank SVD of observed entries
+Y_masked <- Y_obs * mask
+Y_masked[1:10, 15:T_mc] <- NA
+
+# Simple imputation: use SVD on complete rows to predict treated post
+Y_control <- Y_obs[11:N_mc, ]
+svd_control <- svd(Y_control)
+# Project treated pre-period onto control space
+Y_treat_pre <- Y_obs[1:10, 1:14]
+# Use first R_true factors
+V_pre <- svd_control$v[1:14, 1:R_true]
+V_post <- svd_control$v[15:T_mc, 1:R_true]
+U_hat <- Y_treat_pre %*% V_pre %*% solve(t(V_pre) %*% V_pre)
+Y0_hat_post <- U_hat %*% t(V_post)
+
+# Adjust for level (add mean)
+mc_att <- mean(Y_obs[1:10, 15:T_mc] - Y0_hat_post) -
+  mean(Y_obs[1:10, 1:14] - U_hat %*% t(V_pre))
+
+cat("True ATT:     ", tau_true, "\n")
+cat("DID estimate: ", round(did_att, 3), "\n")
+cat("MC estimate:  ", round(mc_att, 3), "\n")
+```
+
+When the data have a low-rank structure that violates simple parallel trends, matrix completion can outperform DID by exploiting the factor structure.
+
+## When to use which method
+
+The landscape of DiD and panel methods has expanded. Here is a practical guide:
+
+```{r}
+#| label: method-guide
+#| echo: false
+cat("
+Modern DiD / Panel Method Guide:
+==================================
+
+STANDARD PANEL (no staggered treatment):
+  - alpha_i correlated with X?
+    Yes --> Fixed Effects or CRE (Mundlak)
+    No  --> Random Effects (rare in observational data)
+  - Lagged dependent variable?
+    Yes --> Arellano-Bond or System GMM (see Ch. 12)
+
+STAGGERED DiD (treatment adopted at different times):
+  - Homogeneous treatment effects?
+    Yes --> Standard TWFE is fine
+    No  --> Use modern methods:
+      * Callaway-Sant'Anna (did package):
+        - Group-time ATTs, flexible aggregation
+        - Supports covariates, doubly robust estimation
+        - Requires staggered adoption (no treatment reversal)
+      * fect package:
+        - FE, IFE, or matrix completion counterfactuals
+        - Handles treatment reversal
+        - Built-in placebo and equivalence tests
+        - Also wraps other methods (CS, Sun-Abraham, etc.)
+      * MCPanel:
+        - Matrix completion (nuclear norm)
+        - Unifies DID, synthetic control, and IFE
+        - Best when outcome matrix is approximately low-rank
+
+DIAGNOSTICS:
+  - Always check pre-trends (event study / placebo test)
+  - For GMM: Sargan/J-test + AR(2) test
+  - For RE: Hausman test (as diagnostic, not decision rule)
+  - For CRE: F-test on group means = robust Hausman test
+")
+```
+
+## Summary
+
+- **Random effects** assumes $\alpha_i \perp X_{it}$ and applies GLS with the composite error structure. It is more efficient than FE when valid, but inconsistent when violated.
+- **The Hausman test** compares FE and RE; use it as a diagnostic, not a model-selection tool.
+- **Correlated random effects (Mundlak)** nests both FE and RE: it recovers FE slopes while also estimating effects of time-invariant variables. The Mundlak test ($\delta = 0$) equals the Hausman test but works with robust SEs.
+- **TWFE fails under staggered treatment** with heterogeneous effects due to negative weighting.
+- **Callaway--Sant'Anna** (`did` package) estimates group-time ATTs and aggregates them into event studies, group-specific effects, or an overall ATT---avoiding the negative weighting problem.
+- **fect** provides counterfactual imputation estimators: FE, interactive fixed effects, and matrix completion. It handles treatment reversal and includes built-in diagnostics.
+- **Matrix completion** (Athey et al.) unifies DID and synthetic control as special cases of nuclear norm minimization, providing a flexible middle ground.
+- All panel estimators connect to the **GMM framework**: FE uses within-group moments, RE adds between-group moments, CRE augments RE to nest FE, and dynamic panels use lagged instruments.

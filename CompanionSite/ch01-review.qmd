@@ -1,0 +1,540 @@
+---
+title: "1. Probability and Linear Algebra"
+subtitle: "From random variables to the OLS estimator"
+---
+
+```{r}
+#| label: setup
+#| message: false
+library(ggplot2)
+library(MASS)
+options(digits = 3)
+```
+
+This chapter builds up the machinery behind OLS from scratch. We start with expectation and variance, show how the conditional expectation function emerges from a joint distribution, and then shift to linear algebra — matrices, projection, and the geometry that makes regression work.
+
+**Questions this chapter answers:**
+
+1. What is the best predictor of a random variable, and why does the mean minimize squared error?
+2. How does conditioning on information improve prediction through the CEF?
+3. How does the design matrix $\mathbf{X}$ encode a regression problem?
+4. Why is OLS a geometric projection, and what do eigenvectors of the hat matrix tell us?
+
+## Expectation as a best guess
+
+If you had to predict a random variable $Y$ with a single number $\mu$, and your penalty for being wrong is squared error, you'd choose the mean. Let's verify this computationally.
+
+Suppose $Y$ takes values $\{1, 2, 3, 4, 5\}$ with probabilities $\{0.1, 0.2, 0.3, 0.25, 0.15\}$.
+
+```{r}
+#| label: expectation-minimizes-mse
+#| fig-cap: "The expectation minimizes mean squared prediction error"
+values <- 1:5
+probs <- c(0.1, 0.2, 0.3, 0.25, 0.15)
+
+# The expected value
+mu <- sum(values * probs)
+mu
+
+# Mean squared error as a function of the guess
+mse <- function(guess) {
+  sum(probs * (values - guess)^2)
+}
+
+# Evaluate over a grid
+guesses <- seq(1, 5, by = 0.01)
+errors <- sapply(guesses, mse)
+
+ggplot(data.frame(guess = guesses, mse = errors), aes(guess, mse)) +
+  geom_line(linewidth = 0.8) +
+  geom_vline(xintercept = mu, linetype = "dashed", color = "steelblue") +
+  annotate("text", x = mu + 0.3, y = max(errors) * 0.9,
+           label = paste("E[Y] =", mu), color = "steelblue") +
+  labs(x = "Guess (mu)", y = "Mean Squared Error",
+       title = "The expectation minimizes mean squared prediction error") +
+  theme_minimal()
+```
+
+The minimum of the parabola lands exactly at $\mathbb{E}[Y]$. This is the simplest version of a result that recurs throughout the course: the conditional expectation function minimizes MSE given information.
+
+::: {#thm-mse-minimizer}
+## E[Y] Minimizes MSE
+Among all constants $\mu$, the expected value $\mathbb{E}[Y]$ uniquely minimizes the mean squared error $\mathbb{E}[(Y - \mu)^2]$.
+:::
+
+## Variance and the deviation identity
+
+Variance measures the average squared distance from the mean:
+
+$$\text{Var}(X) = \mathbb{E}[(X - \mathbb{E}[X])^2] = \mathbb{E}[X^2] - (\mathbb{E}[X])^2$$ {#eq-mse}
+
+Let's verify both formulas give the same answer.
+
+```{r}
+#| label: variance-two-forms
+EY <- sum(values * probs)
+EY2 <- sum(values^2 * probs)
+
+# Definition form
+var_def <- sum(probs * (values - EY)^2)
+
+# Shortcut form
+var_short <- EY2 - EY^2
+
+c(definition = var_def, shortcut = var_short)
+```
+
+In a sample, we can also write the variance as $\frac{1}{n}\sum(x_i - \bar{x})x_i$. This works because deviations from the mean always sum to zero: $\sum(x_i - \bar{x}) = 0$, so shifting the second factor by any constant changes nothing. This same algebra produces the OLS normal equations later.
+
+The interactive visualization below makes this concrete. Think of each term as the signed area of a rectangle with width $(x_i - \bar{x})$ and height $(x_i - c)$. Slide $c$ from $\bar{x}$ down to $0$: the rectangles change shape, but the total signed area stays constant.
+
+```{ojs}
+//| echo: false
+
+viewof ref = Inputs.range([0, 5], {value: 5, step: 0.1, label: "Reference point (c)"})
+```
+
+```{ojs}
+//| echo: false
+
+{
+  const width = 500;
+  const height = 420;
+  const margin = {top: 30, right: 40, bottom: 50, left: 50};
+
+  const data = [1, 5, 6, 8];
+  const xbar = 5;
+  const c = ref;
+
+  const svg = d3.create("svg")
+    .attr("viewBox", [0, 0, width, height])
+    .attr("width", width)
+    .attr("height", height)
+    .style("font-family", "sans-serif");
+
+  const xScale = d3.scaleLinear()
+    .domain([-1, 9.5])
+    .range([margin.left, width - margin.right]);
+
+  const yScale = d3.scaleLinear()
+    .domain([-1, 9.5])
+    .range([height - margin.bottom, margin.top]);
+
+  // Axes
+  svg.append("g")
+    .attr("transform", `translate(0,${yScale(0)})`)
+    .call(d3.axisBottom(xScale).ticks(10))
+    .append("text")
+    .attr("x", width - margin.right)
+    .attr("y", -10)
+    .attr("fill", "black")
+    .attr("text-anchor", "end")
+    .text("x");
+
+  svg.append("g")
+    .attr("transform", `translate(${xScale(0)},0)`)
+    .call(d3.axisLeft(yScale).ticks(10));
+
+  // Draw x-bar vertical line
+  svg.append("line")
+    .attr("x1", xScale(xbar)).attr("x2", xScale(xbar))
+    .attr("y1", yScale(-0.5)).attr("y2", yScale(9))
+    .attr("stroke", "steelblue").attr("stroke-dasharray", "4,4").attr("stroke-width", 1.5);
+
+  svg.append("text")
+    .attr("x", xScale(xbar)).attr("y", yScale(-0.8))
+    .attr("text-anchor", "middle").attr("fill", "steelblue").attr("font-size", 13)
+    .text("x̄ = 5");
+
+  // Draw x-bar horizontal line
+  svg.append("line")
+    .attr("x1", xScale(-0.5)).attr("x2", xScale(9))
+    .attr("y1", yScale(xbar)).attr("y2", yScale(xbar))
+    .attr("stroke", "steelblue").attr("stroke-dasharray", "4,4").attr("stroke-width", 1.5);
+
+  // Draw reference vertical line
+  svg.append("line")
+    .attr("x1", xScale(c)).attr("x2", xScale(c))
+    .attr("y1", yScale(-0.5)).attr("y2", yScale(9))
+    .attr("stroke", "tomato").attr("stroke-dasharray", "2,3").attr("stroke-width", 1.5);
+
+  svg.append("text")
+    .attr("x", xScale(c)).attr("y", yScale(9.3))
+    .attr("text-anchor", "middle").attr("fill", "tomato").attr("font-size", 12)
+    .text(`c = ${c.toFixed(1)}`);
+
+  // Positive/negative color for rectangles
+  const posColor = "rgba(70, 130, 180, 0.3)";
+  const negColor = "rgba(220, 80, 80, 0.3)";
+  const posStroke = "steelblue";
+  const negStroke = "tomato";
+
+  // Draw rectangles
+  for (const xi of data) {
+    const dev = xi - xbar;
+    const ht = xi - c;
+    const area = dev * ht;
+
+    if (Math.abs(dev) < 0.001) continue;
+
+    const isPositive = area >= 0;
+
+    const rx2 = xScale(Math.min(xbar, xi));
+    const ry2 = yScale(Math.max(c, xi));
+    const rw2 = Math.abs(xScale(xi) - xScale(xbar));
+    const rh2 = Math.abs(yScale(c) - yScale(xi));
+
+    svg.append("rect")
+      .attr("x", rx2).attr("y", ry2)
+      .attr("width", rw2).attr("height", rh2)
+      .attr("fill", isPositive ? posColor : negColor)
+      .attr("stroke", isPositive ? posStroke : negStroke)
+      .attr("stroke-width", 1.5);
+
+    const cx = (Math.min(xbar, xi) + Math.max(xbar, xi)) / 2;
+    const cy = (Math.min(c, xi) + Math.max(c, xi)) / 2;
+
+    if (rw2 > 15 && rh2 > 15) {
+      svg.append("text")
+        .attr("x", xScale(cx)).attr("y", yScale(cy))
+        .attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+        .attr("font-size", 11).attr("fill", "#333")
+        .text(`${dev.toFixed(0)}×${ht.toFixed(1)}`);
+    }
+  }
+
+  // Draw data points on the diagonal
+  for (const xi of data) {
+    svg.append("circle")
+      .attr("cx", xScale(xi)).attr("cy", yScale(xi))
+      .attr("r", 5).attr("fill", "black");
+  }
+
+  // Compute total and display
+  let total = 0;
+  for (const xi of data) {
+    total += (xi - xbar) * (xi - c);
+  }
+  const variance = total / data.length;
+
+  svg.append("text")
+    .attr("x", xScale(7)).attr("y", yScale(1.5))
+    .attr("text-anchor", "middle").attr("font-size", 14).attr("fill", "#333")
+    .html(`Total area = ${total.toFixed(1)}`);
+
+  svg.append("text")
+    .attr("x", xScale(7)).attr("y", yScale(0.5))
+    .attr("text-anchor", "middle").attr("font-size", 14).attr("font-weight", "bold").attr("fill", "#333")
+    .text(`Var = ${total.toFixed(1)} / ${data.length} = ${variance.toFixed(2)}`);
+
+  return svg.node();
+}
+```
+
+## Joint distributions and the CEF
+
+The lecture works through an example where two parties (A and B) mobilize voters, with joint density $f(x, y) = 6(1 - x - y)$ for $x, y \geq 0$ and $x + y \leq 1$. Let's visualize this and compute the CEF.
+
+```{r}
+#| label: joint-density
+# Create a grid
+grid <- expand.grid(x = seq(0, 1, length = 200), y = seq(0, 1, length = 200))
+grid$density <- ifelse(grid$x + grid$y <= 1,
+                       6 * (1 - grid$x - grid$y), NA)
+
+ggplot(grid, aes(x, y, fill = density)) +
+  geom_tile() +
+  scale_fill_viridis_c(na.value = "white", name = "f(x,y)") +
+  labs(title = "Joint density: f(x, y) = 6(1 - x - y)",
+       x = "Party A mobilization (x)",
+       y = "Party B mobilization (y)") +
+  coord_fixed() +
+  theme_minimal()
+```
+
+From the joint density we can derive the marginal $f_X(x) = 3(1-x)^2$, the conditional $f_{Y|X}(y|x) = \frac{2(1-x-y)}{(1-x)^2}$, and the CEF $\mathbb{E}[Y|X=x] = \frac{1-x}{3}$. Let's verify by simulation.
+
+```{r}
+#| label: cef-simulation
+# Simulate from f(x,y) = 6(1-x-y) using rejection sampling
+set.seed(123)
+n_sim <- 50000
+samples <- data.frame(x = numeric(0), y = numeric(0))
+
+while (nrow(samples) < n_sim) {
+  x_prop <- runif(n_sim)
+  y_prop <- runif(n_sim)
+  valid <- (x_prop + y_prop <= 1)
+  x_prop <- x_prop[valid]
+  y_prop <- y_prop[valid]
+  # Accept with probability proportional to density
+  accept_prob <- 6 * (1 - x_prop - y_prop) / 6  # max density is 6
+
+  keep <- runif(length(x_prop)) < accept_prob
+  samples <- rbind(samples, data.frame(x = x_prop[keep], y = y_prop[keep]))
+}
+samples <- samples[1:n_sim, ]
+
+# Bin x and compute mean of y in each bin
+samples$x_bin <- cut(samples$x, breaks = 30)
+cef_empirical <- aggregate(y ~ x_bin, data = samples, FUN = mean)
+cef_empirical$x_mid <- seq(0.02, 0.98, length = nrow(cef_empirical))
+
+# Plot simulation vs. theoretical CEF
+ggplot(cef_empirical, aes(x_mid, y)) +
+  geom_point(alpha = 0.7) +
+  stat_function(fun = function(x) (1 - x) / 3, color = "red", linewidth = 1) +
+  labs(x = "x", y = "E[Y | X = x]",
+       title = "CEF: simulation vs. theory",
+       subtitle = "Red line: (1 - x)/3") +
+  theme_minimal()
+```
+
+The simulated conditional means track the theoretical CEF closely. This is a case where the CEF happens to be linear — but that's a special property of this density, not a general fact.
+
+## The law of iterated expectations {#sec-lie}
+
+The LIE says $\mathbb{E}[\mathbb{E}[Y|X]] = \mathbb{E}[Y]$. In words: the average of the conditional averages equals the overall average. Let's check.
+
+```{r}
+#| label: lie-check
+# Overall mean of Y from simulation
+overall_mean <- mean(samples$y)
+
+# Theoretical E[Y]: integrate y * f_Y(y)
+# f_Y(y) = 3(1-y)^2 by symmetry, so E[Y] = integral of y * 3(1-y)^2 from 0 to 1
+EY_theory <- integrate(function(y) y * 3 * (1 - y)^2, 0, 1)$value
+
+# E[E[Y|X]] = E[(1-X)/3] = integral of (1-x)/3 * 3(1-x)^2 dx = integral of (1-x)^3 dx
+EEY_X <- integrate(function(x) (1 - x)^3, 0, 1)$value
+
+c(simulation = overall_mean, `E[Y] theory` = EY_theory, `E[E[Y|X]]` = EEY_X)
+```
+
+All three agree: the LIE holds.
+
+::: {#thm-lie}
+## Law of Iterated Expectations
+For any random variables $X$ and $Y$, $\mathbb{E}[\mathbb{E}[Y|X]] = \mathbb{E}[Y]$. The average of the conditional averages equals the unconditional average.
+:::
+
+## Law of total variance
+
+The law of total variance decomposes $\text{Var}(Y) = \mathbb{E}[\text{Var}(Y|X)] + \text{Var}(\mathbb{E}[Y|X])$. This is the foundation of $R^2$.
+
+```{r}
+#| label: total-variance
+# Var(Y) from simulation
+var_y_sim <- var(samples$y)
+
+# Compute within each bin: variance of y and mean of y
+bin_stats <- aggregate(y ~ x_bin, data = samples, FUN = function(z) c(m = mean(z), v = var(z), n = length(z)))
+bin_stats <- do.call(data.frame, bin_stats)
+
+# E[Var(Y|X)] - average of conditional variances (weighted by bin size)
+weights <- bin_stats$y.n / sum(bin_stats$y.n)
+E_var_YX <- sum(weights * bin_stats$y.v)
+
+# Var(E[Y|X]) - variance of conditional means
+var_EYX <- sum(weights * (bin_stats$y.m - sum(weights * bin_stats$y.m))^2)
+
+c(`Var(Y)` = var_y_sim,
+  `E[Var(Y|X)] + Var(E[Y|X])` = E_var_YX + var_EYX,
+  `explained fraction` = var_EYX / var_y_sim)
+```
+
+The decomposition works. The "explained fraction" is essentially $R^2$: how much of the total variance of $Y$ is captured by the CEF.
+
+::: {#thm-total-variance}
+## Law of Total Variance
+$\text{Var}(Y) = \mathbb{E}[\text{Var}(Y|X)] + \text{Var}(\mathbb{E}[Y|X])$. Total variance decomposes into average conditional variance plus variance of conditional means.
+:::
+
+## From probability to matrices
+
+Now we shift gears. The CEF tells us _what_ we're trying to estimate. Linear algebra tells us _how_.
+
+### The design matrix
+
+In regression, we organize our data as $\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}$. Let's build a design matrix and see what $\mathbf{X}'\mathbf{X}$ and $\mathbf{X}'\mathbf{y}$ look like.
+
+```{r}
+#| label: design-matrix
+set.seed(2026)
+n <- 50
+x1 <- rnorm(n)
+x2 <- rnorm(n)
+y <- 2 + 3 * x1 - 1.5 * x2 + rnorm(n)
+
+# Build the design matrix (intercept + two regressors)
+X <- cbind(1, x1, x2)
+colnames(X) <- c("intercept", "x1", "x2")
+head(X)
+```
+
+### The Gram matrix $\mathbf{X}'\mathbf{X}$
+
+This matrix encodes all second-moment information about the regressors. Its $(i,j)$ entry is the inner product of columns $i$ and $j$.
+
+```{r}
+#| label: gram-matrix
+XtX <- t(X) %*% X
+XtX
+
+# It's symmetric
+all.equal(XtX, t(XtX))
+
+# And positive definite (all eigenvalues positive)
+eigen(XtX)$values
+```
+
+All eigenvalues are positive, so $\mathbf{X}'\mathbf{X}$ is positive definite and invertible.
+
+::: {.callout-note}
+## Full Rank Assumption
+OLS requires $\mathbf{X}'\mathbf{X}$ to be invertible, which holds when $\mathbf{X}$ has full column rank — no column is a perfect linear combination of others. Equivalently, all eigenvalues of $\mathbf{X}'\mathbf{X}$ must be strictly positive.
+:::
+
+### Computing OLS by hand
+
+The OLS estimator is $\hat{\boldsymbol{\beta}} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}$. Let's compute it step by step.
+
+```{r}
+#| label: ols-by-hand
+Xty <- t(X) %*% y
+beta_hat <- solve(XtX) %*% Xty
+
+# Compare to lm()
+beta_lm <- coef(lm(y ~ x1 + x2))
+
+cbind(manual = beta_hat, lm = beta_lm)
+```
+
+They match. The `solve()` function computes the matrix inverse, and `%*%` does matrix multiplication.
+
+::: {.callout-tip}
+## Use `crossprod()` for Speed
+`crossprod(X)` computes $X'X$ more efficiently than `t(X) %*% X`, and `crossprod(X, y)` computes $X'y$. For large matrices, the speedup is substantial.
+:::
+
+## Projection and residuals {#sec-projection}
+
+OLS is a projection. The hat matrix $\mathbf{P} = \mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'$ projects $\mathbf{y}$ onto the column space of $\mathbf{X}$, and $\mathbf{M} = \mathbf{I} - \mathbf{P}$ projects onto its orthogonal complement.
+
+```{r}
+#| label: projection
+P <- X %*% solve(XtX) %*% t(X)
+M <- diag(n) - P
+
+y_hat <- P %*% y      # fitted values
+e_hat <- M %*% y      # residuals
+
+# Residuals are orthogonal to every column of X
+t(X) %*% e_hat
+```
+
+All zeros (up to floating point). This is the matrix version of the OLS first-order conditions: $\mathbf{X}'\mathbf{e} = \mathbf{0}$.
+
+### Idempotency
+
+Both $\mathbf{P}$ and $\mathbf{M}$ are idempotent: applying them twice is the same as applying them once. Projecting an already-projected vector does nothing.
+
+```{r}
+#| label: idempotent
+# P^2 = P
+max(abs(P %*% P - P))
+
+# M^2 = M
+max(abs(M %*% M - M))
+
+# Eigenvalues of P are 0 or 1
+round(eigen(P)$values, 6)
+```
+
+The hat matrix has $k = 3$ eigenvalues equal to 1 (one per regressor) and $n - k = 47$ equal to 0. The trace — and therefore the rank — equals $k$.
+
+```{r}
+#| label: trace-rank
+c(trace_P = sum(diag(P)), k = ncol(X))
+c(trace_M = sum(diag(M)), `n - k` = n - ncol(X))
+```
+
+This is where degrees of freedom come from. The residuals live in an $(n-k)$-dimensional space, which is why we divide the sum of squared residuals by $n - k$ to get an unbiased estimate of $\sigma^2$.
+
+```{r}
+#| label: sigma-hat
+sigma2_biased <- sum(e_hat^2) / n
+sigma2_unbiased <- sum(e_hat^2) / (n - ncol(X))
+
+c(biased = sigma2_biased, unbiased = sigma2_unbiased,
+  true = 1)  # we set sd = 1 in the DGP
+```
+
+## Positive definiteness and the OLS bowl
+
+We saw that $\mathbf{X}'\mathbf{X}$ has all positive eigenvalues — it's positive definite. This has a visual payoff: the sum of squared residuals, as a function of $\boldsymbol{\beta}$, is a bowl with a unique minimum.
+
+```{r}
+#| label: ols-bowl
+# Fix intercept at its OLS value, vary beta1 and beta2
+b0_hat <- beta_hat[1]
+b1_grid <- seq(1.5, 4.5, length = 50)
+b2_grid <- seq(-3, 0, length = 50)
+
+ssr_surface <- outer(b1_grid, b2_grid, Vectorize(function(b1, b2) {
+  sum((y - X %*% c(b0_hat, b1, b2))^2)
+}))
+
+contour(b1_grid, b2_grid, ssr_surface, nlevels = 25,
+        xlab = expression(beta[1]), ylab = expression(beta[2]),
+        main = "Sum of Squared Residuals")
+points(beta_hat[2], beta_hat[3], pch = 19, col = "red", cex = 1.5)
+```
+
+The contours are ellipses (because $\mathbf{X}'\mathbf{X}$ is positive definite), and the red dot marks the OLS solution at the center.
+
+## The normal distribution
+
+Many results in the course rely on normality, especially for small-sample inference. Here's what different normal densities look like, and the key property that linear transformations preserve normality.
+
+```{r}
+#| label: normal-distributions
+ggplot(data.frame(x = c(-5, 5)), aes(x)) +
+  stat_function(fun = dnorm, args = list(mean = 0, sd = 1),
+                aes(color = "N(0, 1)"), linewidth = 0.8) +
+  stat_function(fun = dnorm, args = list(mean = 0, sd = sqrt(0.5)),
+                aes(color = "N(0, 0.5)"), linewidth = 0.8) +
+  stat_function(fun = dnorm, args = list(mean = 0, sd = sqrt(2)),
+                aes(color = "N(0, 2)"), linewidth = 0.8) +
+  scale_color_manual(values = c("steelblue", "tomato", "forestgreen"),
+                     name = "") +
+  labs(x = "x", y = "f(x)",
+       title = "Normal densities with different variances") +
+  theme_minimal()
+```
+
+```{r}
+#| label: normal-linear-transform
+# If X ~ N(2, 3), then aX + b ~ N(a*2 + b, a^2 * 3)
+set.seed(99)
+X_samp <- rnorm(10000, mean = 2, sd = sqrt(3))
+Y_samp <- 4 * X_samp + 1  # a = 4, b = 1
+
+c(empirical_mean = mean(Y_samp), theoretical_mean = 4 * 2 + 1)
+c(empirical_var = var(Y_samp), theoretical_var = 16 * 3)
+```
+
+## Summary
+
+This chapter covered the computational foundations:
+
+- **Expectation** minimizes mean squared error — the simplest prediction problem.
+- **The CEF** generalizes this: the best prediction of $Y$ given $X$.
+- **The law of iterated expectations** connects conditional and unconditional means.
+- **The law of total variance** decomposes variance into explained and unexplained parts ($R^2$).
+- **The design matrix** $\mathbf{X}$ and Gram matrix $\mathbf{X}'\mathbf{X}$ encode the regression problem.
+- **OLS is a projection** of $\mathbf{y}$ onto the column space of $\mathbf{X}$.
+- **Positive definiteness** guarantees a unique solution and a bowl-shaped objective.
+- **Degrees of freedom** ($n - k$) come from the dimension of the residual space.
+
+Next: [The CEF and Best Linear Predictor](ch02-cef-blp.qmd) — what happens when the CEF isn't linear, and why linear regression still works.

@@ -1,0 +1,54 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Estimation I: Computational Companion"
+  description: "R companion for PLSC 30700 at the University of Chicago"
+  navbar:
+    left:
+      - text: "Home"
+        href: index.qmd
+      - text: "Chapters"
+        menu:
+          - text: "1. Probability and Linear Algebra"
+            href: ch01-review.qmd
+          - text: "2. The CEF and Best Linear Predictor"
+            href: ch02-cef-blp.qmd
+          - text: "3. Multivariate OLS"
+            href: ch03-ols.qmd
+          - text: "4. Sensitivity and Leverage"
+            href: ch04-sensitivity.qmd
+          - text: "5. Efficiency and GLS"
+            href: ch05-gls.qmd
+          - text: "6. Small Sample Inference"
+            href: ch06-small-sample.qmd
+          - text: "7. Probit and MLE"
+            href: ch07-probit.qmd
+          - text: "8. Asymptotics"
+            href: ch08-asymptotics.qmd
+          - text: "9. Hypothesis Testing"
+            href: ch09-testing.qmd
+          - text: "10. Instrumental Variables and 2SLS"
+            href: ch10-iv.qmd
+          - text: "11. GMM"
+            href: ch11-gmm.qmd
+          - text: "12. Panel Data"
+            href: ch12-panel.qmd
+          - text: "13. Fixed Effects and Modern DiD"
+            href: ch13-fixed-effects.qmd
+    right:
+      - icon: github
+        href: https://github.com/UChicago-pol-methods/EstimationI
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-fold: false
+    code-tools: true
+    highlight-style: github
+    include-in-header:
+      file: macros.html
+    number-sections: true

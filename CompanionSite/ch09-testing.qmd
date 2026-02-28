@@ -1,0 +1,765 @@
+---
+title: "9. Hypothesis Testing"
+subtitle: "The F-test, the test trinity, multiple testing, and power"
+---
+
+Chapter 8 gave us sandwich standard errors and bootstrap confidence intervals. This chapter puts them to work: we test hypotheses, build confidence regions, guard against false discoveries, and ask whether our sample is large enough to detect effects we care about.
+
+The emphasis is on *doing* --- running tests in R, interpreting the output correctly, and avoiding common pitfalls. We organize around applied questions:
+
+1. **How do I test whether a coefficient is zero?** (t-tests, robust Wald)
+2. **How do I test multiple restrictions at once?** (F-test, joint Wald)
+3. **When do different tests disagree?** (Wald, Score, F)
+4. **How do I get confidence sets for nonlinear parameters?** (test inversion, Fieller)
+5. **What if I test many hypotheses?** (Bonferroni, Holm)
+6. **How large a sample do I need?** (power analysis)
+
+We use the `Salaries` dataset from `carData` throughout: salaries of 397 U.S. professors, with rank, discipline, years since PhD, years of service, and sex.
+
+```{r}
+#| label: setup
+#| message: false
+library(ggplot2)
+library(sandwich)
+library(lmtest)
+library(estimatr)
+library(car)
+library(carData)
+options(digits = 4)
+
+data(Salaries)
+```
+
+## Testing a single coefficient
+
+We start with a wage equation and ask: controlling for rank, discipline, and experience, does sex predict salary?
+
+```{r}
+#| label: base-model
+mod <- lm(salary ~ rank + discipline + yrs.since.phd + yrs.service + sex,
+          data = Salaries)
+summary(mod)
+```
+
+The `summary()` output gives t-statistics and p-values, but these assume homoskedasticity. The robust version uses sandwich standard errors:
+
+```{r}
+#| label: robust-t
+coeftest(mod, vcov. = vcovHC(mod, type = "HC1"))
+```
+
+These are the same tests, built from the same Wald statistic $W = (\hat{\beta}_j / \widehat{\text{se}}_j)^2$. The only difference is the denominator. When the two disagree, trust the robust version --- it doesn't assume $\text{Var}(e_i \mid X_i)$ is constant.
+
+You can also use `linearHypothesis()` for the same test, which makes the Wald structure explicit:
+
+```{r}
+#| label: single-linearHypothesis
+linearHypothesis(mod, "sexMale = 0", vcov. = vcovHC(mod, type = "HC1"))
+```
+
+This tests $H_0: \beta_{\text{Male}} = 0$ against $H_1: \beta_{\text{Male}} \neq 0$ using the robust covariance matrix. The Chisq column is the Wald statistic; divide by 1 (one restriction) and you get the squared t-statistic.
+
+### Testing against a non-zero value
+
+Suppose theory predicts a gender gap of \$5,000. The null is $H_0: \beta_{\text{Male}} = 5000$:
+
+```{r}
+#| label: test-nonzero
+linearHypothesis(mod, "sexMale = 5000", vcov. = vcovHC(mod, type = "HC1"))
+```
+
+The test is not significant if the confidence interval from Chapter 8 already contains \$5,000. Test and CI carry exactly the same information --- they are duals.
+
+
+## Testing multiple restrictions: the F-test
+
+Individual t-tests tell you about one coefficient at a time. But sometimes you need a *joint* test. Does rank matter at all? That means testing two coefficients simultaneously (since rank is a three-level factor with two dummies):
+
+$$H_0: \beta_{\text{AssocProf}} = \beta_{\text{Prof}} = 0$$
+
+### By hand: comparing two regressions
+
+The F-test compares the fit of an **unrestricted** model to a **restricted** model that imposes $H_0$:
+
+$$F = \frac{(\text{SSE}_R - \text{SSE}_U) / q}{\text{SSE}_U / (n - k)}$$
+
+where $q$ is the number of restrictions.
+
+```{r}
+#| label: f-test-manual
+## Unrestricted model (full)
+mod_U <- mod
+
+## Restricted model: drop rank
+mod_R <- lm(salary ~ discipline + yrs.since.phd + yrs.service + sex,
+            data = Salaries)
+
+## Manual F-stat
+SSE_U <- sum(resid(mod_U)^2)
+SSE_R <- sum(resid(mod_R)^2)
+q <- 2                              # two restrictions
+n <- nobs(mod_U)
+k <- length(coef(mod_U))
+
+F_stat <- ((SSE_R - SSE_U) / q) / (SSE_U / (n - k))
+p_val  <- 1 - pf(F_stat, q, n - k)
+
+cat("F =", round(F_stat, 2), "  df1 =", q, "  df2 =", n - k,
+    "  p =", format.pval(p_val), "\n")
+```
+
+### The easy way: `anova()` and `linearHypothesis()`
+
+```{r}
+#| label: f-test-anova
+## Nested model comparison
+anova(mod_R, mod_U)
+```
+
+```{r}
+#| label: f-test-linearHypothesis
+## Same test via linearHypothesis (with robust SEs)
+linearHypothesis(mod, c("rankAssocProf = 0", "rankProf = 0"),
+                 vcov. = vcovHC(mod, type = "HC1"))
+```
+
+Note that `anova()` uses the classical (homoskedastic) F-test, while `linearHypothesis()` with a robust `vcov.` gives the heteroskedasticity-robust Wald test. In this example they agree; with strongly heteroskedastic data they might not.
+
+### Equality constraints
+
+Does the return to years since PhD equal the return to years of service? This is $H_0: \beta_{\text{yrs.phd}} = \beta_{\text{yrs.service}}$:
+
+```{r}
+#| label: equality-test
+linearHypothesis(mod, "yrs.since.phd = yrs.service",
+                 vcov. = vcovHC(mod, type = "HC1"))
+```
+
+This works because `linearHypothesis()` can test *any* linear restriction $\mathbf{R}\boldsymbol{\beta} = \mathbf{r}$.  Under the hood it constructs the restriction matrix $\mathbf{R}$ and computes:
+$$W = (\mathbf{R}\hat{\boldsymbol{\beta}} - \mathbf{r})' [\mathbf{R}\hat{\mathbf{V}}\mathbf{R}']^{-1} (\mathbf{R}\hat{\boldsymbol{\beta}} - \mathbf{r}) \;\xrightarrow{d}\; \chi^2_q$$ {#eq-wald}
+
+::: {#thm-wald}
+## Wald Statistic
+For testing $H_0: R\beta = r$, the Wald statistic is $W = (R\hat\beta - r)'[R\hat{V}R']^{-1}(R\hat\beta - r) \xrightarrow{d} \chi^2_q$ under $H_0$, where $q$ is the number of restrictions. With robust $\hat{V}$, the test is valid under heteroskedasticity.
+:::
+
+
+## The test trinity: Wald, Score, and F
+
+Three classical approaches test the same null $H_0: \mathbf{R}\boldsymbol{\beta} = \mathbf{r}$:
+
+| Test | Estimates from | Measures |
+|------|----------------|----------|
+| **Wald** | Unrestricted model | How far $\hat{\boldsymbol{\beta}}$ is from $H_0$ |
+| **Score (LM)** | Restricted model | Whether the objective function wants to move away from $H_0$ |
+| **F / LR** | Both models | How much the fit worsens when we impose $H_0$ |
+
+For linear restrictions in a normal linear model, they are **monotone transformations of each other** and always give the same accept/reject decision.  Let's verify:
+
+```{r}
+#| label: trinity-comparison
+## Test: rank doesn't matter (q = 2 restrictions)
+## Wald (homoskedastic, for comparability)
+W <- linearHypothesis(mod_U, c("rankAssocProf = 0", "rankProf = 0"))
+W_stat <- W$F[2] * q  # linearHypothesis reports F; multiply by q for chi-sq scale
+
+## F from anova
+Ftest <- anova(mod_R, mod_U)
+
+## Score test (LM): use restricted residuals
+## S = n * (1 - SSE_U / SSE_R) under homoskedasticity
+S <- n * (1 - SSE_U / SSE_R)
+
+cat("Wald statistic (chi-sq scale):", round(W_stat, 3), "\n")
+cat("F statistic (x q):           ", round(Ftest$F[2] * q, 3), "\n")
+cat("Score statistic:             ", round(S, 3), "\n")
+```
+
+The three numbers are close but not identical --- they use different variance estimates (unrestricted $s^2$, restricted $\tilde{\sigma}^2$, or pooled). Asymptotically they converge. Under normality, we have the [exact distributions](ch06-small-sample.qmd#thm-exact-distributions) that make the F-test slightly more conservative in finite samples, which is why `anova()` uses $F_{q, n-k}$ critical values instead of $\chi^2_q / q$.
+
+### When do they diverge?
+
+For **non-normal** models, the trinity can disagree because the three test statistics are no longer monotone transformations of each other. Here is an example using a joint test in the probit model from Chapter 7:
+
+```{r}
+#| label: trinity-probit
+data(Mroz)
+probit <- glm(lfp ~ k5 + k618 + age + wc + lwg + inc,
+              family = binomial(link = "probit"), data = Mroz)
+
+## Test H0: k5 = 0, k618 = 0 (joint, q = 2)
+probit_r <- glm(lfp ~ age + wc + lwg + inc,
+                family = binomial(link = "probit"), data = Mroz)
+
+## Wald
+W_probit <- linearHypothesis(probit, c("k5 = 0", "k618 = 0"))
+
+## LR
+LR <- -2 * as.numeric(logLik(probit_r) - logLik(probit))
+
+## Score (Rao)
+S_probit <- anova(probit_r, probit, test = "Rao")
+
+cat("Wald chi-sq: ", round(W_probit$Chisq[2], 2), "\n")
+cat("LR chi-sq:   ", round(LR, 2), "\n")
+cat("Score chi-sq:", round(S_probit$Rao[2], 2), "\n")
+```
+
+The three statistics differ noticeably: the Wald statistic (58.5) is substantially smaller than the LR (65.8) and Score (65.0). All three reject decisively here, but in borderline cases they could lead to different conclusions. The LR test tends to be the most reliable in nonlinear models because it directly measures the change in the log-likelihood.
+
+
+## Confidence regions and test inversion
+
+A 95% confidence interval is the set of values $\theta_0$ that would *not be rejected* at the 5% level:
+
+$$\hat{C} = \{\theta_0 : |T(\theta_0)| \leq 1.96\}$$
+
+This is **test inversion**. For a single linear coefficient, test inversion gives the familiar $\hat{\beta} \pm 1.96 \cdot \widehat{\text{se}}$. But for *nonlinear* functions of parameters, test inversion is more reliable than the delta method.
+
+::: {.callout-note}
+## Test Inversion Gives Confidence Sets
+A 95% confidence set is exactly the set of parameter values not rejected at the 5% level. For linear parameters, this gives the familiar $\hat\beta \pm 1.96 \cdot \text{SE}$. For nonlinear functions, Fieller's method (test inversion over a grid) is more reliable than the delta method.
+:::
+
+### Confidence ellipses for two coefficients
+
+For two parameters tested jointly, the confidence region is an **ellipse** --- the set of $(\beta_1, \beta_2)$ values consistent with the Wald test:
+
+```{r}
+#| label: confidence-ellipse
+#| fig-width: 7
+#| fig-height: 5.5
+## Joint confidence region for the two experience variables
+confidenceEllipse(mod, which.coef = c("yrs.since.phd", "yrs.service"),
+                  vcov. = vcovHC(mod, type = "HC1"),
+                  main = "95% joint confidence region",
+                  xlab = "Coefficient on yrs.since.phd",
+                  ylab = "Coefficient on yrs.service",
+                  col = "steelblue", lwd = 2)
+abline(h = 0, lty = 2, col = "gray50")
+abline(v = 0, lty = 2, col = "gray50")
+## Add the 45-degree line for equality
+abline(a = 0, b = 1, lty = 3, col = "coral", lwd = 1.5)
+legend("topright", legend = c("95% joint region", "equality line"),
+       col = c("steelblue", "coral"), lty = c(1, 3), lwd = c(2, 1.5))
+```
+
+The dashed lines at zero show the individual null values. The coral line shows where the two coefficients are equal. If the ellipse crosses a line, the corresponding null cannot be rejected.
+
+### Test inversion for a nonlinear parameter: Fieller's method
+
+Suppose we want a confidence interval for the **ratio** $\theta = \beta_{\text{Prof}} / \beta_{\text{AssocProf}}$ --- how many times larger is the full professor salary premium than the associate professor premium? The delta method (Chapter 8) gives a quick CI, but it can be unreliable when the denominator is imprecisely estimated.
+
+**Fieller's trick**: rewrite $\theta = \beta_1 / \beta_2$ as the linear restriction $\beta_1 - \theta \beta_2 = 0$, then *invert* the Wald test over a grid of $\theta$ values:
+
+```{r}
+#| label: fieller-inversion
+b <- coef(mod)
+V <- vcovHC(mod, type = "HC1")
+
+## Delta method CI for comparison
+dm <- deltaMethod(mod, "rankProf / rankAssocProf",
+                  vcov. = vcovHC(mod, type = "HC1"))
+dm_ci <- c(dm$Estimate - 1.96 * dm$SE, dm$Estimate + 1.96 * dm$SE)
+
+## Grid search: invert the Wald test
+theta_grid <- seq(0, 8, by = 0.01)
+idx_prof <- which(names(b) == "rankProf")
+idx_assoc <- which(names(b) == "rankAssocProf")
+
+in_CI <- sapply(theta_grid, function(th) {
+  r_vec <- numeric(length(b))
+  r_vec[idx_prof] <- 1
+  r_vec[idx_assoc] <- -th
+  num <- (sum(r_vec * b))^2
+  den <- t(r_vec) %*% V %*% r_vec
+  num / den <= qchisq(0.95, 1)
+})
+fieller_ci <- range(theta_grid[in_CI])
+
+cat("Point estimate:  ", round(dm$Estimate, 3), "\n")
+cat("Delta method CI: ", round(dm_ci, 3), "\n")
+cat("Fieller CI:      ", round(fieller_ci, 3), "\n")
+```
+
+Here the two CIs are similar because the denominator ($\beta_{\text{AssocProf}}$) is precisely estimated. The ratio tells us that the full professor premium is about 3.5 times the associate professor premium.
+
+```{r}
+#| label: fieller-plot
+#| fig-width: 8
+#| fig-height: 3.5
+## Plot the Wald statistic over theta
+wald_vals <- sapply(theta_grid, function(th) {
+  r_vec <- numeric(length(b))
+  r_vec[idx_prof] <- 1
+  r_vec[idx_assoc] <- -th
+  num <- (sum(r_vec * b))^2
+  den <- c(t(r_vec) %*% V %*% r_vec)
+  num / den
+})
+
+df_fieller <- data.frame(theta = theta_grid, W = wald_vals)
+ggplot(df_fieller, aes(theta, W)) +
+  geom_line(color = "steelblue", linewidth = 0.8) +
+  geom_hline(yintercept = qchisq(0.95, 1), linetype = "dashed", color = "coral") +
+  annotate("text", x = 6.5, y = qchisq(0.95, 1) + 0.5, label = "95% critical value",
+           color = "coral") +
+  coord_cartesian(ylim = c(0, 15)) +
+  labs(title = "Test inversion: Wald statistic as a function of θ₀",
+       subtitle = "The Fieller CI is the set of θ₀ values below the dashed line",
+       x = expression(theta[0] == beta[Prof] / beta[AssocProf]),
+       y = "Wald statistic")
+```
+
+### When Fieller and the delta method disagree
+
+The real value of Fieller's method appears when the **denominator is imprecise**. Consider $\theta = \beta_{\text{yrs.phd}} / \beta_{\text{yrs.service}}$ --- the ratio of the two experience coefficients. Both are individually insignificant:
+
+```{r}
+#| label: fieller-unbounded
+## Experience coefficients are imprecise
+cat("yrs.since.phd: estimate =", round(b["yrs.since.phd"]),
+    "  SE =", round(sqrt(V["yrs.since.phd", "yrs.since.phd"])), "\n")
+cat("yrs.service:   estimate =", round(b["yrs.service"]),
+    "  SE =", round(sqrt(V["yrs.service", "yrs.service"])), "\n")
+
+## Delta method gives a finite CI
+dm2 <- deltaMethod(mod, "yrs.since.phd / yrs.service",
+                   vcov. = vcovHC(mod, type = "HC1"))
+cat("\nDelta method CI:", round(c(dm2$Estimate - 1.96 * dm2$SE,
+                                  dm2$Estimate + 1.96 * dm2$SE), 2), "\n")
+
+## Fieller: check a wide grid
+theta_wide <- seq(-50, 50, by = 0.1)
+idx_phd <- which(names(b) == "yrs.since.phd")
+idx_svc <- which(names(b) == "yrs.service")
+in_CI2 <- sapply(theta_wide, function(th) {
+  r_vec <- numeric(length(b))
+  r_vec[idx_phd] <- 1
+  r_vec[idx_svc] <- -th
+  num <- (sum(r_vec * b))^2
+  den <- c(t(r_vec) %*% V %*% r_vec)
+  num / den <= qchisq(0.95, 1)
+})
+
+## Check if CI covers entire grid (unbounded)
+if (all(in_CI2)) {
+  cat("Fieller CI: (-∞, +∞)  [unbounded!]\n")
+} else if (any(in_CI2)) {
+  cat("Fieller CI:", range(theta_wide[in_CI2]), "\n")
+}
+```
+
+The delta method reports a finite CI of width ~1.3, but the Fieller CI is **unbounded** --- the entire real line. This is the correct answer: since $\beta_{\text{yrs.service}}$ is not significantly different from zero, the ratio could be anything. The delta method's finite interval is overconfident.
+
+
+## Multiple testing {#sec-multiple-testing}
+
+When you look at many coefficients, some will be "significant" by chance.
+
+### Simulation: false discoveries under the null
+
+To make this concrete: generate 20 pure-noise regressors, test each at 5%, and count how many reject:
+
+```{r}
+#| label: multiple-testing-sim
+set.seed(303)
+n <- 200
+k_noise <- 20
+Y <- rnorm(n)
+X_noise <- matrix(rnorm(n * k_noise), nrow = n)
+colnames(X_noise) <- paste0("X", 1:k_noise)
+dat_noise <- data.frame(Y, X_noise)
+
+mod_noise <- lm(Y ~ ., data = dat_noise)
+pvals <- summary(mod_noise)$coefficients[-1, 4]  # drop intercept
+
+cat("Number of regressors with p < 0.05:", sum(pvals < 0.05), "out of", k_noise, "\n")
+cat("Significant variables:", paste(names(pvals[pvals < 0.05]), collapse = ", "), "\n")
+```
+
+Under the global null, we *expect* $20 \times 0.05 = 1$ false rejection on average. Repeat this many times to see the problem clearly:
+
+```{r}
+#| label: fwer-simulation
+#| fig-width: 7
+#| fig-height: 4
+set.seed(42)
+B <- 5000
+n <- 200
+k_noise <- 20
+
+false_rejections <- replicate(B, {
+  Y <- rnorm(n)
+  X <- matrix(rnorm(n * k_noise), nrow = n)
+  pv <- summary(lm(Y ~ X))$coefficients[-1, 4]
+  sum(pv < 0.05)
+})
+
+cat("P(at least one false rejection):", mean(false_rejections >= 1), "\n")
+cat("Expected:", round(1 - (1 - 0.05)^k_noise, 3), "\n")
+
+ggplot(data.frame(rejections = false_rejections), aes(rejections)) +
+  geom_bar(fill = "steelblue", alpha = 0.7) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "coral") +
+  labs(title = "False rejections when all 20 nulls are true",
+       subtitle = paste0("P(≥1 false rejection) = ",
+                         round(mean(false_rejections >= 1), 3)),
+       x = "Number of rejections at α = 0.05",
+       y = "Frequency")
+```
+
+With 20 tests at 5%, you have about a `r round(100 * (1 - (1 - 0.05)^20))`% chance of at least one false rejection. This is the **familywise error rate (FWER)** problem.
+
+::: {.callout-warning}
+## Multiple Testing Inflates the Familywise Error Rate
+With $k$ independent tests at level $\alpha$, the probability of at least one false rejection is $1 - (1 - \alpha)^k$. With 20 tests at 5%, this exceeds 60%. Use Holm's correction (uniformly more powerful than Bonferroni) to control the FWER.
+:::
+
+### Corrections: Bonferroni and Holm
+
+The **Bonferroni correction** rejects the $j$th hypothesis only if $p_j < \alpha / k$. It controls the FWER for any dependence structure:
+
+```{r}
+#| label: bonferroni-holm
+## Back to our salary model
+pvals_salary <- summary(mod)$coefficients[-1, 4]
+
+corrections <- data.frame(
+  raw = round(pvals_salary, 4),
+  bonferroni = round(p.adjust(pvals_salary, method = "bonferroni"), 4),
+  holm = round(p.adjust(pvals_salary, method = "holm"), 4)
+)
+corrections
+```
+
+**Holm's method** is uniformly more powerful than Bonferroni while still controlling the FWER. It works by ordering the p-values from smallest to largest and comparing the $j$th smallest to $\alpha / (k - j + 1)$. Use Holm whenever you would use Bonferroni.
+
+### When to worry about multiple testing
+
+Multiple testing corrections matter when you:
+
+- Examine many coefficients and report the "most significant"
+- Try many specifications and present the one that "works"
+- Test across subgroups (by age, gender, region, ...)
+- Use stepwise selection procedures
+
+They matter *less* when you have a small number of pre-specified hypotheses motivated by theory.
+
+
+## Power: can you detect the effect?
+
+A test's **power** is the probability it rejects when $H_0$ is false:
+
+$$\text{Power}(\theta) = P[\text{Reject } H_0 \mid \theta \neq \theta_0]$$
+
+Power depends on four things: the true effect size, the standard error, the significance level, and the sample size. In OLS, for a two-sided test of $H_0: \beta = 0$:
+
+$$\delta = \frac{|\beta|}{\text{se}(\hat{\beta})} \approx \frac{|\beta| \cdot \text{sd}(X) \cdot \sqrt{n}}{\sigma_e}$$
+
+Power $\approx \Phi(\delta - z_{\alpha/2}) + \Phi(-\delta - z_{\alpha/2})$, where $\delta$ is the signal-to-noise ratio.
+
+::: {#thm-power}
+## Power of a Two-Sided Test
+For testing $H_0: \beta = 0$ at level $\alpha$, the power against alternative $\beta \neq 0$ is approximately $\Phi(\delta - z_{\alpha/2}) + \Phi(-\delta - z_{\alpha/2})$, where $\delta = |\beta|/\text{SE}(\hat\beta)$ is the signal-to-noise ratio.
+:::
+
+```{r}
+#| label: power-function
+## Power for a two-sided t-test in OLS
+power_ols <- function(effect, sigma_e, sd_x, n, alpha = 0.05) {
+  se <- sigma_e / (sd_x * sqrt(n))
+  delta <- abs(effect) / se
+  z <- qnorm(1 - alpha / 2)
+  pnorm(delta - z) + pnorm(-delta - z)
+}
+```
+
+### Power curves
+
+How does power vary with sample size and effect size?
+
+```{r}
+#| label: power-curves
+#| fig-cap: "Power curves for a two-sided OLS t-test"
+#| fig-width: 8
+#| fig-height: 5
+n_seq <- seq(20, 500, by = 5)
+effects <- c(0.05, 0.10, 0.20, 0.40)
+
+df_power <- do.call(rbind, lapply(effects, function(eff) {
+  data.frame(
+    n = n_seq,
+    power = sapply(n_seq, function(nn) power_ols(eff, sigma_e = 1, sd_x = 1, nn)),
+    effect = paste0("β = ", eff)
+  )
+}))
+
+ggplot(df_power, aes(n, power, color = effect)) +
+  geom_line(linewidth = 1) +
+  geom_hline(yintercept = 0.80, linetype = "dashed", color = "gray50") +
+  annotate("text", x = 480, y = 0.82, label = "80% power", color = "gray50") +
+  geom_hline(yintercept = 0.05, linetype = "dotted", color = "gray70") +
+  annotate("text", x = 480, y = 0.07, label = "α = 0.05", color = "gray70") +
+  scale_color_brewer(palette = "Set1") +
+  labs(title = "Power curves for a two-sided OLS t-test",
+       subtitle = "σ_e = 1, sd(X) = 1",
+       x = "Sample size (n)", y = "Power", color = "True effect") +
+  coord_cartesian(ylim = c(0, 1))
+```
+
+Small effects require enormous samples. With $\beta = 0.10$ and $\sigma_e / \text{sd}(X) = 1$, you need roughly $n = 800$ for 80% power.
+
+::: {.callout-tip}
+## The 80% Power Rule of Thumb
+A study should have at least 80% power to detect the smallest effect of scientific interest. This requires $n \approx 16\sigma_e^2 / (\beta^2 \cdot \text{Var}(X))$ for a two-sided 5% test. Adding relevant controls reduces $\sigma_e$ and boosts power for free.
+:::
+
+### Simulation: observing power
+
+Let's verify the formula with a Monte Carlo simulation:
+
+```{r}
+#| label: power-simulation
+#| fig-width: 8
+#| fig-height: 4
+set.seed(12)
+B <- 2000
+true_beta <- 0.3
+sigma_e <- 1
+n_vals <- c(20, 50, 100, 200)
+
+sim_power <- function(n, B) {
+  rejections <- replicate(B, {
+    x <- rnorm(n)
+    y <- true_beta * x + rnorm(n, sd = sigma_e)
+    pval <- summary(lm(y ~ x))$coefficients["x", "Pr(>|t|)"]
+    pval < 0.05
+  })
+  mean(rejections)
+}
+
+results <- data.frame(
+  n = n_vals,
+  simulated = sapply(n_vals, sim_power, B = B),
+  formula = sapply(n_vals, function(nn) power_ols(true_beta, sigma_e, 1, nn))
+)
+results
+```
+
+The simulated power matches the formula closely.
+
+### Controls boost power
+
+Adding a relevant control variable reduces $\sigma_e$ without reducing $\text{sd}(X)$, giving a free power boost:
+
+```{r}
+#| label: controls-power
+set.seed(99)
+B <- 2000
+n <- 100
+beta_x <- 0.2
+beta_z <- 1.0  # strong control
+
+## Without control
+power_no_ctrl <- mean(replicate(B, {
+  x <- rnorm(n); z <- rnorm(n)
+  y <- beta_x * x + beta_z * z + rnorm(n)
+  summary(lm(y ~ x))$coefficients["x", "Pr(>|t|)"] < 0.05
+}))
+
+## With control
+power_with_ctrl <- mean(replicate(B, {
+  x <- rnorm(n); z <- rnorm(n)
+  y <- beta_x * x + beta_z * z + rnorm(n)
+  summary(lm(y ~ x + z))$coefficients["x", "Pr(>|t|)"] < 0.05
+}))
+
+cat("Power without control:", round(power_no_ctrl, 3), "\n")
+cat("Power with control:   ", round(power_with_ctrl, 3), "\n")
+cat("Residual SD without z:", round(sqrt(beta_z^2 + 1), 2), "\n")
+cat("Residual SD with z:   ", round(1, 2), "\n")
+```
+
+The control cuts the residual standard deviation roughly in half, dramatically increasing power. This is why pre-treatment covariates help in experiments even though they are unnecessary for unbiasedness.
+
+### Joint tests have less power
+
+Testing more restrictions simultaneously dilutes power. Fix the total non-centrality parameter and compare:
+
+```{r}
+#| label: joint-test-power
+#| fig-width: 7
+#| fig-height: 4
+lambda_seq <- seq(0, 15, by = 0.1)
+
+df_joint <- do.call(rbind, lapply(c(1, 2, 5, 10), function(q) {
+  data.frame(
+    lambda = lambda_seq,
+    power = 1 - pchisq(qchisq(0.95, q), q, ncp = lambda_seq),
+    q = paste0("q = ", q)
+  )
+}))
+
+ggplot(df_joint, aes(lambda, power, color = q)) +
+  geom_line(linewidth = 1) +
+  geom_hline(yintercept = 0.80, linetype = "dashed", color = "gray50") +
+  scale_color_brewer(palette = "Set1") +
+  labs(title = "Power vs. non-centrality for joint tests",
+       subtitle = "More restrictions require a larger signal to achieve the same power",
+       x = expression(paste("Non-centrality parameter ", lambda)),
+       y = "Power", color = "Restrictions")
+```
+
+A single-coefficient t-test is more powerful than a joint F-test that lumps in other restrictions. Test exactly what you care about.
+
+## Statistical vs. economic significance
+
+With a large enough sample, *any* nonzero coefficient becomes statistically significant. This is test consistency: $P[\text{Reject}] \to 1$ whenever $\beta \neq 0$.
+
+```{r}
+#| label: stat-vs-econ
+#| fig-width: 8
+#| fig-height: 4
+set.seed(77)
+true_beta <- 0.01   # tiny effect
+n_vals <- c(50, 200, 1000, 5000, 20000)
+B <- 1000
+
+rejection_rate <- sapply(n_vals, function(nn) {
+  mean(replicate(B, {
+    x <- rnorm(nn)
+    y <- true_beta * x + rnorm(nn)
+    summary(lm(y ~ x))$coefficients["x", "Pr(>|t|)"] < 0.05
+  }))
+})
+
+df_consist <- data.frame(n = n_vals, rejection_rate = rejection_rate)
+ggplot(df_consist, aes(n, rejection_rate)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 3, color = "steelblue") +
+  geom_hline(yintercept = 0.05, linetype = "dashed", color = "coral") +
+  scale_x_log10() +
+  labs(title = "Test consistency: even β = 0.01 gets rejected eventually",
+       subtitle = "With enough data, statistical significance is guaranteed for any nonzero effect",
+       x = "Sample size (log scale)", y = "Rejection rate at α = 0.05")
+```
+
+A $p$-value tells you whether the data are inconsistent with $H_0$. It tells you nothing about whether the effect is large enough to matter. Always report the **magnitude** alongside the significance.
+
+
+## Applied workflow: the salary example
+
+Let's bring everything together with a thorough analysis of the professor salary data.
+
+### Step 1: Fit and inspect
+
+```{r}
+#| label: salary-full
+mod_full <- lm(salary ~ rank + discipline + yrs.since.phd + yrs.service + sex,
+               data = Salaries)
+coeftest(mod_full, vcov. = vcovHC(mod_full, type = "HC1"))
+```
+
+### Step 2: Key hypotheses
+
+**Does rank matter?** (joint test, $q = 2$)
+
+```{r}
+#| label: salary-rank-test
+linearHypothesis(mod_full, c("rankAssocProf = 0", "rankProf = 0"),
+                 vcov. = vcovHC(mod_full, type = "HC1"))
+```
+
+**Does discipline matter?** (single restriction)
+
+```{r}
+#| label: salary-discipline-test
+linearHypothesis(mod_full, "disciplineB = 0",
+                 vcov. = vcovHC(mod_full, type = "HC1"))
+```
+
+**Are the two experience measures interchangeable?** ($\beta_{\text{phd}} = \beta_{\text{svc}}$)
+
+```{r}
+#| label: salary-experience-test
+linearHypothesis(mod_full, "yrs.since.phd = yrs.service",
+                 vcov. = vcovHC(mod_full, type = "HC1"))
+```
+
+### Step 3: Confidence intervals
+
+```{r}
+#| label: salary-ci
+## Robust CIs
+ci_robust <- coefci(mod_full, vcov. = vcovHC(mod_full, type = "HC1"))
+ci_robust
+```
+
+### Step 4: Multiple testing adjustment
+
+If we're testing all six regressors simultaneously:
+
+```{r}
+#| label: salary-multiple
+pvals_all <- coeftest(mod_full, vcov. = vcovHC(mod_full, type = "HC1"))[-1, 4]
+data.frame(
+  raw_p = round(pvals_all, 4),
+  holm_p = round(p.adjust(pvals_all, method = "holm"), 4),
+  significant_raw = ifelse(pvals_all < 0.05, "*", ""),
+  significant_holm = ifelse(p.adjust(pvals_all, method = "holm") < 0.05, "*", "")
+)
+```
+
+### Step 5: Power assessment for the gender gap
+
+Suppose the "true" gender gap is \$5,000 (about 5% of mean salary). Could we detect it?
+
+```{r}
+#| label: salary-power
+sigma_e <- sigma(mod_full)
+sd_sex <- sd(as.numeric(Salaries$sex == "Male"))
+n <- nrow(Salaries)
+
+power_sex <- power_ols(effect = 5000, sigma_e = sigma_e,
+                       sd_x = sd_sex, n = n, alpha = 0.05)
+cat("Estimated power to detect a $5,000 gender gap:", round(power_sex, 3), "\n")
+
+## What sample size for 80% power?
+n_needed <- seq(100, 5000, by = 10)
+pow_curve <- sapply(n_needed, function(nn)
+  power_ols(5000, sigma_e, sd_sex, nn, 0.05))
+n80 <- n_needed[which(pow_curve >= 0.80)[1]]
+cat("Sample size for 80% power:", n80, "\n")
+```
+
+
+## Practical advice (after Hansen)
+
+A checklist for reporting regression results:
+
+1. **Report standard errors, not just t-ratios.** Standard errors convey precision; t-statistics reduce everything to a binary yes/no.
+
+2. **Report p-values, not asterisks.** The difference between $p = 0.049$ and $p = 0.051$ is not meaningful. Stars obscure this.
+
+3. **Focus on substantive hypotheses.** Don't mechanically test every coefficient against zero. Test things that answer a scientific question.
+
+4. **"Fail to reject" $\neq$ "accept."** Low power can explain non-rejection. Always ask: could we have detected a meaningful effect?
+
+5. **Statistical significance $\neq$ economic significance.** A tiny but significant coefficient may be policy-irrelevant. A large but insignificant coefficient may reflect low power.
+
+6. **Use robust inference by default.** There is rarely a good reason to report classical SEs when $n$ is not tiny. Use HC1/HC2 or the bootstrap.
+
+7. **Account for multiple testing.** If you report the "most significant" result from many tests, apply Holm or Bonferroni corrections.
+
+
+## Connection to GMM
+
+The Wald test has a natural GMM interpretation. In GMM, testing $H_0: \mathbf{R}\boldsymbol{\beta} = \mathbf{r}$ is equivalent to testing whether the restricted moment conditions $E[\mathbf{Z}'(Y - \mathbf{X}\boldsymbol{\beta})] = \mathbf{0}$ with $\mathbf{R}\boldsymbol{\beta} = \mathbf{r}$ are compatible with the data. The J-test of overidentifying restrictions, which we'll meet in Chapter 11, generalizes the F-test to the setting where there are more moment conditions than parameters.
+
+| OLS test | GMM counterpart |
+|----------|-----------------|
+| F-test (restricted vs. unrestricted) | Distance test (restricted vs. unrestricted GMM) |
+| Wald test | Wald test (same formula, different $\hat{\mathbf{V}}$) |
+| Score / LM test | Score test from restricted GMM |
+| Overall F-statistic | J-test of overidentifying restrictions |

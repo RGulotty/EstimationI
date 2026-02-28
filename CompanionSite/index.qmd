@@ -1,0 +1,42 @@
+---
+title: "Estimation I: Computational Companion"
+subtitle: "PLSC 30700 — University of Chicago"
+---
+
+This site is a computational companion to the lecture slides for **Estimation I** (PLSC 30700), taught by Robert Gulotty at the University of Chicago.
+
+Each chapter mirrors a lecture topic and demonstrates the key ideas in R. The goal is not to replace the slides or the textbook, but to give you a parallel way to build intuition: by computing, simulating, and visualizing the concepts.
+
+## How to use this site
+
+- **Read alongside the lectures.** Each chapter covers the same material as the corresponding lecture, but tells the story through code.
+- **Run the code yourself.** Copy-paste into R or RStudio. Modify the examples. Break things.
+- **Focus on understanding, not memorization.** The code is a tool for building intuition about what the math is doing.
+
+## Prerequisites
+
+You will need R installed. The following packages are used throughout:
+
+```r
+install.packages(c("ggplot2", "MASS", "car", "carData", "sensemakr",
+                   "sandwich", "lmtest", "estimatr", "haven", "plm", "boot",
+                   "AER", "gmm", "panelView", "fixest", "did", "fect"))
+```
+
+## Chapters
+
+| Week | Chapter | Topic |
+|------|---------|-------|
+| 1 | [1. Probability and Linear Algebra](ch01-review.qmd) | Expectation, variance, the CEF, matrix algebra, and projection |
+| 1 | [2. The CEF and Best Linear Predictor](ch02-cef-blp.qmd) | Why regression approximates the CEF |
+| 2 | [3. Multivariate OLS](ch03-ols.qmd) | Deriving and computing the OLS estimator |
+| 2 | [4. Sensitivity and Leverage](ch04-sensitivity.qmd) | Frisch-Waugh-Lovell, partial R², influential observations |
+| 3 | [5. Efficiency and GLS](ch05-gls.qmd) | WLS, feasible GLS, method of moments |
+| 4 | [6. Small Sample Inference](ch06-small-sample.qmd) | Likelihood, the normal linear model, t- and F-tests |
+| 5 | [7. Probit and MLE](ch07-probit.qmd) | Binary outcomes, maximum likelihood estimation |
+| 5–6 | [8. Asymptotics](ch08-asymptotics.qmd) | Large-sample theory, the delta method, and the bootstrap |
+| 6 | [9. Hypothesis Testing](ch09-testing.qmd) | F-test, test trinity, multiple testing, power |
+| 7 | [10. Instrumental Variables and 2SLS](ch10-iv.qmd) | Endogeneity, IV estimation, 2SLS, weak instruments, LATE |
+| 8 | [11. GMM](ch11-gmm.qmd) | Moment conditions, efficient weighting, J-test, missing data |
+| 9 | [12. Panel Data](ch12-panel.qmd) | panelView, pooled/between/within, DiD, clustering, Arellano--Bond GMM |
+| 9 | [13. Fixed Effects and Modern DiD](ch13-fixed-effects.qmd) | RE, Hausman test, CRE, Callaway--Sant'Anna, fect, matrix completion |

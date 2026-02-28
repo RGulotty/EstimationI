@@ -1,0 +1,696 @@
+---
+title: "12. Panel Data"
+subtitle: "Pooled, between, and within estimators; difference-in-differences; dynamic panels"
+---
+
+This chapter covers panel data methods: pooled OLS, the between and within (fixed effects) estimators, difference-in-differences, clustering, and dynamic panel GMM. We use the `plm` package for panel estimation, `panelView` for visualization, and `fixest` for fast fixed effects with flexible standard errors.
+
+**Questions this chapter answers:**
+
+1. How do `panelView` and `ggplot` help visualize treatment patterns, missingness, and outcome dynamics?
+2. What are the pooled, between, and within estimators — and when is each consistent?
+3. How does difference-in-differences identify causal effects under parallel trends?
+4. How do Arellano-Bond and system GMM handle dynamic panels with lagged dependent variables?
+
+```{r}
+#| label: setup
+#| message: false
+library(ggplot2)
+library(plm)
+library(panelView)
+library(fixest)
+library(sandwich)
+library(lmtest)
+library(estimatr)
+```
+
+## Visualizing panel structure with panelView
+
+Before estimating anything, it pays to *look* at your panel. The `panelView` package visualizes treatment patterns, missingness, and outcome dynamics.
+
+```{r}
+#| label: panelview-datasets
+# Load the built-in datasets
+data(panelView)
+```
+
+### Treatment status plots
+
+The `turnout` dataset tracks U.S. state voter turnout and election-day registration (EDR) policy adoption---a classic staggered treatment design (see the [TWFE bias discussion](ch13-fixed-effects.qmd#sec-twfe-bias) for the problem under staggered adoption).
+
+```{r}
+#| label: panelview-treat
+panelview(turnout ~ policy_edr + policy_mail_in + policy_motor,
+          data = turnout, index = c("abb", "year"),
+          xlab = "Year", ylab = "State",
+          main = "Election-day registration adoption by state")
+```
+
+Sorting by treatment timing reveals the staggered adoption pattern:
+
+```{r}
+#| label: panelview-timing
+panelview(turnout ~ policy_edr + policy_mail_in + policy_motor,
+          data = turnout, index = c("abb", "year"),
+          by.timing = TRUE,
+          xlab = "Year", ylab = "State",
+          main = "EDR adoption sorted by timing")
+```
+
+### Missing data plots
+
+The `capacity` dataset (country-level state capacity) has substantial missingness. `panelView` reveals the pattern:
+
+```{r}
+#| label: panelview-missing
+panelview(Capacity ~ demo + lngdp + lnpop,
+          data = capacity, index = c("ccode", "year"),
+          type = "miss", axis.lab = "off",
+          main = "Missing data in state capacity panel")
+```
+
+### Outcome dynamics
+
+We can also plot the outcome variable over time, colored by treatment status:
+
+```{r}
+#| label: panelview-outcome
+panelview(turnout ~ policy_edr,
+          data = turnout, index = c("abb", "year"),
+          type = "outcome",
+          main = "Voter turnout by EDR status",
+          ylab = "Turnout (%)", xlab = "Year")
+```
+
+## Panel data basics: the Produc dataset
+
+We use the `Produc` dataset from the `plm` package: 48 U.S. states observed from 1970--1986, with gross state product, public capital, private capital, employment, and unemployment.
+
+```{r}
+#| label: produc-setup
+data("Produc", package = "plm")
+cat("States:", length(unique(Produc$state)),
+    " Years:", min(Produc$year), "-", max(Produc$year),
+    " Obs:", nrow(Produc), "\n")
+head(Produc[, c("state", "year", "gsp", "pcap", "emp", "unemp")])
+```
+
+We model log gross state product as a function of log public capital, log private capital, log employment, and unemployment rate:
+
+$$\ln(\text{gsp})_{it} = \beta_1 \ln(\text{pcap})_{it} + \beta_2 \ln(\text{pc})_{it} + \beta_3 \ln(\text{emp})_{it} + \beta_4 \text{unemp}_{it} + \alpha_i + \varepsilon_{it}$$
+
+The question is whether $\alpha_i$ (the state-specific intercept) is correlated with the regressors.
+
+### Visualizing the panel
+
+```{r}
+#| label: produc-plot
+# Log GSP over time by state
+ggplot(Produc, aes(x = year, y = log(gsp), group = state)) +
+  geom_line(alpha = 0.3) +
+  labs(title = "Log gross state product over time",
+       x = "Year", y = "log(GSP)") +
+  theme_minimal()
+```
+
+## Pooled OLS
+
+Pooled OLS ignores the panel structure entirely---it treats all $NT$ observations as independent:
+
+```{r}
+#| label: pooled-ols
+pooled <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
+              data = Produc, index = c("state", "year"),
+              model = "pooling")
+summary(pooled)
+```
+
+Pooled OLS is consistent only if the unobserved state effects $\alpha_i$ are uncorrelated with all regressors. If wealthier states invest more in public capital (likely), pooled OLS is biased.
+
+## The between estimator
+
+The between estimator uses only cross-sectional variation---it regresses group means $\bar{y}_i$ on $\bar{x}_i$:
+
+```{r}
+#| label: between
+between_fit <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
+                   data = Produc, index = c("state", "year"),
+                   model = "between")
+summary(between_fit)
+```
+
+The between estimator discards all within-state time variation. It is consistent only under the random effects assumption ($\alpha_i \perp X_{it}$). When that assumption fails, the between estimator is biased.
+
+## The within (fixed effects) estimator {#sec-within}
+
+The within estimator removes $\alpha_i$ by demeaning each variable within each state:
+
+$$(\ln\text{gsp}_{it} - \overline{\ln\text{gsp}}_i) = \beta'(x_{it} - \bar{x}_i) + (\varepsilon_{it} - \bar{\varepsilon}_i)$$ {#eq-within}
+
+::: {#def-within}
+## Within (Fixed Effects) Estimator
+The within estimator demeans all variables within each unit: $(y_{it} - \bar{y}_i) = \beta'(x_{it} - \bar{x}_i) + (\varepsilon_{it} - \bar\varepsilon_i)$. It is consistent when $\mathbb{E}[\varepsilon_{it}|X_{i1}, \ldots, X_{iT}, \alpha_i] = 0$, even if $\alpha_i$ is correlated with $X_{it}$.
+:::
+
+::: {.callout-note}
+## Within Eliminates Time-Invariant Confounders
+The within estimator removes all time-invariant unit characteristics $\alpha_i$ — both observed and unobserved. This eliminates omitted variable bias from time-invariant confounders, but it also prevents estimating effects of time-invariant regressors (e.g., region, ethnicity). Use CRE/Mundlak (Chapter 13) to recover these.
+:::
+
+```{r}
+#| label: within
+within_fit <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
+                  data = Produc, index = c("state", "year"),
+                  model = "within")
+summary(within_fit)
+```
+
+### Fixed effects by hand
+
+By the [FWL theorem](ch04-sensitivity.qmd#thm-fwl), the within estimator is equivalent to including dummy variables for each state (LSDV), which is equivalent to the Frisch--Waugh--Lovell projection:
+
+```{r}
+#| label: within-by-hand
+# LSDV approach: include state dummies
+lsdv <- lm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp + factor(state),
+           data = Produc)
+
+# Compare slope coefficients
+cat("plm within:  ", round(coef(within_fit), 4), "\n")
+cat("LSDV slopes: ", round(coef(lsdv)[2:5], 4), "\n")
+```
+
+### Manual demeaning
+
+```{r}
+#| label: demean-by-hand
+# Demean each variable within state
+demean <- function(x, group) x - ave(x, group)
+
+Produc$lgsp_dm  <- demean(log(Produc$gsp), Produc$state)
+Produc$lpcap_dm <- demean(log(Produc$pcap), Produc$state)
+Produc$lpc_dm   <- demean(log(Produc$pc), Produc$state)
+Produc$lemp_dm  <- demean(log(Produc$emp), Produc$state)
+Produc$unemp_dm <- demean(Produc$unemp, Produc$state)
+
+dm_fit <- lm(lgsp_dm ~ lpcap_dm + lpc_dm + lemp_dm + unemp_dm - 1, data = Produc)
+cat("Manual demeaning: ", round(coef(dm_fit), 4), "\n")
+cat("plm within:       ", round(coef(within_fit), 4), "\n")
+```
+
+### Comparing estimators
+
+```{r}
+#| label: compare-estimators
+coef_table <- data.frame(
+  Variable = names(coef(within_fit)),
+  Pooled = round(coef(pooled)[-1], 4),
+  Between = round(coef(between_fit)[-1], 4),
+  Within = round(coef(within_fit), 4)
+)
+rownames(coef_table) <- NULL
+coef_table
+```
+
+The pooled and between estimators give a large positive coefficient on public capital (`pcap`). The within estimator---which controls for unobserved state characteristics---gives a much smaller (or negative) coefficient. This is the classic omitted variable bias story: states with high unobserved productivity invest in more public capital *and* have higher GSP.
+
+### Variance decomposition
+
+The total variation in a panel decomposes into between-group and within-group components. The pooled estimator is a matrix-weighted average of the between and within estimators:
+
+```{r}
+#| label: variance-decomp
+# Between variation
+x_bar <- aggregate(log(pcap) ~ state, data = Produc, mean)$`log(pcap)`
+between_var <- var(x_bar)
+
+# Within variation
+within_var <- var(demean(log(Produc$pcap), Produc$state))
+
+# Total
+total_var <- var(log(Produc$pcap))
+
+cat("Between variance:", round(between_var, 4), "\n")
+cat("Within variance: ", round(within_var, 4), "\n")
+cat("Total variance:  ", round(total_var, 4), "\n")
+cat("Between share:   ", round(between_var / total_var * 100, 1), "%\n")
+```
+
+When the between share is large (as here), pooled OLS is heavily influenced by cross-sectional differences between states, which may be confounded by omitted variables.
+
+## Clustering and robust standard errors
+
+Standard errors from pooled OLS or even fixed effects may be wrong if errors are correlated within states (serial correlation) or across states (spatial correlation).
+
+### Cluster-robust standard errors
+
+```{r}
+#| label: cluster-se
+# Default plm standard errors (assume iid errors)
+cat("Default within SE:\n")
+round(coef(summary(within_fit))[, "Std. Error"], 4)
+```
+
+```{r}
+#| label: cluster-robust
+# Cluster-robust SE (Arellano, 1987)
+cat("\nCluster-robust SE (Arellano):\n")
+round(sqrt(diag(vcovHC(within_fit, method = "arellano", type = "HC1"))), 4)
+```
+
+```{r}
+#| label: newey-west-panel
+# Newey-West SE for serial correlation
+cat("\nNewey-West SE (1 lag):\n")
+round(sqrt(diag(vcovNW(within_fit, maxlag = 1))), 4)
+```
+
+::: {.callout-warning}
+## Always Cluster Standard Errors in Panel Data
+Standard OLS errors assume independence across observations. In panel data, errors are typically correlated within units (serial correlation). Failing to cluster inflates test statistics by the Moulton factor $\sqrt{1 + (T-1)\rho}$, which can be substantial.
+:::
+
+Using `fixest::feols()` provides the same estimates with more flexible standard error options:
+
+```{r}
+#| label: fixest-fe
+fe_fixest <- feols(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp | state,
+                   data = Produc, panel.id = ~state + year)
+
+# Various SE types
+summary(fe_fixest, vcov = "iid")
+```
+
+```{r}
+#| label: fixest-cluster
+summary(fe_fixest, vcov = ~state)  # cluster by state
+```
+
+```{r}
+#| label: fixest-driscoll-kraay
+# Driscoll-Kraay SE (cross-sectional + serial dependence)
+summary(fe_fixest, vcov = "DK")
+```
+
+### The Moulton factor
+
+Why do clustered SEs matter? When errors are correlated within clusters, standard SEs are too small by a factor that grows with cluster size and intra-cluster correlation $\rho$:
+
+$$\text{Moulton factor} \approx \sqrt{1 + (n_g - 1)\rho}$$
+
+```{r}
+#| label: moulton
+# Estimate intra-state error correlation from within-model residuals
+e_within <- residuals(within_fit)
+pdat <- pdata.frame(Produc, index = c("state", "year"))
+state_ids <- as.numeric(pdat$state)
+
+# Compute average within-state residual correlation
+states <- unique(state_ids)
+cors <- numeric(length(states))
+for (j in seq_along(states)) {
+  e_j <- e_within[state_ids == states[j]]
+  if (length(e_j) > 1) {
+    pair_cors <- cor(e_j[-length(e_j)], e_j[-1])
+    cors[j] <- pair_cors
+  }
+}
+rho <- mean(cors, na.rm = TRUE)
+T_per_state <- nrow(Produc) / length(unique(Produc$state))
+moulton <- sqrt(1 + (T_per_state - 1) * rho)
+cat("Intra-state correlation (rho):", round(rho, 3), "\n")
+cat("Average T per state:", T_per_state, "\n")
+cat("Moulton factor:", round(moulton, 2), "\n")
+```
+
+Standard errors should be inflated by roughly this factor when clustering is ignored.
+
+## Difference-in-differences {#sec-did}
+
+Difference-in-differences (DiD) is a panel method for estimating causal effects when treatment is assigned to some units at some time. The canonical $2 \times 2$ DiD model is:
+
+$$Y_{it} = \alpha + \beta \cdot \text{Group}_i + \gamma \cdot \text{Post}_t + \delta \cdot (\text{Group}_i \times \text{Post}_t) + \varepsilon_{it}$$ {#eq-did}
+
+::: {#thm-did}
+## Difference-in-Differences
+The DiD estimator $\hat\delta = (\bar{Y}_{1,\text{post}} - \bar{Y}_{1,\text{pre}}) - (\bar{Y}_{0,\text{post}} - \bar{Y}_{0,\text{pre}})$ identifies the ATT under the **parallel trends** assumption: absent treatment, treated and control groups would have followed the same trajectory.
+:::
+
+where $\delta$ is the treatment effect, identified under the **parallel trends** assumption.
+
+### Simulated DiD example
+
+```{r}
+#| label: did-sim
+set.seed(42)
+N <- 100  # units
+T_periods <- 10
+treat_time <- 6  # treatment starts at t = 6
+treated_units <- 1:(N/2)
+
+did_data <- expand.grid(unit = 1:N, time = 1:T_periods)
+did_data$treated <- as.integer(did_data$unit %in% treated_units)
+did_data$post <- as.integer(did_data$time >= treat_time)
+
+# Generate outcomes with parallel pre-trends
+alpha_i <- rep(rnorm(N, sd = 2), each = T_periods)  # unit effects
+gamma_t <- rep(0.3 * (1:T_periods), times = N)       # common trend
+delta_true <- 1.5
+
+did_data$y <- 5 + alpha_i + gamma_t +
+  delta_true * did_data$treated * did_data$post +
+  rnorm(N * T_periods, sd = 1)
+```
+
+```{r}
+#| label: did-plot
+#| fig-cap: "Difference-in-differences: group means over time with treatment onset"
+# Group means over time
+group_means <- aggregate(y ~ time + treated, data = did_data, mean)
+group_means$group <- factor(group_means$treated, labels = c("Control", "Treated"))
+
+ggplot(group_means, aes(x = time, y = y, color = group)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  geom_vline(xintercept = treat_time - 0.5, linetype = "dashed") +
+  annotate("text", x = treat_time - 0.3, y = max(group_means$y),
+           label = "Treatment", hjust = 1, size = 3) +
+  labs(title = "Difference-in-differences",
+       x = "Time", y = "Outcome", color = "Group") +
+  theme_minimal()
+```
+
+### DiD estimation
+
+```{r}
+#| label: did-estimate
+# Method 1: OLS with interaction
+did_ols <- lm(y ~ treated * post, data = did_data)
+cat("DiD coefficient (OLS interaction):", round(coef(did_ols)["treated:post"], 3),
+    " (true:", delta_true, ")\n")
+```
+
+```{r}
+#| label: did-twfe
+# Method 2: Two-way fixed effects (unit + time FE)
+did_twfe <- feols(y ~ treated:post | unit + time, data = did_data)
+cat("DiD coefficient (TWFE):", round(coef(did_twfe), 3), "\n")
+```
+
+```{r}
+#| label: did-cluster
+# With cluster-robust SEs (cluster on unit)
+summary(did_twfe, vcov = ~unit)
+```
+
+### Visualizing the DiD with panelView
+
+```{r}
+#| label: did-panelview
+# Treatment pattern
+did_data$D <- did_data$treated * did_data$post
+panelview(y ~ D, data = did_data, index = c("unit", "time"),
+          type = "treat",
+          main = "Treatment pattern in DiD design")
+```
+
+## Random effects
+
+The random effects (RE) estimator assumes $\alpha_i \perp X_{it}$ and estimates a GLS model with the composite error $\nu_{it} = \alpha_i + \varepsilon_{it}$. The RE estimator is a weighted average of the between and within estimators:
+
+$$\hat{\beta}_{RE} = \lambda \hat{\beta}_{W} + (1 - \lambda) \hat{\beta}_{B}$$
+
+where $\lambda$ depends on the ratio of within to between variance.
+
+```{r}
+#| label: random-effects
+re_fit <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp,
+              data = Produc, index = c("state", "year"),
+              model = "random")
+summary(re_fit)
+```
+
+### Hausman test: FE vs RE
+
+The Hausman test compares FE and RE. Under $H_0$ (RE is consistent), both estimators are consistent but RE is efficient. Under $H_1$, only FE is consistent.
+
+```{r}
+#| label: hausman
+phtest(within_fit, re_fit)
+```
+
+A small p-value means we reject the RE assumption---the fixed effects are correlated with the regressors, so FE is preferred.
+
+### Mundlak's correlated random effects
+
+Mundlak (1978) showed that we can relax the RE assumption by including the group means $\bar{x}_i$ as additional regressors. This "correlated random effects" (CRE) estimator gives the same slope coefficients as FE while also estimating effects of time-invariant variables:
+
+```{r}
+#| label: mundlak
+# Compute state means of the regressors
+Produc$lpcap_mean <- ave(log(Produc$pcap), Produc$state)
+Produc$lpc_mean   <- ave(log(Produc$pc), Produc$state)
+Produc$lemp_mean  <- ave(log(Produc$emp), Produc$state)
+Produc$unemp_mean <- ave(Produc$unemp, Produc$state)
+
+# CRE = RE + group means
+cre_fit <- plm(log(gsp) ~ log(pcap) + log(pc) + log(emp) + unemp +
+                 lpcap_mean + lpc_mean + lemp_mean + unemp_mean,
+               data = Produc, index = c("state", "year"),
+               model = "random")
+
+# Compare CRE slopes to FE slopes
+cat("CRE slopes: ", round(coef(cre_fit)[2:5], 4), "\n")
+cat("FE slopes:  ", round(coef(within_fit), 4), "\n")
+```
+
+The slope coefficients on the time-varying regressors match the FE estimates, confirming the Mundlak equivalence. The coefficients on the group means capture the between-group relationships that FE removes.
+
+## Dynamic panels and Arellano--Bond GMM
+
+When the model includes a lagged dependent variable, fixed effects estimation is inconsistent (Nickell bias, $O(1/T)$). Arellano and Bond (1991) proposed first-differencing the equation and using lagged levels as instruments:
+
+$$\Delta y_{it} = \rho \Delta y_{it-1} + \Delta x_{it}'\beta + \Delta \varepsilon_{it}$$
+
+Since $\text{Cov}(y_{is}, \Delta\varepsilon_{it}) = 0$ for $s \leq t-2$, lagged levels are valid instruments. This creates a growing set of moment conditions---naturally suited to GMM.
+
+### The EmplUK dataset
+
+We use the `EmplUK` dataset: 140 UK firms observed over 1976--1984, with employment, wages, capital, and output.
+
+```{r}
+#| label: empluk-setup
+data("EmplUK", package = "plm")
+cat("Firms:", length(unique(EmplUK$firm)),
+    " Years:", min(EmplUK$year), "-", max(EmplUK$year),
+    " Obs:", nrow(EmplUK), "\n")
+head(EmplUK)
+```
+
+```{r}
+#| label: empluk-panelview
+# Visualize the panel structure
+panelview(emp ~ wage, data = EmplUK,
+          index = c("firm", "year"),
+          type = "miss", axis.lab = "off",
+          main = "EmplUK panel balance")
+```
+
+### Nickell bias: why FE fails with lagged DV
+
+```{r}
+#| label: nickell-sim
+set.seed(123)
+N_nick <- 100; T_nick <- 8
+rho_true <- 0.5
+
+# Simulate dynamic panel
+nick_data <- data.frame()
+for (i in 1:N_nick) {
+  alpha_i <- rnorm(1, sd = 1)
+  y <- numeric(T_nick)
+  y[1] <- alpha_i / (1 - rho_true) + rnorm(1)
+  for (t in 2:T_nick) {
+    y[t] <- rho_true * y[t-1] + alpha_i + rnorm(1)
+  }
+  nick_data <- rbind(nick_data,
+    data.frame(id = i, time = 1:T_nick, y = y))
+}
+
+# FE estimate of rho (biased downward)
+nick_data$y_lag <- ave(nick_data$y, nick_data$id,
+                       FUN = function(x) c(NA, x[-length(x)]))
+fe_nick <- plm(y ~ y_lag, data = nick_data, index = c("id", "time"),
+               model = "within", na.action = na.omit)
+cat("True rho:", rho_true, "\n")
+cat("FE estimate:", round(coef(fe_nick), 4), " (Nickell bias)\n")
+cat("Expected bias ~ -1/T =", round(-1/T_nick, 4), "\n")
+```
+
+The FE estimator is biased downward by approximately $-1/T$ when $T$ is small.
+
+::: {#def-nickell-bias}
+## Nickell Bias
+In a dynamic panel $y_{it} = \rho y_{it-1} + \alpha_i + \varepsilon_{it}$, fixed effects estimation is inconsistent with bias $\approx -(\rho + 1)/(T - 1)$. This arises because demeaning creates mechanical correlation between $\tilde{y}_{it-1}$ and $\tilde\varepsilon_{it}$. The bias is severe when $T$ is small.
+:::
+
+### Arellano--Bond difference GMM
+
+The `pgmm()` function in `plm` implements Arellano--Bond (difference GMM) and Blundell--Bond (system GMM).
+
+The formula syntax uses `|` to separate regressors from GMM instruments:
+
+```
+y ~ regressors | GMM_instruments | standard_instruments
+```
+
+```{r}
+#| label: arellano-bond
+# Arellano-Bond: Table 4, Column (b) from Arellano & Bond (1991)
+ab_fit <- pgmm(
+  log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+            + log(capital) + lag(log(output), 0:1)
+            | lag(log(emp), 2:99),
+  data = EmplUK,
+  effect = "twoways",
+  model = "twosteps",
+  transformation = "d"  # difference GMM
+)
+
+summary(ab_fit, robust = TRUE)
+```
+
+### Diagnostic tests
+
+Two diagnostics are essential for dynamic panel GMM:
+
+1. **Sargan/Hansen J-test**: Are the overidentifying restrictions satisfied?
+2. **AR(2) test**: Is there second-order serial correlation in the differenced residuals? (AR(1) is expected due to differencing; AR(2) would invalidate lag-2 instruments.)
+
+```{r}
+#| label: ab-diagnostics
+# Sargan test of overidentifying restrictions
+sargan(ab_fit)
+```
+
+```{r}
+#| label: ab-ar-tests
+# Serial correlation tests
+mtest(ab_fit, order = 1)  # AR(1): expected to reject
+mtest(ab_fit, order = 2)  # AR(2): should not reject
+```
+
+AR(1) in the differenced residuals is expected and mechanical. The key test is AR(2): failing to reject means our instruments (lags 2+) are valid.
+
+### Blundell--Bond system GMM
+
+When the dependent variable is highly persistent ($\rho$ close to 1), lagged levels become weak instruments for first differences. Blundell and Bond (1998) augment the moment conditions with level equations, using lagged *differences* as instruments:
+
+```{r}
+#| label: system-gmm
+# System GMM: use transformation = "ld" (level + difference)
+bb_fit <- pgmm(
+  log(emp) ~ lag(log(emp), 1) + lag(log(wage), 0:1)
+            + lag(log(capital), 0:1)
+            | lag(log(emp), 2:99) + lag(log(wage), 2:99)
+              + lag(log(capital), 2:99),
+  data = EmplUK,
+  effect = "twoways",
+  model = "twosteps",
+  transformation = "ld"  # system GMM
+)
+
+summary(bb_fit, robust = TRUE)
+```
+
+```{r}
+#| label: bb-diagnostics
+sargan(bb_fit)
+mtest(bb_fit, order = 2)
+```
+
+### Instrument proliferation
+
+A practical concern with `pgmm()` is that the number of GMM instruments grows quadratically with $T$. With $T = 9$ periods, using `lag(y, 2:99)` generates up to $(T-1)(T-2)/2 = 28$ instruments from a single variable. Too many instruments can overfit the endogenous variable.
+
+The `collapse = TRUE` option reduces the instrument count:
+
+```{r}
+#| label: collapse-instruments
+# Collapsed instrument matrix
+ab_collapse <- pgmm(
+  log(emp) ~ lag(log(emp), 1:2) + lag(log(wage), 0:1)
+            + log(capital) + lag(log(output), 0:1)
+            | lag(log(emp), 2:99),
+  data = EmplUK,
+  effect = "twoways",
+  model = "twosteps",
+  transformation = "d",
+  collapse = TRUE
+)
+
+summary(ab_collapse, robust = TRUE)
+```
+
+```{r}
+#| label: collapse-comparison
+# Compare coefficient on lag(log(emp), 1) across specifications
+cat("Full instruments:     ", round(coef(ab_fit)["lag(log(emp), 1:2)1"], 4), "\n")
+cat("Collapsed instruments:", round(coef(ab_collapse)["lag(log(emp), 1:2)1"], 4), "\n")
+```
+
+## Panel estimators as moment conditions
+
+Every panel estimator we've covered is a GMM estimator with specific moment conditions:
+
+| Estimator | Moment condition | Instruments |
+|-----------|-----------------|-------------|
+| Pooled OLS | $\mathbb{E}[X_{it} \varepsilon_{it}] = 0$ | $X_{it}$ |
+| Within (FE) | $\mathbb{E}[\tilde{X}_{it} \tilde{\varepsilon}_{it}] = 0$ | Demeaned $\tilde{X}_{it}$ |
+| Between | $\mathbb{E}[\bar{X}_i \bar{\varepsilon}_i] = 0$ | Group means $\bar{X}_i$ |
+| Random effects | $\mathbb{E}[X_{it} \nu_{it}] = 0$, $\mathbb{E}[\bar{X}_i \nu_{it}] = 0$ | Both $X_{it}$ and $\bar{X}_i$ |
+| Arellano--Bond | $\mathbb{E}[y_{is} \Delta\varepsilon_{it}] = 0,\ s \leq t-2$ | Lagged levels |
+| Blundell--Bond | Above + $\mathbb{E}[\Delta y_{is} \varepsilon_{it}] = 0,\ s \leq t-1$ | + Lagged differences |
+
+The progression from OLS to system GMM mirrors the course arc: each step adds moment conditions and addresses a new identification challenge.
+
+## Choosing a panel estimator
+
+```{r}
+#| label: decision-tree
+#| echo: false
+cat("
+Panel Estimator Decision Guide:
+================================
+1. Is alpha_i correlated with X_it?
+   - No  --> Random Effects (more efficient)
+   - Yes --> Fixed Effects
+   - Unsure --> Run Hausman test
+
+2. Do you have a lagged dependent variable?
+   - No  --> Standard FE is fine
+   - Yes --> FE is biased (Nickell bias)
+           --> Use Arellano-Bond or System GMM
+
+3. Is the DV highly persistent (rho near 1)?
+   - No  --> Arellano-Bond (difference GMM)
+   - Yes --> Blundell-Bond (system GMM)
+
+4. Diagnostics:
+   - Always report cluster-robust SEs
+   - For GMM: check Sargan test + AR(2) test
+   - Watch for instrument proliferation
+")
+```
+
+## Summary
+
+- **panelView** visualizes treatment adoption, missingness, and outcome dynamics before estimation.
+- **Pooled OLS** ignores unit effects; **between** uses only cross-sectional variation; **within (FE)** uses only time variation within units.
+- The within estimator removes time-invariant confounders but cannot estimate effects of time-invariant regressors.
+- **Cluster-robust SEs** (Arellano, Newey--West, Driscoll--Kraay) account for within-cluster error dependence. The Moulton factor quantifies the standard error inflation from ignoring clustering.
+- **Mundlak's CRE** gives FE slopes while retaining the ability to estimate effects of time-invariant variables.
+- **Hausman test** compares FE and RE; rejection means $\alpha_i$ is correlated with $X_{it}$.
+- **Arellano--Bond** and **Blundell--Bond** use GMM for dynamic panels with lagged dependent variables, overcoming Nickell bias.
+- **Diagnostic tests**: Sargan/Hansen J-test for overidentifying restrictions; AR(2) test for instrument validity.
+- All panel estimators are special cases of GMM with different moment conditions.

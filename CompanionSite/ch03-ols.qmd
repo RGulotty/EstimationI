@@ -1,0 +1,701 @@
+---
+title: "3. Multivariate OLS"
+subtitle: "Deriving and computing the OLS estimator"
+---
+
+```{r}
+#| label: setup
+#| message: false
+library(ggplot2)
+library(carData)
+options(digits = 3)
+tr <- function(M) sum(diag(M))  # R has no built-in trace
+```
+
+The OLS estimator $\hat\beta = (X'X)^{-1}X'y$ is a matrix formula. Every piece of it — the transpose, the product, the inverse — has a direct R function. This chapter builds OLS from those building blocks, first geometrically in two dimensions, then in full matrix form with real data.
+
+**Questions this chapter answers:**
+
+1. What R functions implement matrix operations, and how does `crossprod()` relate to the normal equations?
+2. What is the geometry of OLS — why is regression a projection?
+3. How do we derive $\hat\beta = (X'X)^{-1}X'y$ from the minimization of SSE?
+4. How do standard errors arise from $s_e^2(X'X)^{-1}$, and what makes them precise or imprecise?
+
+## R's matrix toolkit
+
+Before deriving anything, here are the operations we'll use throughout.
+
+```{r}
+#| label: matrix-toolkit
+A <- matrix(c(2, 1, 1, 3), nrow = 2)
+A
+
+# 1. Transpose: t()
+t(A)
+
+# 2. Matrix multiply: %*%  (not * which is element-wise)
+B <- matrix(c(1, 0, -1, 2), nrow = 2)
+A %*% B
+
+# 3. Inverse: solve()
+solve(A)
+A %*% solve(A)  # identity
+
+# 4. Trace: sum(diag())
+tr(A)   # sum of diagonal elements
+
+# 5. Eigendecomposition: eigen()
+eigen(A)
+
+# 6. Determinant: det()
+det(A)
+
+# 7. Cross product shortcuts
+x_vec <- c(1, 2, 3)
+y_vec <- c(4, 5, 6)
+c(manual = sum(x_vec * y_vec),
+  crossprod = as.numeric(crossprod(x_vec, y_vec)))
+```
+
+`crossprod(X)` computes $X'X$ faster than `t(X) %*% X`, and `crossprod(X, y)` computes $X'y$. We'll use these constantly.
+
+## Geometry: projection in two dimensions
+
+You're used to plotting data with variables on the axes — one axis for $X$, one for $Y$, and each point is an observation. The geometric view of regression flips this: each axis is an *observation*, and each variable is a *vector*. A variable with $n$ observations is a vector in $\mathbb{R}^n$.
+
+Why think this way? Because regression asks: among all scalar multiples of $\mathbf{x}$ (all predictions of the form $b\mathbf{x}$), which one is closest to $\mathbf{y}$? That's a projection — dropping a perpendicular from $\mathbf{y}$ onto the line spanned by $\mathbf{x}$.
+
+With just two observations, we can see this on a page. Suppose we survey two students: we record how long each spent on homework ($\mathbf{h}$) and how long reading the textbook ($\mathbf{t}$). Each variable is a 2-vector, and we can plot both in $\mathbb{R}^2$:
+
+```{r}
+#| label: two-vectors
+# Student 1: 3 hrs homework, 2.5 hrs reading
+# Student 2: 5 hrs homework, 2 hrs reading
+h <- c(3, 5)    # outcome: homework time
+tt <- c(2.5, 2)  # predictor: reading time
+```
+
+We want to predict $\mathbf{h}$ using $\mathbf{t}$: find $b$ so that $b\mathbf{t}$ is as close to $\mathbf{h}$ as possible. Geometrically, $b\mathbf{t}$ must lie on the line through $\mathbf{t}$ (the dotted line in the plot below), and the best choice is the one where the "miss" — the residual — is perpendicular to that line.
+
+The **vector projection** of $\mathbf{h}$ onto $\mathbf{t}$ solves this:
+
+$$\hat{\mathbf{h}} = \frac{\mathbf{t} \cdot \mathbf{h}}{\mathbf{t} \cdot \mathbf{t}} \mathbf{t}$$
+
+The scalar $b = \frac{\mathbf{t} \cdot \mathbf{h}}{\mathbf{t} \cdot \mathbf{t}}$ minimizes $\|\mathbf{h} - b\mathbf{t}\|^2$ — the sum of squared errors. This is the least squares solution, derived purely from geometry.
+
+```{r}
+#| label: projection-by-hand
+# The projection coefficient
+b <- as.numeric(crossprod(tt, h) / crossprod(tt))
+b
+
+# The projected vector (fitted values)
+h_hat <- b * tt
+h_hat
+```
+
+And this is exactly what `lm()` computes when we regress $\mathbf{h}$ on $\mathbf{t}$ without an intercept:
+
+```{r}
+#| label: projection-equals-ols
+# OLS without intercept gives the same b
+coef(lm(h ~ tt - 1))
+
+# Fitted values = the projection
+cbind(projection = h_hat, fitted = fitted(lm(h ~ tt - 1)))
+```
+
+The residual $\mathbf{e} = \mathbf{h} - \hat{\mathbf{h}}$ is orthogonal to $\mathbf{t}$ — their dot product is zero:
+
+```{r}
+#| label: residual-orthogonal
+e_vec <- h - h_hat
+as.numeric(crossprod(tt, e_vec))
+```
+
+This orthogonality is the geometric content of the normal equations $X'e = 0$. Here's the full picture:
+
+```{r}
+#| label: geometry-plot
+#| fig-cap: "OLS finds the closest point on the line of t to h"
+#| fig-width: 5
+#| fig-height: 5
+df_arrows <- data.frame(
+  x0 = c(0, 0, 0, h_hat[1]),
+  y0 = c(0, 0, 0, h_hat[2]),
+  x1 = c(h[1], tt[1], h_hat[1], h[1]),
+  y1 = c(h[2], tt[2], h_hat[2], h[2]),
+  label = c("h (outcome)", "t (regressor)", "h-hat (fitted)", "e (residual)"),
+  color = c("black", "gray50", "forestgreen", "tomato")
+)
+
+slope_t <- tt[2] / tt[1]
+
+ggplot() +
+  geom_abline(intercept = 0, slope = slope_t, linetype = "dotted", alpha = 0.3) +
+  geom_segment(data = df_arrows,
+               aes(x = x0, y = y0, xend = x1, yend = y1, color = label),
+               arrow = arrow(length = unit(0.15, "inches")),
+               linewidth = 1.1) +
+  scale_color_manual(values = c("h (outcome)" = "black",
+                                "t (regressor)" = "gray50",
+                                "h-hat (fitted)" = "forestgreen",
+                                "e (residual)" = "tomato"),
+                     name = "") +
+  coord_fixed(xlim = c(-1, 5), ylim = c(-1, 6)) +
+  labs(x = "Observation 1", y = "Observation 2",
+       title = "OLS finds the closest point on the line of t to h") +
+  theme_minimal()
+```
+
+The green vector ($\hat{\mathbf{h}}$) is the best prediction in the "column space" of $\mathbf{t}$, and the red vector ($\mathbf{e}$) is the part of $\mathbf{h}$ that $\mathbf{t}$ cannot explain. With $n = 100$ observations, these vectors live in $\mathbb{R}^{100}$ and we can't draw them — but the geometry is identical. With multiple regressors, the "line" becomes a plane (or hyperplane), and the projection lands on the closest point in that plane.
+
+## Building the design matrix
+
+The model $y = X\beta + e$ stacks $n$ observations into a matrix. Each row of $X$ is one observation; each column is one variable. The first column is typically all ones (the intercept).
+
+We'll use the Canadian Prestige dataset: the Pineo-Porter prestige score of occupations, predicted by average education (years) and average income (dollars) of workers in each occupation.
+
+```{r}
+#| label: design-matrix
+data(Prestige)
+n <- nrow(Prestige)
+K <- 3  # intercept + education + income
+
+X <- cbind(1, Prestige$education, Prestige$income)
+y <- Prestige$prestige
+
+dim(X)   # n x K
+head(X)
+```
+
+The two fundamental products in OLS are $X'X$ (a $K \times K$ matrix) and $X'y$ (a $K \times 1$ vector):
+
+```{r}
+#| label: xtx-xty
+XtX <- crossprod(X)       # K x K: t(X) %*% X
+XtX
+
+Xty <- crossprod(X, y)    # K x 1: t(X) %*% y
+Xty
+```
+
+$X'X$ encodes the relationships among the regressors. The diagonal holds $\sum X_k^2$ for each variable; the off-diagonals hold $\sum X_j X_k$. Dividing by $n$ gives the sample second-moment matrix.
+
+## Bivariate OLS: the formula connection
+
+Before the matrix derivation, recall the bivariate OLS formula: $\hat\beta_1 = \text{Cov}(X, Y)/\text{Var}(X)$. This is the sample analogue of the BLP coefficient from Chapter 2. Let's verify it matches the matrix formula using just education as a predictor:
+
+```{r}
+#| label: bivariate-by-hand
+educ <- Prestige$education
+
+# Formula approach
+beta1_formula <- cov(educ, y) / var(educ)
+beta0_formula <- mean(y) - beta1_formula * mean(educ)
+
+# Matrix approach (2x2 system)
+X_biv <- cbind(1, educ)
+beta_biv <- solve(crossprod(X_biv), crossprod(X_biv, y))
+
+# lm() approach
+beta_lm <- coef(lm(prestige ~ education, data = Prestige))
+
+cbind(formula = c(beta0_formula, beta1_formula),
+      matrix = beta_biv,
+      lm = beta_lm)
+```
+
+All three give the same answer. The matrix formula $\hat\beta = (X'X)^{-1}X'y$ generalizes the bivariate $\text{Cov}/\text{Var}$ formula to any number of regressors.
+
+## Deriving OLS with matrix calculus {#sec-ols-derivation}
+
+The sum of squared errors in matrix form is:
+
+$$\text{SSE}(\beta) = (y - X\beta)'(y - X\beta) = \underbrace{y'y}_{\text{constant}} - \underbrace{2y'X\beta}_{\text{linear}} + \underbrace{\beta'X'X\beta}_{\text{quadratic}}$$ {#eq-ols}
+
+Let's build each piece in R and verify the expansion:
+
+```{r}
+#| label: sse-expansion
+beta_test <- c(0, 1, 0.001)  # an arbitrary beta to test
+
+# Direct computation
+sse_direct <- as.numeric(crossprod(y - X %*% beta_test))
+
+# Expanded form
+piece1 <- as.numeric(crossprod(y))                         # y'y
+piece2 <- as.numeric(2 * crossprod(y, X %*% beta_test))    # 2y'Xbeta
+piece3 <- as.numeric(t(beta_test) %*% XtX %*% beta_test)  # beta'X'Xbeta
+
+c(direct = sse_direct, expanded = piece1 - piece2 + piece3)
+```
+
+Setting $\partial \text{SSE}/\partial \beta = -2X'y + 2X'X\hat\beta = 0$ gives the **normal equations**:
+
+$$X'X\hat\beta = X'y$$ {#eq-normal-equations}
+
+Solving with `solve()`:
+
+```{r}
+#| label: ols-solve
+# solve(A, b) solves the system Ax = b — better than solve(A) %*% b
+beta_hat <- solve(XtX, Xty)
+beta_hat
+
+# lm() gives the same thing
+coef(lm(prestige ~ education + income, data = Prestige))
+```
+
+Note: `solve(A, b)` is preferred over `solve(A) %*% b` — it avoids computing the full inverse, which is slower and less numerically stable.
+
+::: {#thm-ols}
+## The OLS Estimator
+The OLS estimator $\hat\beta = (X'X)^{-1}X'y$ is the unique minimizer of $\text{SSE}(\beta) = (y - X\beta)'(y - X\beta)$ when $X'X$ is positive definite.
+:::
+
+### The second-order condition
+
+The second derivative of $\text{SSE}$ is $2X'X$. This is a minimum when $X'X$ is positive definite — all eigenvalues are positive:
+
+```{r}
+#| label: second-order
+eigen(XtX)$values
+```
+
+All positive, confirming positive definiteness. If any eigenvalue were zero, $X'X$ would be singular and `solve()` would fail.
+
+## What collinearity does to $X'X$
+
+When a column of $X$ is a linear combination of others, $X'X$ loses rank:
+
+```{r}
+#| label: collinearity
+# Add a redundant column: income2 = 2 * income
+X_bad <- cbind(X, 2 * Prestige$income)
+
+XtX_bad <- crossprod(X_bad)
+det(XtX_bad)          # essentially zero
+eigen(XtX_bad)$values  # last eigenvalue collapses
+```
+
+In practice, *near*-collinearity (very small but nonzero eigenvalues) inflates standard errors without crashing `solve()`. The **condition number** — ratio of largest to smallest eigenvalue — measures how close to singular:
+
+```{r}
+#| label: condition-number
+evals <- eigen(XtX)$values
+c(largest = evals[1], smallest = evals[K], condition = evals[1] / evals[K])
+```
+
+R's `lm()` handles exact collinearity by dropping the redundant column:
+
+```{r}
+#| label: lm-collinearity
+coef(lm(prestige ~ education + income + I(2 * income), data = Prestige))
+```
+
+::: {.callout-warning}
+## Near-Collinearity Inflates Standard Errors
+When columns of $X$ are nearly linearly dependent, $X'X$ has a near-zero eigenvalue, making $(X'X)^{-1}$ very large. This inflates the variance of $\hat\beta$ without causing `solve()` to fail — standard errors balloon silently. Check the condition number of $X'X$ to detect this.
+:::
+
+## The projection matrix {#sec-projection-matrix}
+
+The projection matrix $P = X(X'X)^{-1}X'$ maps any $n$-vector onto the column space of $X$. In two dimensions (our earlier example), it projected $\mathbf{h}$ onto the line of $\mathbf{t}$. With $K = 3$ regressors, it projects $\mathbf{y}$ onto a 3-dimensional subspace of $\mathbb{R}^n$.
+
+```{r}
+#| label: projection-matrix
+P <- X %*% solve(XtX) %*% t(X)
+dim(P)  # n x n
+
+mod <- lm(prestige ~ education + income, data = Prestige)
+```
+
+::: {#def-projection-matrix}
+## Projection (Hat) Matrix
+The projection matrix $P = X(X'X)^{-1}X'$ maps any $n$-vector onto the column space of $X$. It is symmetric ($P' = P$) and idempotent ($P^2 = P$), with eigenvalues in $\{0, 1\}$ and $\text{tr}(P) = K$.
+:::
+
+Every property of $P$ corresponds to a matrix operation:
+
+```{r}
+#| label: projection-properties
+# P*y = fitted values
+all.equal(as.vector(P %*% y), as.numeric(fitted(mod)))
+
+# Symmetric: t(P) = P
+all.equal(t(P), P)
+
+# Idempotent: P %*% P = P (projecting twice = projecting once)
+all.equal(P %*% P, P)
+
+# P*X = X (X is already in its own column space)
+all.equal(P %*% X, X, check.attributes = FALSE)
+```
+
+### What idempotency means for eigenvalues
+
+If $Pv = \lambda v$, then $P^2 v = \lambda^2 v$. But $P^2 = P$, so $\lambda^2 = \lambda$, which means $\lambda \in \{0, 1\}$:
+
+```{r}
+#| label: projection-eigenvalues
+eig_P <- eigen(P)$values
+table(round(eig_P, 10))
+```
+
+$K$ eigenvalues equal 1 (the column space of $X$) and $n - K$ equal 0 (the null space). The trace counts the 1s:
+
+```{r}
+#| label: projection-trace
+c(trace_P = tr(P), K = K)
+```
+
+### Projection onto the intercept
+
+The simplest projection is onto a column of ones: $P_1 = \mathbf{1}(\mathbf{1}'\mathbf{1})^{-1}\mathbf{1}' = \frac{1}{n}\mathbf{1}\mathbf{1}'$. This projects every observation onto the sample mean:
+
+```{r}
+#| label: intercept-projection
+ones <- rep(1, n)
+P1 <- outer(ones, ones) / n  # outer product: 1*1' / n
+
+# P1 * y = sample mean for every observation
+all.equal(as.vector(P1 %*% y), rep(mean(y), n))
+```
+
+Every additional regressor refines this baseline: the full $P$ starts from the mean and adds the directions explained by the other columns of $X$.
+
+## The annihilator matrix
+
+The annihilator $M = I_n - P$ projects onto the orthogonal complement — the part of $y$ that $X$ cannot explain:
+
+```{r}
+#| label: annihilator-matrix
+M <- diag(n) - P
+
+# M*y = residuals
+all.equal(as.vector(M %*% y), as.numeric(resid(mod)))
+
+# Idempotent and symmetric
+all.equal(M %*% M, M)
+all.equal(t(M), M)
+
+# M annihilates X: M*X = 0
+max(abs(M %*% X))
+```
+
+::: {#def-annihilator}
+## Annihilator Matrix
+The annihilator $M = I_n - P$ projects onto the orthogonal complement of the column space of $X$. It satisfies $MX = 0$ (annihilates $X$), is idempotent and symmetric, and has $\text{tr}(M) = n - K$.
+:::
+
+Eigenvalues are complementary to $P$: $n - K$ ones and $K$ zeros:
+
+```{r}
+#| label: annihilator-eigenvalues
+c(trace_M = tr(M), n_minus_K = n - K)
+```
+
+The **demeaning matrix** $M_1 = I - P_1$ is a special case — it subtracts the mean:
+
+```{r}
+#| label: demeaning
+M1 <- diag(n) - P1
+all.equal(as.vector(M1 %*% y), as.numeric(y - mean(y)))
+```
+
+## Application: regression to the mean
+
+Here's a classic application of bivariate OLS. Galton noticed that children of unusually tall parents tend to be shorter than their parents — and children of unusually short parents tend to be taller. This "regression to the mean" is not a causal mechanism; it's a consequence of the BLP slope being less than 1 when the correlation is less than 1.
+
+```{r}
+#| label: regression-to-mean
+# Simulate parent-child heights (jointly normal)
+set.seed(307)
+n_ht <- 1000
+rho <- 0.5   # correlation between parent and child height
+
+library(MASS)
+heights <- mvrnorm(n_ht, mu = c(68, 68),
+                   Sigma = matrix(c(9, rho * 9, rho * 9, 9), 2, 2))
+parent_ht <- heights[, 1]
+child_ht <- heights[, 2]
+
+# OLS by matrix formula
+X_ht <- cbind(1, parent_ht)
+beta_ht <- solve(crossprod(X_ht), crossprod(X_ht, child_ht))
+beta_ht
+```
+
+The slope is $\hat\beta_1 \approx$ `r round(beta_ht[2], 2)`, less than 1. So a parent who is 1 inch above average has a child who is only about `r round(beta_ht[2], 2)` inches above average — regression toward the mean.
+
+```{r}
+#| label: regression-to-mean-plot
+df_ht <- data.frame(parent = parent_ht, child = child_ht)
+
+ggplot(df_ht, aes(parent, child)) +
+  geom_point(alpha = 0.15, size = 0.8) +
+  geom_smooth(method = "lm", se = FALSE, color = "steelblue", linewidth = 1.2) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", alpha = 0.5) +
+  annotate("text", x = 74, y = 74.5, label = "slope = 1 (no regression)", alpha = 0.5) +
+  labs(x = "Parent height (in)", y = "Child height (in)",
+       title = "Regression to the mean",
+       subtitle = paste0("Slope = ", round(beta_ht[2], 2),
+                         " < 1: children of tall parents are less extreme")) +
+  theme_minimal()
+```
+
+The tallest parents (above the 95th percentile) have children who are closer to the mean:
+
+```{r}
+#| label: tall-parents
+tall <- parent_ht > quantile(parent_ht, 0.95)
+c(parent_mean = mean(parent_ht[tall]),
+  child_mean = mean(child_ht[tall]),
+  difference = mean(parent_ht[tall]) - mean(child_ht[tall]))
+```
+
+## Residuals vs. disturbances
+
+The true model is $y = X\beta + e$ where $e$ is unobservable. The residuals $\hat{e} = My$ relate to the disturbances through:
+
+$$\hat{e} = My = M(X\beta + e) = \underbrace{MX}_{= 0}\beta + Me = Me$$
+
+Let's simulate to see this. We know $\beta$ and $e$ because we generate the data:
+
+```{r}
+#| label: resid-vs-disturbance
+set.seed(307)
+n_sim <- 100
+K_sim <- 2
+X_sim <- cbind(1, rnorm(n_sim))
+beta_true <- c(2, 3)
+e_true <- rnorm(n_sim, sd = 2)
+y_sim <- X_sim %*% beta_true + e_true
+
+# Build M for this design
+P_sim <- X_sim %*% solve(crossprod(X_sim)) %*% t(X_sim)
+M_sim <- diag(n_sim) - P_sim
+
+# Residuals = M * disturbances
+e_hat <- as.vector(M_sim %*% y_sim)
+all.equal(e_hat, as.vector(M_sim %*% e_true))
+
+# Residuals have smaller variance — M zeroes out K dimensions
+c(var_disturbances = var(e_true), var_residuals = var(e_hat))
+```
+
+## Estimating $\sigma^2$: the trace trick
+
+The natural estimator $\hat\sigma^2 = \hat{e}'\hat{e}/n$ is biased downward because $\hat{e}'\hat{e} = e'Me \leq e'e$ ($M$ is positive semi-definite). The unbiased estimator divides by $n - K$.
+
+The proof is a chain of matrix operations. Every step translates to R:
+
+```{r}
+#| label: trace-trick
+# Step 1: e'Me is a scalar = its own trace
+scalar_form <- as.numeric(t(e_true) %*% M_sim %*% e_true)
+trace_form <- tr(M_sim %*% tcrossprod(e_true))  # tr(M * ee')
+
+c(scalar = scalar_form, trace = trace_form)
+
+# Step 2: E[ee'] = sigma^2 * I, so E[tr(Mee')] = sigma^2 * tr(M)
+# tr(M) = n - K, so E[e'hat * e'hat] = sigma^2 * (n - K)
+c(trace_M = tr(M_sim), n_minus_K = n_sim - K_sim)
+```
+
+::: {.callout-note}
+## The $n - K$ Divisor
+The unbiased variance estimator divides by $n - K$ (not $n$) because the residuals live in an $(n - K)$-dimensional subspace. The $K$ "lost" dimensions are consumed by estimating $\hat\beta$. This is the matrix version of Bessel's correction.
+:::
+
+This is why the unbiased estimator is $s_e^2 = \hat{e}'\hat{e}/(n-K)$:
+
+```{r}
+#| label: error-variance
+# Back to the Prestige data
+e_hat_prestige <- resid(mod)
+
+sigma2_biased <- as.numeric(crossprod(e_hat_prestige)) / n
+sigma2_unbiased <- as.numeric(crossprod(e_hat_prestige)) / (n - K)
+
+c(biased = sigma2_biased,
+  unbiased = sigma2_unbiased,
+  R_sigma2 = sigma(mod)^2)
+```
+
+The underestimation shows up in the eigenvalues of $M$: $n - K$ eigenvalues are 1, and $K$ are 0. The residuals live in an $(n-K)$-dimensional subspace:
+
+```{r}
+#| label: m-eigenvalues
+eig_M <- round(eigen(M)$values, 10)
+c(eigenvalues_equal_1 = sum(eig_M == 1),
+  eigenvalues_equal_0 = sum(eig_M == 0))
+```
+
+## Variance of $\hat\beta$: building $s_e^2(X'X)^{-1}$
+
+Under homoskedasticity, $\text{Var}(\hat\beta|X) = \sigma^2(X'X)^{-1}$. Each piece is a matrix operation:
+
+```{r}
+#| label: vcov-construction
+# Step 1: (X'X)^{-1}
+XtX_inv <- solve(XtX)
+XtX_inv
+
+# Step 2: multiply by s_e^2
+vcov_manual <- sigma(mod)^2 * XtX_inv
+
+# Step 3: compare to R
+all.equal(vcov_manual, vcov(mod), check.attributes = FALSE)
+```
+
+Standard errors are the square roots of the diagonal:
+
+```{r}
+#| label: standard-errors
+se_manual <- sqrt(diag(vcov_manual))
+se_R <- coef(summary(mod))[, "Std. Error"]
+
+cbind(manual = se_manual, R = se_R)
+```
+
+### Why $(X'X)^{-1}$ determines precision
+
+The eigenvalues of $(X'X)^{-1}$ are the reciprocals of those of $X'X$. Large eigenvalues of $X'X$ (strong signal) become small eigenvalues of $(X'X)^{-1}$ (precise estimates). Near-collinearity creates a tiny eigenvalue in $X'X$, which inflates variance:
+
+```{r}
+#| label: xtx-inv-eigenvalues
+eig_XtX <- eigen(XtX)$values
+eig_inv <- eigen(XtX_inv)$values
+
+cbind(XtX = eig_XtX, XtX_inv = eig_inv, product = eig_XtX * eig_inv)
+```
+
+The products are all 1: the eigenvalues invert exactly.
+
+## Application: the Prestige regression
+
+Let's interpret the full regression. Education and income both predict occupational prestige:
+
+```{r}
+#| label: prestige-application
+summary(mod)
+```
+
+The coefficient on education (`r round(coef(mod)[2], 1)`) says: holding income constant, one additional year of average education is associated with about `r round(coef(mod)[2], 1)` points more prestige. The coefficient on income (`r round(coef(mod)[3], 4)`) is small in magnitude because income is in dollars — a \$1,000 increase predicts about `r round(coef(mod)[3] * 1000, 1)` points.
+
+Let's see which occupations the model fits well and poorly, using the projection and annihilator:
+
+```{r}
+#| label: prestige-residuals
+Prestige$fitted <- as.vector(P %*% y)
+Prestige$resid <- as.vector(M %*% y)
+
+# Largest positive residuals: more prestige than education+income predict
+head(Prestige[order(-Prestige$resid), c("education", "income", "prestige", "fitted", "resid")], 5)
+
+# Largest negative residuals: less prestige than predicted
+head(Prestige[order(Prestige$resid), c("education", "income", "prestige", "fitted", "resid")], 5)
+```
+
+```{r}
+#| label: prestige-residual-plot
+ggplot(Prestige, aes(fitted, resid)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_text(data = Prestige[abs(Prestige$resid) > 15, ],
+            aes(label = rownames(Prestige)[abs(Prestige$resid) > 15]),
+            hjust = -0.1, size = 3) +
+  labs(x = "Fitted values (Py)", y = "Residuals (My)",
+       title = "Prestige: fitted vs. residuals") +
+  theme_minimal()
+```
+
+## ANOVA as inner products
+
+The decomposition $y = \hat{y} + \hat{e}$ is orthogonal. In matrix terms, $\hat{y}'\hat{e} = (Py)'(My) = y'PMy = 0$:
+
+```{r}
+#| label: orthogonality
+as.numeric(crossprod(fitted(mod), resid(mod)))
+```
+
+After centering, the inner products give sums of squares:
+
+```{r}
+#| label: anova-decomposition
+# SST = ||M1 * y||^2  (total variation around the mean)
+SST <- as.numeric(crossprod(M1 %*% y))
+
+# SSR = ||(P - P1) * y||^2  (variation explained by regressors beyond the mean)
+SSR <- as.numeric(crossprod(fitted(mod) - mean(y)))
+
+# SSE = ||M * y||^2  (unexplained variation)
+SSE <- as.numeric(crossprod(resid(mod)))
+
+c(SST = SST, SSR_plus_SSE = SSR + SSE)
+
+# Cross term is zero when X includes a constant
+as.numeric(crossprod(fitted(mod) - mean(y), resid(mod)))
+```
+
+## $R^2$
+
+$R^2 = \text{SSR}/\text{SST} = 1 - \text{SSE}/\text{SST}$:
+
+```{r}
+#| label: r-squared
+c(R2 = SSR / SST,
+  R2_alt = 1 - SSE / SST,
+  R_reports = summary(mod)$r.squared)
+```
+
+Adding regressors can only increase $R^2$, even if the variable is noise. The adjusted $R^2$ penalizes for $K$:
+
+```{r}
+#| label: adjusted-r2
+set.seed(42)
+Prestige$noise <- rnorm(n)
+mod_noise <- lm(prestige ~ education + income + noise, data = Prestige)
+
+c(R2_original = summary(mod)$r.squared,
+  R2_with_noise = summary(mod_noise)$r.squared,
+  adj_R2_original = summary(mod)$adj.r.squared,
+  adj_R2_with_noise = summary(mod_noise)$adj.r.squared)
+```
+
+Raw $R^2$ ticks up; adjusted $R^2$ drops — correctly penalizing the useless variable.
+
+$R^2$ measures descriptive fit, not causal validity. Typical values: cross-sectional micro data $\approx 0.2$--$0.4$, aggregate time series $\approx 0.7$--$0.9$.
+
+## Naming conventions: a warning
+
+Different textbooks use SSE and SSR with opposite meanings. In this course (following Hansen), SSR is "regression" (explained) and SSE is "error" (unexplained). Some texts reverse these. The math is always $\text{SST} = \text{explained} + \text{unexplained}$.
+
+## Summary
+
+The OLS estimator is a sequence of matrix operations:
+
+| Math | R | What it does |
+|------|---|-------------|
+| $X'X$ | `crossprod(X)` | Gram matrix of regressors |
+| $(X'X)^{-1}$ | `solve(crossprod(X))` | Inverse |
+| $\hat\beta = (X'X)^{-1}X'y$ | `solve(crossprod(X), crossprod(X, y))` | OLS coefficients |
+| $P = X(X'X)^{-1}X'$ | `X %*% solve(crossprod(X)) %*% t(X)` | Projection (hat matrix) |
+| $M = I - P$ | `diag(n) - P` | Annihilator |
+| $\text{tr}(M)$ | `sum(diag(M))` | Degrees of freedom ($n - K$) |
+| eigenvalues of $P$ | `eigen(P)$values` | All 0 or 1 |
+| $s_e^2(X'X)^{-1}$ | `sigma(mod)^2 * solve(crossprod(X))` | Variance-covariance of $\hat\beta$ |
+| $\text{SE}(\hat\beta_k)$ | `sqrt(diag(vcov(mod)))` | Standard errors |
+
+Key facts:
+
+- OLS is **projection**: $\hat{y} = Py$ is the closest point to $y$ in the column space of $X$, and $\hat{e} = My$ is the orthogonal residual.
+- $P$ and $M$ are **symmetric** and **idempotent**, with eigenvalues in $\{0, 1\}$.
+- $\text{tr}(P) = K$ and $\text{tr}(M) = n - K$ count dimensions.
+- The **trace trick** proves $s_e^2$ is unbiased: $\mathbb{E}[e'Me] = \sigma^2 \text{tr}(M) = \sigma^2(n-K)$.
+- Eigenvalues of $(X'X)^{-1}$ are reciprocals of those of $X'X$: near-collinearity inflates variance.
+- **Regression to the mean** is a consequence of $\hat\beta_1 < 1$ when $|\rho| < 1$.
+
+Next: [Sensitivity and Leverage](ch04-sensitivity.qmd) — the Frisch-Waugh-Lovell theorem, partial $R^2$, and influential observations.

@@ -1,0 +1,640 @@
+---
+title: "6. Small Sample Inference"
+subtitle: "Likelihood, the normal linear model, and exact tests"
+---
+
+The previous chapters derived the OLS estimator using only moment conditions — no distributional assumptions required. This chapter adds the assumption that errors are normal, which unlocks exact finite-sample distributions for $\hat{\beta}$, $s^2$, and the $t$- and $F$-statistics. We build everything computationally: write the likelihood, verify MLE = OLS, simulate the distributional results, and apply them to real data.
+
+**Questions this chapter answers:**
+
+1. How does the likelihood function connect to OLS, and why does MLE give the same $\hat\beta$?
+2. What exact sampling distributions do $\hat\beta$, $s^2$, and the $t$-statistic follow under normality?
+3. How do we conduct applied inference — $t$-tests, $F$-tests, and confidence intervals — in R?
+4. When do exact tests break down, and what alternatives exist?
+
+```{r}
+#| label: setup
+#| message: false
+library(ggplot2)
+library(sandwich)
+library(lmtest)
+library(estimatr)
+library(car)
+options(digits = 3)
+```
+
+## Likelihood
+
+A parametric model specifies a probability density $f(x \mid \theta)$ for the data. The **likelihood** reverses the role of data and parameters: given observed data, how probable is each parameter value?
+
+### Example: binomial likelihood
+
+Suppose we observe the number of terms served by 5 legislators: $x = \{1, 0, 1, 2, 0\}$, each out of 2 possible terms. The binomial probability is $P(x_i \mid p) = \binom{2}{x_i} p^{x_i}(1-p)^{2-x_i}$.
+
+```{r}
+#| label: binomial-likelihood
+#| fig-width: 7
+#| fig-height: 4
+x_obs <- c(1, 0, 1, 2, 0)
+n_trials <- 2
+
+# Likelihood as a function of p
+lik <- function(p) {
+  prod(dbinom(x_obs, size = n_trials, prob = p))
+}
+
+p_grid <- seq(0.01, 0.99, by = 0.01)
+lik_vals <- sapply(p_grid, lik)
+
+df_lik <- data.frame(p = p_grid, likelihood = lik_vals)
+ggplot(df_lik, aes(p, likelihood)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = p_grid[which.max(lik_vals)], linetype = "dashed", color = "red") +
+  labs(title = "Binomial likelihood for x = {1, 0, 1, 2, 0}",
+       subtitle = paste("MLE: p̂ =", p_grid[which.max(lik_vals)]),
+       x = "p", y = "L(p | x)")
+```
+
+The MLE is $\hat{p} = \sum x_i / (n \cdot 2) = 4/10 = 0.4$ — the sample proportion.
+
+### The log-likelihood
+
+We almost always work with the **log-likelihood** $\ell(\theta) = \sum \log f(x_i \mid \theta)$, which turns products into sums and is easier to optimize:
+
+```{r}
+#| label: loglik-binomial
+loglik <- function(p) sum(dbinom(x_obs, size = n_trials, prob = p, log = TRUE))
+
+# Optimize
+opt <- optimize(loglik, interval = c(0, 1), maximum = TRUE)
+opt$maximum
+```
+
+### Score, Hessian, and Fisher information
+
+The **score** is the derivative of the log-likelihood — it tells you the slope at any parameter value. At the MLE, the score equals zero:
+
+```{r}
+#| label: score-hessian
+# Score for binomial: d/dp [sum(x*log(p) + (2-x)*log(1-p))]
+# = sum(x)/p - sum(2-x)/(1-p)
+score <- function(p) sum(x_obs) / p - sum(n_trials - x_obs) / (1 - p)
+score(0.4)  # zero at the MLE
+
+# Hessian (negative second derivative): observed information
+hessian <- function(p) sum(x_obs) / p^2 + sum(n_trials - x_obs) / (1 - p)^2
+observed_info <- hessian(0.4)
+
+# Cramér-Rao bound: variance >= 1 / information
+c(observed_information = observed_info,
+  CR_bound_variance    = 1 / observed_info,
+  CR_bound_se          = 1 / sqrt(observed_info))
+```
+
+The Fisher information measures how sharply the likelihood peaks — more information means more precise estimation.
+
+## The normal linear model
+
+The **classic normal regression model** adds a distributional assumption to OLS:
+
+$$y \mid X \sim N(X\beta, \, \sigma^2 I)$$
+
+This gives us the likelihood:
+
+$$\mathcal{L}(\beta, \sigma^2) = (2\pi\sigma^2)^{-n/2} \exp\!\left(-\frac{1}{2\sigma^2} \sum_{i=1}^n (y_i - x_i'\beta)^2\right)$$ {#eq-normal-loglik}
+
+### Writing the log-likelihood in R
+
+```{r}
+#| label: normal-loglik
+data(swiss)
+y <- swiss$Fertility
+X <- model.matrix(~ Education + Agriculture + Catholic + Infant.Mortality,
+                  data = swiss)
+n <- nrow(X)
+K <- ncol(X)
+
+# Log-likelihood as a function of beta and sigma^2
+normal_loglik <- function(beta, sigma2) {
+  resid <- y - X %*% beta
+  -n/2 * log(2 * pi * sigma2) - sum(resid^2) / (2 * sigma2)
+}
+```
+
+### MLE = OLS
+
+Maximizing the normal log-likelihood with respect to $\beta$ gives $\hat{\beta}_{MLE} = (X'X)^{-1}X'y$ — exactly OLS. For $\sigma^2$, the MLE is $\hat{\sigma}^2_{MLE} = \frac{1}{n}\sum \hat{e}_i^2$ (biased, unlike $s^2 = \frac{1}{n-K}\sum \hat{e}_i^2$).
+
+::: {#thm-mle-ols}
+## MLE Equals OLS
+Under the normal linear model $y|X \sim N(X\beta, \sigma^2 I)$, the MLE of $\beta$ is identical to the OLS estimator: $\hat\beta_{MLE} = (X'X)^{-1}X'y$. The MLE of $\sigma^2$ is $\hat\sigma^2_{MLE} = \frac{1}{n}\sum\hat{e}_i^2$ (biased downward).
+:::
+
+```{r}
+#| label: mle-equals-ols
+mod <- lm(Fertility ~ Education + Agriculture + Catholic + Infant.Mortality,
+          data = swiss)
+
+# OLS coefficients
+beta_ols <- coef(mod)
+
+# MLE sigma^2 (biased) vs s^2 (unbiased)
+sigma2_mle <- sum(resid(mod)^2) / n
+sigma2_s2 <- sum(resid(mod)^2) / (n - K)
+
+c(sigma2_MLE = sigma2_mle, s2 = sigma2_s2, sigma_R = sigma(mod))
+```
+
+R's `sigma()` returns $\sqrt{s^2}$, the bias-corrected RMSE.
+
+### `logLik()` and model comparison
+
+R computes the maximized log-likelihood directly:
+
+```{r}
+#| label: loglik-r
+# R's logLik uses s^2 (REML-style), but logLik.lm uses MLE sigma^2
+logLik(mod)
+
+# Verify by hand
+normal_loglik(beta_ols, sigma2_mle)
+```
+
+The log-likelihood is useful for comparing nested models via **AIC** and **BIC**:
+
+```{r}
+#| label: aic-bic
+mod1 <- lm(Fertility ~ Education, data = swiss)
+mod2 <- lm(Fertility ~ Education + Agriculture, data = swiss)
+mod3 <- lm(Fertility ~ Education + Agriculture + Catholic + Infant.Mortality,
+           data = swiss)
+
+data.frame(
+  Model = c("Education only", "+ Agriculture", "+ Catholic + Infant.Mortality"),
+  logLik = sapply(list(mod1, mod2, mod3), logLik),
+  AIC    = sapply(list(mod1, mod2, mod3), AIC),
+  BIC    = sapply(list(mod1, mod2, mod3), BIC),
+  K      = sapply(list(mod1, mod2, mod3), function(m) length(coef(m)))
+)
+```
+
+AIC = $-2\ell + 2K$ penalizes complexity; BIC = $-2\ell + K \log n$ penalizes it more heavily. Lower is better for both.
+
+## Scores as moment conditions
+
+The score of the normal regression model for $\beta$ is:
+
+$$\frac{\partial}{\partial \beta} \ell(\beta, \sigma^2) = \frac{1}{\sigma^2} X'(y - X\beta)$$
+
+Setting this to zero gives $X'(y - X\hat{\beta}) = 0$ — the OLS normal equations. This means:
+
+- **MLE** solves: score = 0
+- **OLS** solves: $X'e = 0$ (normal equations)
+- **Method of moments** solves: $\frac{1}{n}\sum x_i(y_i - x_i'\hat{\beta}) = 0$
+
+All three are the same equation.
+
+::: {#def-score-information}
+## Score and Fisher Information
+The **score** is $S(\theta) = \partial \ell / \partial \theta$, the gradient of the log-likelihood. Setting $S(\hat\theta) = 0$ defines the MLE. The **Fisher information** $\mathcal{I}(\theta) = -\mathbb{E}[\partial^2 \ell / \partial\theta\partial\theta']$ measures how sharply the likelihood peaks. Under correct specification, $\text{Var}(\hat\theta) \approx \mathcal{I}(\theta)^{-1}/n$.
+:::
+
+The likelihood-based view adds two things: (1) the **information matrix** tells us the variance of $\hat{\beta}$, and (2) under correct specification, the information equals the Hessian, giving us the classical formula $\sigma^2(X'X)^{-1}$. Under misspecification, $\mathcal{I} \neq \mathcal{H}$, and we need the sandwich $\mathcal{H}^{-1}\mathcal{I}\mathcal{H}^{-1}$ — exactly the robust variance from Chapter 5.
+
+```{r}
+#| label: score-moment
+# Score at the MLE = 0 = normal equations
+score_at_mle <- t(X) %*% resid(mod)
+score_at_mle
+```
+
+## Exact distributions under normality {#sec-exact-distributions}
+
+The normality assumption gives us **exact** finite-sample distributions — no asymptotics needed.
+
+::: {#thm-exact-distributions}
+## Exact Sampling Distributions
+Under $e|X \sim N(0, \sigma^2 I)$: (i) $\hat\beta|X \sim N(\beta, \sigma^2(X'X)^{-1})$; (ii) $(n-K)s^2/\sigma^2 \sim \chi^2_{n-K}$; (iii) $\hat\beta$ and $s^2$ are independent; (iv) $t_j = (\hat\beta_j - \beta_j)/\text{SE}(\hat\beta_j) \sim t_{n-K}$.
+:::
+
+::: {.callout-note}
+## Exact Means No Asymptotics Required
+These distributions hold for any sample size $n$ — no "large $n$" approximation needed. The $t$-distribution automatically accounts for the extra uncertainty from estimating $\sigma^2$, with heavier tails when $n - K$ is small.
+:::
+
+### $\hat{\beta}$ is normal
+
+Since $\hat{\beta} = \beta + (X'X)^{-1}X'e$ is a linear function of the normal vector $e$:
+
+$$\hat{\beta} \mid X \sim N(\beta, \, \sigma^2 (X'X)^{-1})$$
+
+```{r}
+#| label: beta-normal-sim
+#| fig-width: 7
+#| fig-height: 4
+set.seed(1)
+B <- 10000
+beta_true <- coef(mod)
+sigma_true <- sigma(mod)
+
+# Simulate under the normal model using the actual Swiss X matrix
+b_sim <- matrix(NA, B, K)
+for (b in 1:B) {
+  y_sim <- X %*% beta_true + rnorm(n, 0, sigma_true)
+  b_sim[b, ] <- as.numeric(solve(crossprod(X)) %*% crossprod(X, y_sim))
+}
+
+# Focus on Education coefficient (column 2)
+j <- 2
+se_theory <- sigma_true * sqrt(solve(crossprod(X))[j, j])
+
+df_beta <- data.frame(b_hat = b_sim[, j])
+ggplot(df_beta, aes(b_hat)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 50, alpha = 0.5) +
+  stat_function(fun = dnorm, args = list(mean = beta_true[j], sd = se_theory),
+                color = "red", linewidth = 1) +
+  labs(title = "Sampling distribution of β̂_Education",
+       subtitle = paste("Simulated vs. N(β, σ²[(X'X)⁻¹]_jj), SE =", round(se_theory, 3)),
+       x = expression(hat(beta)[Education]))
+```
+
+The histogram of simulated $\hat{\beta}$ matches the theoretical normal density perfectly.
+
+### $(n-K)s^2/\sigma^2 \sim \chi^2_{n-K}$
+
+The residual sum of squares, scaled by $\sigma^2$, follows a chi-squared distribution:
+
+```{r}
+#| label: chi-sq-sim
+#| fig-width: 7
+#| fig-height: 4
+scaled_s2 <- numeric(B)
+for (b in 1:B) {
+  y_sim <- X %*% beta_true + rnorm(n, 0, sigma_true)
+  e_hat <- resid(lm(y_sim ~ X - 1))
+  scaled_s2[b] <- sum(e_hat^2) / sigma_true^2
+}
+
+# Should match chi-squared(n-K)
+df_chi <- n - K
+c(simulated_mean = mean(scaled_s2), theory_mean = df_chi,
+  simulated_var  = var(scaled_s2),  theory_var  = 2 * df_chi)
+```
+
+```{r}
+#| label: chi-sq-plot
+#| fig-width: 7
+#| fig-height: 4
+df_s2 <- data.frame(scaled_s2 = scaled_s2)
+ggplot(df_s2, aes(scaled_s2)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 50, alpha = 0.5) +
+  stat_function(fun = dchisq, args = list(df = df_chi),
+                color = "red", linewidth = 1) +
+  labs(title = expression((n-K)*s^2/sigma^2 ~ "follows" ~ chi[n-K]^2),
+       subtitle = paste("df =", df_chi),
+       x = expression((n-K)*s^2/sigma^2))
+```
+
+### Independence of $\hat{\beta}$ and $s^2$
+
+A crucial fact: $\hat{\beta}$ and $\hat{e}$ are **independent** under normality (because their joint covariance is zero and they are jointly normal). This is what allows us to form the $t$-statistic.
+
+```{r}
+#| label: independence
+# Correlation between beta_hat and s^2 across simulations
+s2_sim <- numeric(B)
+for (b in 1:B) {
+  y_sim <- X %*% beta_true + rnorm(n, 0, sigma_true)
+  fit <- lm(y_sim ~ X - 1)
+  s2_sim[b] <- sum(resid(fit)^2) / (n - K)
+}
+
+cor(b_sim[, 2], s2_sim)
+```
+
+### The $t$-statistic
+
+Since $\hat{\beta}_j$ is normal and $s^2$ is independent chi-squared, their ratio has an **exact** $t$-distribution:
+
+$$T = \frac{\hat{\beta}_j - \beta_j}{\text{SE}(\hat{\beta}_j)} = \frac{\hat{\beta}_j - \beta_j}{\sqrt{s^2 [(X'X)^{-1}]_{jj}}} \sim t_{n-K}$$ {#eq-t-stat}
+
+```{r}
+#| label: t-distribution-sim
+#| fig-width: 7
+#| fig-height: 4
+#| fig-cap: "Simulated t-statistics follow the t distribution with n-K degrees of freedom"
+# Compute t-statistics across simulations
+t_sim <- numeric(B)
+for (b in 1:B) {
+  y_sim <- X %*% beta_true + rnorm(n, 0, sigma_true)
+  fit <- lm(y_sim ~ X - 1)
+  # t-stat for Education coefficient
+  se_b <- sqrt(vcov(fit)[j, j])
+  t_sim[b] <- (coef(fit)[j] - beta_true[j]) / se_b
+}
+
+df_t <- data.frame(t_stat = t_sim)
+ggplot(df_t, aes(t_stat)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 60, alpha = 0.5) +
+  stat_function(fun = dt, args = list(df = n - K),
+                color = "red", linewidth = 1) +
+  stat_function(fun = dnorm, color = "blue", linewidth = 0.8, linetype = "dashed") +
+  labs(title = expression("Simulated t-statistics follow " * t[n-K]),
+       subtitle = paste("Red = t(", n-K, "), blue dashed = N(0,1). Heavier tails with small df."),
+       x = "t-statistic")
+```
+
+With $n - K = `r n - K`$ degrees of freedom, the $t$-distribution is close to the normal but has heavier tails — the extra uncertainty from estimating $\sigma^2$.
+
+## Applied inference with the Swiss data
+
+### The regression table
+
+```{r}
+#| label: swiss-summary
+summary(mod)
+```
+
+Each row reports $\hat{\beta}_j$, $\text{SE}(\hat{\beta}_j)$, the $t$-statistic $\hat{\beta}_j / \text{SE}(\hat{\beta}_j)$ (testing $H_0: \beta_j = 0$), and the two-sided $p$-value.
+
+### Reading the output
+
+The Education coefficient is $-0.98$ with SE $= 0.15$:
+
+```{r}
+#| label: manual-t-test
+beta_hat <- coef(mod)["Education"]
+se_hat <- sqrt(vcov(mod)["Education", "Education"])
+t_stat <- beta_hat / se_hat
+p_val <- 2 * (1 - pt(abs(t_stat), df = n - K))
+
+c(estimate = beta_hat, se = se_hat, t = t_stat, p = p_val)
+```
+
+For each additional percentage point of post-primary education, fertility is about 1 point lower, and this is highly significant.
+
+### Confidence intervals
+
+A $95\%$ confidence interval is $\hat{\beta}_j \pm t_{n-K, 0.975} \cdot \text{SE}(\hat{\beta}_j)$:
+
+```{r}
+#| label: confint
+# Critical value from t-distribution
+c_val <- qt(0.975, df = n - K)
+c(critical_value = c_val, normal_approx = qnorm(0.975))
+
+# confint() does this automatically
+confint(mod)
+```
+
+```{r}
+#| label: confint-manual
+# By hand for Education
+ci_lo <- beta_hat - c_val * se_hat
+ci_hi <- beta_hat + c_val * se_hat
+c(lower = ci_lo, upper = ci_hi)
+```
+
+The correct interpretation: if we repeated this study many times, 95% of the computed intervals would contain the true $\beta$.
+
+### Robust confidence intervals
+
+Under heteroskedasticity, the $t$-distribution is only approximate. Use `lm_robust()` or `coeftest()` with sandwich SEs:
+
+```{r}
+#| label: robust-confint
+# Robust SEs
+mod_r <- lm_robust(Fertility ~ Education + Agriculture + Catholic + Infant.Mortality,
+                    data = swiss, se_type = "HC2")
+
+# Compare classical vs. robust CIs
+ci_classical <- confint(mod)
+ci_robust <- confint(mod_r)
+
+data.frame(
+  Variable = rownames(ci_classical),
+  Classical_lo = ci_classical[, 1],
+  Classical_hi = ci_classical[, 2],
+  Robust_lo = ci_robust[, 1],
+  Robust_hi = ci_robust[, 2]
+)
+```
+
+### Visualizing confidence intervals
+
+```{r}
+#| label: coefplot
+#| fig-width: 7
+#| fig-height: 4
+ci_df <- data.frame(
+  term = rep(names(coef(mod))[-1], 2),
+  estimate = rep(coef(mod)[-1], 2),
+  lo = c(ci_classical[-1, 1], ci_robust[-1, 1]),
+  hi = c(ci_classical[-1, 2], ci_robust[-1, 2]),
+  type = rep(c("Classical", "HC2 Robust"), each = K - 1)
+)
+
+ggplot(ci_df, aes(x = estimate, y = term, color = type)) +
+  geom_point(position = position_dodge(0.3)) +
+  geom_errorbarh(aes(xmin = lo, xmax = hi),
+                 height = 0.2, position = position_dodge(0.3)) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  labs(title = "Swiss fertility: classical vs. robust confidence intervals",
+       x = "Coefficient estimate", y = NULL, color = NULL)
+```
+
+## The $F$-test
+
+The $t$-test handles one coefficient at a time. The $F$-test tests **joint** restrictions — for instance, "do Agriculture and Catholic together predict fertility, controlling for the other variables?"
+
+### $F$-test as a likelihood ratio
+
+The $F$-statistic compares the restricted (null) and unrestricted models:
+
+$$F = \frac{(\tilde{\sigma}^2 - \hat{\sigma}^2) / q}{\hat{\sigma}^2 / (n - K)} \sim F_{q, \, n-K}$$ {#eq-f-stat}
+
+where $\tilde{\sigma}^2$ is the residual variance from the restricted model and $q$ is the number of restrictions.
+
+```{r}
+#| label: f-test-by-hand
+# Unrestricted model
+mod_full <- lm(Fertility ~ Education + Agriculture + Catholic + Infant.Mortality,
+               data = swiss)
+
+# Restricted model: drop Agriculture and Catholic
+mod_restricted <- lm(Fertility ~ Education + Infant.Mortality, data = swiss)
+
+# F-statistic by hand
+RSS_full <- sum(resid(mod_full)^2)
+RSS_restr <- sum(resid(mod_restricted)^2)
+q <- 2  # number of restrictions
+df_full <- n - K
+
+F_stat <- ((RSS_restr - RSS_full) / q) / (RSS_full / df_full)
+p_F <- 1 - pf(F_stat, q, df_full)
+
+c(F_statistic = F_stat, df1 = q, df2 = df_full, p_value = p_F)
+```
+
+### Using `anova()` and `linearHypothesis()`
+
+```{r}
+#| label: anova-f-test
+# anova() compares nested models
+anova(mod_restricted, mod_full)
+```
+
+```{r}
+#| label: linearHypothesis
+# linearHypothesis() tests restrictions directly
+linearHypothesis(mod_full, c("Agriculture = 0", "Catholic = 0"))
+```
+
+### The overall $F$-test
+
+The $F$-statistic at the bottom of `summary(lm)` tests whether *all* slope coefficients are jointly zero:
+
+```{r}
+#| label: overall-f
+# Overall F-test: H0: all slopes = 0
+mod_null <- lm(Fertility ~ 1, data = swiss)
+anova(mod_null, mod_full)
+```
+
+```{r}
+#| label: f-and-t
+# When q = 1, F = t^2
+t_education <- summary(mod_full)$coefficients["Education", "t value"]
+F_education <- linearHypothesis(mod_full, "Education = 0")$F[2]
+
+c(t_squared = t_education^2, F_stat = F_education)
+```
+
+### Robust $F$-tests
+
+Under heteroskedasticity, use `linearHypothesis()` with a robust covariance matrix:
+
+```{r}
+#| label: robust-f
+# Classical F-test
+linearHypothesis(mod_full, c("Agriculture = 0", "Catholic = 0"))
+
+# Robust F-test (HC2)
+linearHypothesis(mod_full, c("Agriculture = 0", "Catholic = 0"),
+                 vcov = vcovHC(mod_full, type = "HC2"))
+```
+
+## Prediction intervals
+
+A **confidence interval** for $E[y \mid x_0]$ captures uncertainty about the regression line. A **prediction interval** for a new observation $y_0$ also includes the error variance $\sigma^2$:
+
+$$\hat{y}_0 \pm t_{n-K, 1-\alpha/2} \cdot \sqrt{s^2 (1 + x_0'(X'X)^{-1}x_0)}$$
+
+```{r}
+#| label: prediction-intervals
+# Predict fertility for a district with median characteristics
+new_data <- data.frame(
+  Education  = median(swiss$Education),
+  Agriculture = median(swiss$Agriculture),
+  Catholic   = median(swiss$Catholic),
+  Infant.Mortality = median(swiss$Infant.Mortality)
+)
+
+# Confidence interval for E[y|x]
+predict(mod_full, newdata = new_data, interval = "confidence")
+
+# Prediction interval for a new y
+predict(mod_full, newdata = new_data, interval = "prediction")
+```
+
+The prediction interval is much wider — it accounts for the irreducible noise $\sigma^2$.
+
+```{r}
+#| label: prediction-plot
+#| fig-width: 7
+#| fig-height: 4
+# Simple model for visualization
+mod_simple <- lm(Fertility ~ Education, data = swiss)
+pred_grid <- data.frame(Education = seq(1, 55, length.out = 100))
+pred_ci <- predict(mod_simple, newdata = pred_grid, interval = "confidence")
+pred_pi <- predict(mod_simple, newdata = pred_grid, interval = "prediction")
+
+df_pred <- data.frame(
+  Education = pred_grid$Education,
+  fit = pred_ci[, 1],
+  ci_lo = pred_ci[, 2], ci_hi = pred_ci[, 3],
+  pi_lo = pred_pi[, 2], pi_hi = pred_pi[, 3]
+)
+
+ggplot() +
+  geom_ribbon(data = df_pred, aes(Education, ymin = pi_lo, ymax = pi_hi),
+              alpha = 0.15, fill = "steelblue") +
+  geom_ribbon(data = df_pred, aes(Education, ymin = ci_lo, ymax = ci_hi),
+              alpha = 0.3, fill = "steelblue") +
+  geom_line(data = df_pred, aes(Education, fit), color = "steelblue", linewidth = 1) +
+  geom_point(data = swiss, aes(Education, Fertility), alpha = 0.6) +
+  labs(title = "Swiss fertility: confidence and prediction intervals",
+       subtitle = "Dark band = CI for E[y|x], light band = PI for new observation",
+       y = "Fertility")
+```
+
+## When do exact tests break down?
+
+The $t$- and $F$-distributions are **exact** only under:
+
+1. Normality of errors
+2. Homoskedasticity
+3. Known, correct model specification
+
+What happens when normality fails? Let's simulate with heavy-tailed errors:
+
+```{r}
+#| label: non-normal-coverage
+set.seed(42)
+B <- 5000
+cover_normal <- cover_t5 <- logical(B)
+beta_ed <- coef(mod)["Education"]
+
+for (b in 1:B) {
+  # Normal errors
+  e_norm <- rnorm(n, 0, sigma(mod))
+  y_norm <- X %*% coef(mod) + e_norm
+  fit_norm <- lm(y_norm ~ X - 1)
+  ci_norm <- confint(fit_norm)[j, ]
+  cover_normal[b] <- ci_norm[1] < beta_ed & beta_ed < ci_norm[2]
+
+  # t(5) errors (heavy tails, same variance)
+  e_t5 <- rt(n, df = 5) * sigma(mod) / sqrt(5/3)
+  y_t5 <- X %*% coef(mod) + e_t5
+  fit_t5 <- lm(y_t5 ~ X - 1)
+  ci_t5 <- confint(fit_t5)[j, ]
+  cover_t5[b] <- ci_t5[1] < beta_ed & beta_ed < ci_t5[2]
+}
+
+c(normal_errors = mean(cover_normal),
+  t5_errors     = mean(cover_t5))
+```
+
+With normal errors, coverage is close to 95%. With $t_5$ errors (heavier tails), coverage degrades — the exact $t$-distribution no longer applies. In practice, this is where robust SEs and asymptotic approximations (Chapters 9–11) take over.
+
+::: {.callout-warning}
+## Heavy Tails Break Exact Tests
+The $t$- and $F$-distributions are exact only under normality. With heavy-tailed errors (e.g., $t_5$), coverage of confidence intervals degrades noticeably. In practice, use robust SEs and asymptotic theory (Chapters 8-9) when normality is suspect. The [CLT](ch08-asymptotics.qmd#thm-clt) will justify this asymptotically in Chapter 8.
+:::
+
+## Summary
+
+| Concept | Formula | R code |
+|---------|---------|--------|
+| Log-likelihood | $\ell = -\frac{n}{2}\log(2\pi\sigma^2) - \frac{1}{2\sigma^2}\sum e_i^2$ | `logLik(mod)` |
+| MLE of $\beta$ | $(X'X)^{-1}X'y$ (= OLS) | `coef(lm(...))` |
+| MLE of $\sigma^2$ | $\frac{1}{n}\sum \hat{e}_i^2$ (biased) | `sum(resid(mod)^2) / n` |
+| AIC / BIC | $-2\ell + 2K$ / $-2\ell + K\log n$ | `AIC(mod)`, `BIC(mod)` |
+| $t$-statistic | $\hat{\beta}_j / \text{SE}(\hat{\beta}_j) \sim t_{n-K}$ | `summary(mod)$coefficients` |
+| Confidence interval | $\hat{\beta}_j \pm t_{n-K,\,0.975} \cdot \text{SE}$ | `confint(mod)` |
+| $F$-test | $\frac{(RSS_R - RSS_U)/q}{RSS_U/(n-K)} \sim F_{q,n-K}$ | `anova(mod_r, mod_u)` |
+| Joint hypothesis | $R\beta = r$ | `linearHypothesis(mod, ...)` |
+| Robust $F$-test | — | `linearHypothesis(mod, ..., vcov = vcovHC)` |
+| Prediction interval | $\hat{y}_0 \pm t \cdot s\sqrt{1 + x_0'(X'X)^{-1}x_0}$ | `predict(mod, interval = "prediction")` |
+
+**Key takeaway.** The normal linear model gives us exact finite-sample distributions: $\hat{\beta}$ is normal, $s^2$ is chi-squared, their ratio gives $t$, and nested model comparisons give $F$. These are the foundation of every regression table. But they rely on normality and homoskedasticity — when those fail, use robust SEs and asymptotic theory instead.

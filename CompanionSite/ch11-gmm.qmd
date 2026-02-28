@@ -1,0 +1,761 @@
+---
+title: "11. GMM"
+subtitle: "Generalized method of moments"
+---
+
+This chapter demonstrates the Generalized Method of Moments (GMM) framework computationally. We show that OLS, IV, and 2SLS are all special cases, then build up to efficient GMM estimation, the J-test, and a missing data application. The key reference is Hansen, Chapter 13.
+
+**Questions this chapter answers:**
+
+1. How does GMM unify OLS, IV, and 2SLS under a single framework of moment conditions?
+2. What is the optimal weighting matrix, and how does efficient GMM achieve the semiparametric variance bound?
+3. How does the J-test detect misspecification in overidentified models?
+4. How can nonlinear GMM handle problems like missing data?
+
+```{r}
+#| label: setup
+#| message: false
+library(ggplot2)
+library(gmm)
+library(sandwich)
+library(lmtest)
+library(estimatr)
+library(MASS)
+```
+
+## Everything is a moment condition
+
+Every estimator we have studied solves a set of moment conditions $\mathbb{E}[g_i(\beta)] = 0$. The sample analog sets $\bar{g}_n(\hat\beta) = \frac{1}{n}\sum g_i(\hat\beta) = 0$.
+
+| Estimator | Moment condition | Solution |
+|-----------|-----------------|----------|
+| OLS | $\mathbb{E}[X_i(Y_i - X_i'\beta)] = 0$ | the [OLS estimator](ch03-ols.qmd#eq-ols) |
+| IV | $\mathbb{E}[Z_i(Y_i - X_i'\beta)] = 0$ | $(Z'X)^{-1}Z'Y$ |
+| 2SLS | Same as IV, with $W = (Z'Z)^{-1}$ | $(X'P_Z X)^{-1}X'P_Z Y$ |
+
+::: {#def-gmm}
+## GMM Estimator (Hansen 13.1)
+The GMM estimator minimizes $J(\beta) = n\,\bar{g}_n(\beta)' W\, \bar{g}_n(\beta)$, where $\bar{g}_n(\beta) = \frac{1}{n}\sum g_i(\beta)$ and $W$ is a positive definite weight matrix. Different choices of $W$ yield different estimators; the optimal $W = \Omega^{-1}$ minimizes asymptotic variance.
+:::
+
+::: {.callout-note}
+## GMM Unifies Everything
+Every estimator in this course — OLS, GLS, IV, 2SLS, probit MLE — is a GMM estimator with specific moment conditions and weight matrices. The GMM framework provides a single set of tools for estimation, inference, and specification testing.
+:::
+
+Let's verify this computationally. We simulate an IV model with one endogenous regressor and one instrument:
+
+```{r}
+#| label: moment-conditions-setup
+set.seed(42)
+n <- 500
+
+# DGP: Y = 1 + 0.5*X + e, where X is endogenous
+u <- rnorm(n)
+Z <- rnorm(n)
+X <- 0.8 * Z + u          # X correlated with u
+e <- 0.6 * u + rnorm(n)   # e correlated with u through shared u
+Y <- 1 + 0.5 * X + e
+```
+
+OLS is biased because $\text{Cov}(X, e) \neq 0$:
+
+```{r}
+#| label: ols-moment
+# OLS: E[X(Y - Xb)] = 0
+beta_ols <- solve(t(cbind(1, X)) %*% cbind(1, X)) %*% t(cbind(1, X)) %*% Y
+cat("OLS slope:", round(beta_ols[2], 4), " (biased, true = 0.5)\n")
+```
+
+IV uses the instrument $Z$ to form moment conditions $\mathbb{E}[Z(Y - X\beta)] = 0$:
+
+```{r}
+#| label: iv-moment
+# IV: E[Z(Y - Xb)] = 0, just-identified (ell = k)
+Xmat <- cbind(1, X)
+Zmat <- cbind(1, Z)
+beta_iv <- solve(t(Zmat) %*% Xmat) %*% t(Zmat) %*% Y
+cat("IV slope:", round(beta_iv[2], 4), " (consistent)\n")
+```
+
+When the number of moment conditions $\ell$ equals the number of parameters $k$, we can solve exactly. But what happens when $\ell > k$?
+
+## The overidentification problem
+
+With more instruments than parameters, no $\beta$ can simultaneously zero out all moment conditions. We need a principled way to get as close as possible.
+
+```{r}
+#| label: overid-setup
+# Now add a second instrument
+Z2 <- 0.5 * X + rnorm(n, sd = 2)  # second instrument (weaker)
+Zmat2 <- cbind(1, Z, Z2)           # 3 instruments, 2 parameters
+
+# Can't solve Z'(Y - Xb) = 0 exactly (3 equations, 2 unknowns)
+# Check: the IV formula with the full Z matrix is not square
+cat("Z'X dimensions:", nrow(t(Zmat2) %*% Xmat), "x", ncol(t(Zmat2) %*% Xmat), "\n")
+cat("(not square -- can't invert directly)\n")
+```
+
+### The GMM criterion function
+
+For a positive definite weight matrix $W$, the GMM criterion is:
+
+$$J(\beta) = n\,\bar{g}_n(\beta)' W\, \bar{g}_n(\beta)$$ {#eq-gmm-criterion}
+
+The GMM estimator minimizes this weighted quadratic form.
+
+```{r}
+#| label: gmm-criterion
+# GMM criterion function for the linear IV model
+gmm_criterion <- function(beta, Y, X, Z, W) {
+  g_bar <- colMeans(Z * as.numeric(Y - X %*% beta))  # sample moments
+  n <- nrow(X)
+  n * t(g_bar) %*% W %*% g_bar
+}
+
+# Closed-form GMM estimator: (X'Z W Z'X)^{-1} (X'Z W Z'Y)
+gmm_linear <- function(Y, X, Z, W) {
+  XZ <- t(X) %*% Z
+  solve(XZ %*% W %*% t(XZ)) %*% XZ %*% W %*% t(Z) %*% Y
+}
+```
+
+Different weight matrices yield different estimators:
+
+```{r}
+#| label: weight-comparison
+# Identity matrix
+W_ident <- diag(3)
+beta_gmm_ident <- gmm_linear(Y, Xmat, Zmat2, W_ident)
+
+# (Z'Z)^{-1} -- this gives 2SLS
+W_2sls <- solve(t(Zmat2) %*% Zmat2)
+beta_gmm_2sls <- gmm_linear(Y, Xmat, Zmat2, W_2sls)
+
+# Verify 2SLS matches
+PZ <- Zmat2 %*% solve(t(Zmat2) %*% Zmat2) %*% t(Zmat2)
+beta_2sls <- solve(t(Xmat) %*% PZ %*% Xmat) %*% t(Xmat) %*% PZ %*% Y
+
+cat("GMM (W = I):     slope =", round(beta_gmm_ident[2], 4), "\n")
+cat("GMM (W = 2SLS):  slope =", round(beta_gmm_2sls[2], 4), "\n")
+cat("2SLS directly:   slope =", round(beta_2sls[2], 4), "\n")
+```
+
+::: {#thm-gmm-2sls}
+## 2SLS as GMM (Hansen 13.2)
+When $W = (Z'Z/n)^{-1}$, the GMM estimator for the linear IV model reduces to 2SLS: $\hat\beta_{2SLS} = (X'P_Z X)^{-1}X'P_Z Y$. Under homoskedasticity, 2SLS is efficient among all GMM estimators.
+:::
+
+The choice of $W$ matters when the model is overidentified---but the optimal choice is $W = \Omega^{-1}$, where $\Omega = \mathbb{E}[Z_i Z_i' e_i^2]$ is the variance of the moment conditions.
+
+## Efficient GMM by hand {#sec-efficient-gmm}
+
+The optimal weight matrix $W = \Omega^{-1}$ minimizes the asymptotic variance of the GMM estimator. The two-step procedure is:
+
+::: {#thm-efficient-gmm}
+## Efficient GMM (Hansen 13.4-13.5)
+The efficient GMM estimator uses $W = \hat\Omega^{-1}$, where $\hat\Omega = \frac{1}{n}\sum g_i(\tilde\beta)g_i(\tilde\beta)'$ and $\tilde\beta$ is a preliminary consistent estimator. This achieves the semiparametric efficiency bound among all estimators using the same moment conditions.
+:::
+
+1. Estimate $\beta$ by 2SLS (using $W = (Z'Z)^{-1}$). Compute residuals $\tilde{e}_i$.
+2. Estimate $\hat\Omega = \frac{1}{n}\sum Z_i Z_i' \tilde{e}_i^2$, set $\hat{W} = \hat\Omega^{-1}$, and re-estimate.
+
+```{r}
+#| label: two-step-by-hand
+# Step 1: 2SLS
+beta_step1 <- beta_2sls
+e_step1 <- Y - Xmat %*% beta_step1
+
+# Step 2: Estimate optimal weight matrix
+Omega_hat <- (t(Zmat2) %*% diag(as.numeric(e_step1^2)) %*% Zmat2) / n
+W_opt <- solve(Omega_hat)
+
+# Re-estimate with optimal W
+beta_step2 <- gmm_linear(Y, Xmat, Zmat2, W_opt)
+
+cat("Step 1 (2SLS) slope:     ", round(beta_step1[2], 4), "\n")
+cat("Step 2 (efficient) slope:", round(beta_step2[2], 4), "\n")
+```
+
+We can iterate---updating $\hat\Omega$ and re-estimating---until convergence:
+
+```{r}
+#| label: iterated-gmm
+# Iterated GMM
+beta_iter <- beta_2sls
+for (s in 1:20) {
+  e_s <- Y - Xmat %*% beta_iter
+  Omega_s <- (t(Zmat2) %*% diag(as.numeric(e_s^2)) %*% Zmat2) / n
+  W_s <- solve(Omega_s)
+  beta_new <- gmm_linear(Y, Xmat, Zmat2, W_s)
+  if (max(abs(beta_new - beta_iter)) < 1e-8) {
+    cat("Converged in", s, "iterations\n")
+    break
+  }
+  beta_iter <- beta_new
+}
+cat("Iterated GMM slope:", round(beta_iter[2], 4), "\n")
+```
+
+## Using the gmm package
+
+The `gmm` package handles moment function specification, weighting, and inference. For a linear IV model, we can pass the formula directly:
+
+```{r}
+#| label: gmm-package-linear
+# Linear IV via gmm()
+# Formula: Y ~ X | Z  (endogenous ~ instruments)
+dat <- data.frame(Y = Y, X = X, Z1 = Z, Z2 = Z2)
+
+# Two-step GMM
+fit_2step <- gmm(Y ~ X, ~ Z1 + Z2, data = dat, type = "twoStep")
+summary(fit_2step)
+```
+
+Compare to the iterative version:
+
+```{r}
+#| label: gmm-iterative
+fit_iter <- gmm(Y ~ X, ~ Z1 + Z2, data = dat, type = "iterative")
+cat("Two-step slope:", round(coef(fit_2step)["X"], 4), "\n")
+cat("Iterated slope:", round(coef(fit_iter)["X"], 4), "\n")
+```
+
+And verify against `iv_robust` (which computes 2SLS):
+
+```{r}
+#| label: compare-iv-robust
+fit_iv <- iv_robust(Y ~ X | Z1 + Z2, data = dat)
+cat("2SLS (iv_robust):", round(coef(fit_iv)["X"], 4), "\n")
+cat("Two-step GMM:    ", round(coef(fit_2step)["X"], 4), "\n")
+```
+
+Under homoskedasticity, 2SLS and efficient GMM give the same estimates (Hansen Thm 13.6). The differences here arise because we simulated heteroskedastic-style errors.
+
+## When does efficient GMM help? A simulation
+
+2SLS is efficient only under homoskedasticity. Under heteroskedasticity, efficient GMM can reduce variance. Let's demonstrate with a Monte Carlo:
+
+```{r}
+#| label: efficiency-sim
+set.seed(99)
+B <- 500
+n_sim <- 300
+beta_true <- 0.5
+results <- data.frame(method = character(), estimate = numeric())
+
+for (b in 1:B) {
+  u <- rnorm(n_sim)
+  z1 <- rnorm(n_sim)
+  z2 <- rnorm(n_sim)
+  x <- 0.6 * z1 + 0.3 * z2 + u
+
+  # Heteroskedastic errors: variance depends on z1
+  sigma_i <- 0.5 + abs(z1)
+  e <- sigma_i * rnorm(n_sim) + 0.5 * u
+  y <- 1 + beta_true * x + e
+
+  d <- data.frame(y = y, x = x, z1 = z1, z2 = z2)
+
+  # 2SLS
+  iv_fit <- tryCatch(
+    iv_robust(y ~ x | z1 + z2, data = d, se_type = "classical"),
+    error = function(e) NULL
+  )
+
+  # Two-step GMM
+  gmm_fit <- tryCatch(
+    gmm(y ~ x, ~ z1 + z2, data = d, type = "twoStep"),
+    error = function(e) NULL
+  )
+
+  if (!is.null(iv_fit) && !is.null(gmm_fit)) {
+    results <- rbind(results,
+      data.frame(method = "2SLS", estimate = coef(iv_fit)["x"]),
+      data.frame(method = "Efficient GMM", estimate = coef(gmm_fit)["x"])
+    )
+  }
+}
+
+# Compare variances
+var_table <- aggregate(estimate ~ method, data = results,
+                       FUN = function(x) c(mean = mean(x), var = var(x)))
+var_table <- cbind(var_table[1], as.data.frame(var_table[[2]]))
+names(var_table) <- c("method", "mean", "variance")
+var_table$efficiency_ratio <- var_table$variance / min(var_table$variance)
+print(var_table, digits = 4)
+```
+
+```{r}
+#| label: efficiency-plot
+#| fig-cap: "2SLS vs. efficient GMM under heteroskedasticity"
+ggplot(results, aes(x = estimate, fill = method)) +
+  geom_density(alpha = 0.4) +
+  geom_vline(xintercept = beta_true, linetype = "dashed") +
+  labs(title = "2SLS vs efficient GMM under heteroskedasticity",
+       subtitle = paste0("n = ", n_sim, ", ", B, " replications"),
+       x = expression(hat(beta)), y = "Density") +
+  theme_minimal() +
+  scale_fill_manual(values = c("steelblue", "coral"))
+```
+
+Under heteroskedasticity, efficient GMM has lower variance because it weights moment conditions by the inverse of their variance---upweighting informative, low-noise moments and downweighting noisy ones. Just as the [Gauss-Markov theorem](ch05-gls.qmd#thm-gauss-markov) bounds OLS among linear unbiased estimators, the efficient GMM achieves the semiparametric bound among all estimators using the same moment conditions.
+
+## The J-test for overidentification {#sec-j-test}
+
+When $\ell > k$ (more moment conditions than parameters), the model imposes testable restrictions. If the moment conditions are correctly specified, the minimized criterion value should be small.
+
+$$J = n\,\bar{g}_n(\hat\beta)'\hat\Omega^{-1}\bar{g}_n(\hat\beta) \xrightarrow{d} \chi^2_{\ell - k}$$ {#eq-j-test}
+
+::: {#thm-j-test}
+## J-Test for Overidentification (Hansen 13.14)
+Under correct specification, the minimized GMM criterion $J = n\,\bar{g}_n(\hat\beta)'\hat\Omega^{-1}\bar{g}_n(\hat\beta) \xrightarrow{d} \chi^2_{\ell - k}$, where $\ell$ is the number of moment conditions and $k$ is the number of parameters. Rejection indicates that the moment conditions are mutually inconsistent.
+:::
+
+```{r}
+#| label: j-test-valid
+# J-test from our earlier fit (valid instruments)
+specTest(fit_2step)
+```
+
+Here $\ell - k = 3 - 2 = 1$ degree of freedom. A large p-value means we fail to reject: the overidentifying restrictions are consistent with the data.
+
+### When the J-test rejects
+
+If an instrument is invalid (correlated with the error), the J-test should detect this:
+
+```{r}
+#| label: j-test-invalid
+set.seed(123)
+n <- 500
+u <- rnorm(n)
+z1 <- rnorm(n)
+z2_bad <- rnorm(n)
+x <- 0.6 * z1 + 0.3 * z2_bad + u
+e <- 0.5 * u + 0.4 * z2_bad + rnorm(n)  # z2_bad enters the error!
+y <- 1 + 0.5 * x + e
+
+d_bad <- data.frame(y = y, x = x, z1 = z1, z2 = z2_bad)
+fit_bad <- gmm(y ~ x, ~ z1 + z2, data = d_bad, type = "twoStep")
+specTest(fit_bad)
+```
+
+The J-test has a limitation: if all instruments are invalid in the same direction, the test may not detect the problem. It tests whether the instruments *disagree* with each other, not whether any individual instrument is valid.
+
+::: {.callout-warning}
+## J-Test Limitations
+The J-test only detects when instruments *disagree* with each other. If all instruments are invalid in the same direction, the test has no power. It tests internal consistency of the overidentifying restrictions, not the validity of any individual instrument.
+:::
+
+### J-test rejection rates by simulation
+
+Let's verify the J-test has correct size (under valid instruments) and power (under an invalid instrument):
+
+```{r}
+#| label: j-test-sim
+set.seed(42)
+B <- 500
+n_sim <- 300
+rejections <- data.frame(scenario = character(), rejected = logical())
+
+for (scenario in c("valid", "invalid")) {
+  for (b in 1:B) {
+    u <- rnorm(n_sim)
+    z1 <- rnorm(n_sim)
+    z2 <- rnorm(n_sim)
+    x <- 0.6 * z1 + 0.3 * z2 + u
+
+    if (scenario == "valid") {
+      e <- 0.5 * u + rnorm(n_sim)
+    } else {
+      e <- 0.5 * u + 0.3 * z2 + rnorm(n_sim)  # z2 in error
+    }
+    y <- 1 + 0.5 * x + e
+
+    d <- data.frame(y = y, x = x, z1 = z1, z2 = z2)
+    fit <- tryCatch(gmm(y ~ x, ~ z1 + z2, data = d, type = "twoStep"),
+                    error = function(e) NULL)
+    if (!is.null(fit)) {
+      jtest <- tryCatch(specTest(fit), error = function(e) NULL)
+      if (!is.null(jtest)) {
+        pval <- jtest$test[1, 2]  # p-value
+        rejections <- rbind(rejections,
+          data.frame(scenario = scenario, rejected = pval < 0.05))
+      }
+    }
+  }
+}
+
+rej_rates <- aggregate(rejected ~ scenario, data = rejections, mean)
+names(rej_rates)[2] <- "rejection_rate"
+rej_rates
+```
+
+Under valid instruments, the rejection rate should be near 0.05 (the nominal size). Under the invalid instrument, the rejection rate should be substantially higher.
+
+## Nonlinear GMM: custom moment functions
+
+The `gmm` package also accepts user-defined moment functions for nonlinear models. The moment function takes parameters $\theta$ and data $x$, and returns an $n \times \ell$ matrix of moment contributions.
+
+Here's a simple example: estimating the mean and variance of a distribution simultaneously using moment conditions $\mathbb{E}[Y - \mu] = 0$ and $\mathbb{E}[(Y - \mu)^2 - \sigma^2] = 0$:
+
+```{r}
+#| label: nonlinear-moments
+# Moment function: E[Y - mu] = 0 and E[(Y - mu)^2 - sigma2] = 0
+g_meanvar <- function(theta, x) {
+  mu <- theta[1]
+  sigma2 <- theta[2]
+  m1 <- x - mu
+  m2 <- (x - mu)^2 - sigma2
+  cbind(m1, m2)  # n x 2 matrix
+}
+
+# Generate data
+set.seed(1)
+y_data <- rnorm(200, mean = 3, sd = 2)
+
+# GMM estimation (just-identified: 2 moments, 2 parameters)
+fit_mv <- gmm(g_meanvar, x = y_data, t0 = c(0, 1))
+cat("GMM estimates:  mu =", round(coef(fit_mv)[1], 3),
+    " sigma2 =", round(coef(fit_mv)[2], 3), "\n")
+cat("Sample moments: mean =", round(mean(y_data), 3),
+    " var =", round(var(y_data) * (200-1)/200, 3), "\n")
+```
+
+The GMM estimates match the sample moments exactly because this is a just-identified model.
+
+## Application: missing data and GMM
+
+This section implements the Abrevaya & Donald (2017) approach to missing data using GMM. The idea is to exploit moment conditions from *both* complete and incomplete observations.
+
+### The setup
+
+Suppose we want to estimate:
+$$y_i = \beta_0 + \alpha \cdot x_i + \beta_1 \cdot z_i + \varepsilon_i$$
+
+where $x_i$ is sometimes missing but $z_i$ is always observed. If $x_i$ has a linear projection on $z_i$:
+$$x_i = \gamma_0 + \gamma_1 \cdot z_i + \xi_i$$
+
+then for observations where $x_i$ is missing, we can substitute:
+$$y_i = (\beta_0 + \alpha\gamma_0) + (\beta_1 + \alpha\gamma_1) z_i + (\varepsilon_i + \alpha\xi_i)$$
+
+This gives us three blocks of moment conditions---and more conditions than parameters (overidentification).
+
+### Simulating the WLS-like data
+
+We simulate data similar to the Wisconsin Longitudinal Study, where education ($y$) depends on a BMI-related rating ($x$, sometimes missing) and IQ ($z$, always observed):
+
+```{r}
+#| label: missing-data-sim
+set.seed(314)
+n_wls <- 5000
+
+# Parameters
+beta_0_true <- 12
+alpha_true <- -0.04
+beta_iq_true <- 0.06
+gamma_0_true <- 3.5
+gamma_iq_true <- 0.005
+
+# Generate data
+iq <- rnorm(n_wls, mean = 100, sd = 15)
+xi <- rnorm(n_wls, sd = 1)
+bmi <- gamma_0_true + gamma_iq_true * iq + xi
+eps <- rnorm(n_wls, sd = 1.5)
+educ <- beta_0_true + alpha_true * bmi + beta_iq_true * iq + eps
+
+# Missingness: depends on iq (MAR) but not on eps or xi
+prob_missing <- plogis(-2 + 0.01 * iq)  # ~20% missing overall
+missing <- rbinom(n_wls, 1, prob_missing)
+cat("Fraction missing:", round(mean(missing), 3), "\n")
+
+# Set bmi to 0 for missing observations (placeholder)
+bmi_obs <- ifelse(missing == 0, bmi, 0)
+
+wls <- data.frame(educ = educ, bmi = bmi_obs, iq = iq, bmimissing = missing)
+```
+
+### Complete case and dummy variable approaches
+
+```{r}
+#| label: complete-case
+# Complete case: drop missing observations
+cc_fit <- lm(educ ~ bmi + iq, data = subset(wls, bmimissing == 0))
+
+# Dummy variable: fill in 0, add missing indicator
+dv_fit <- lm_robust(educ ~ bmi + iq + bmimissing, data = wls)
+
+cat("Complete case:   alpha =", round(coef(cc_fit)["bmi"], 4),
+    " SE =", round(summary(cc_fit)$coefficients["bmi", "Std. Error"], 4), "\n")
+cat("Dummy variable:  alpha =", round(coef(dv_fit)["bmi"], 4),
+    " SE =", round(dv_fit$std.error["bmi"], 4), "\n")
+cat("True alpha:     ", alpha_true, "\n")
+```
+
+### GMM with three blocks of moment conditions
+
+Now we implement the Abrevaya & Donald GMM estimator. The five parameters are $\theta = (\beta_0, \alpha, \beta_{iq}, \gamma_0, \gamma_{iq})$ and we have seven moment conditions:
+
+```{r}
+#| label: gmm-moment-function
+# Moment function: 7 conditions for 5 parameters
+g_missing <- function(theta, x) {
+  beta_0  <- theta[1]
+  alpha   <- theta[2]
+  beta_iq <- theta[3]
+  gamma_0 <- theta[4]
+  gamma_iq <- theta[5]
+
+  educ <- x[, 1]
+  bmi  <- x[, 2]
+  iq   <- x[, 3]
+  m    <- x[, 4]  # missing indicator
+
+  # Block 1: structural equation, observed cases only
+  resid1 <- (1 - m) * (educ - beta_0 - alpha * bmi - beta_iq * iq)
+
+  # Block 2: projection equation, observed cases only
+  resid2 <- (1 - m) * (bmi - gamma_0 - gamma_iq * iq)
+
+  # Block 3: substituted equation, missing cases only
+  resid3 <- m * (educ - (gamma_0 * alpha + beta_0) - (gamma_iq * alpha + beta_iq) * iq)
+
+  cbind(
+    resid1,              # m1: E[(1-m)(y - b0 - a*x - b1*z)] = 0
+    resid1 * bmi,        # m2: E[(1-m)(y - ...)*x] = 0
+    resid1 * iq,         # m3: E[(1-m)(y - ...)*z] = 0
+    resid2,              # m4: E[(1-m)(x - g0 - g1*z)] = 0
+    resid2 * iq,         # m5: E[(1-m)(x - ...)*z] = 0
+    resid3,              # m6: E[m(y - delta'z)] = 0
+    resid3 * iq          # m7: E[m(y - delta'z)*z] = 0
+  )
+}
+```
+
+The instruments for each block multiply the residuals: Block 1 uses $(1, x, z)$, Block 2 uses $(1, z)$, Block 3 uses $(1, z)$. Total: $3 + 2 + 2 = 7$ moment conditions for 5 parameters, giving us **2 overidentifying restrictions**.
+
+### Starting values and estimation
+
+Good starting values help the optimizer. We use complete-case regressions:
+
+```{r}
+#| label: gmm-starting-values
+# Starting values from complete cases
+cc_reg <- lm(educ ~ bmi + iq, data = subset(wls, bmimissing == 0))
+proj_reg <- lm(bmi ~ iq, data = subset(wls, bmimissing == 0))
+
+start_vals <- c(
+  beta_0   = unname(coef(cc_reg)["(Intercept)"]),
+  alpha    = unname(coef(cc_reg)["bmi"]),
+  beta_iq  = unname(coef(cc_reg)["iq"]),
+  gamma_0  = unname(coef(proj_reg)["(Intercept)"]),
+  gamma_iq = unname(coef(proj_reg)["iq"])
+)
+```
+
+```{r}
+#| label: gmm-estimation
+# Data matrix
+x_mat <- as.matrix(wls[, c("educ", "bmi", "iq", "bmimissing")])
+
+# Two-step GMM
+gmm_fit <- gmm(
+  g_missing,
+  x = x_mat,
+  t0 = start_vals,
+  type = "twoStep",
+  wmatrix = "ident",
+  vcov = "HAC"
+)
+
+summary(gmm_fit)
+```
+
+### Comparing all methods
+
+```{r}
+#| label: comparison-table
+comparison <- data.frame(
+  Method = c("True", "Complete Case", "Dummy Variable", "GMM"),
+  alpha = c(
+    alpha_true,
+    coef(cc_fit)["bmi"],
+    coef(dv_fit)["bmi"],
+    coef(gmm_fit)["alpha"]
+  ),
+  SE_alpha = c(
+    NA,
+    summary(cc_fit)$coefficients["bmi", "Std. Error"],
+    dv_fit$std.error["bmi"],
+    sqrt(vcov(gmm_fit)["alpha", "alpha"])
+  ),
+  beta_iq = c(
+    beta_iq_true,
+    coef(cc_fit)["iq"],
+    coef(dv_fit)["iq"],
+    coef(gmm_fit)["beta_iq"]
+  )
+)
+comparison$alpha <- round(comparison$alpha, 4)
+comparison$SE_alpha <- round(comparison$SE_alpha, 4)
+comparison$beta_iq <- round(comparison$beta_iq, 4)
+comparison
+```
+
+GMM uses all observations (both complete and incomplete cases), which can improve efficiency. The complete case estimator is consistent but throws away data. The dummy variable approach can be inconsistent depending on the missingness mechanism.
+
+### J-test for the missing data model
+
+The J-test checks whether the overidentifying restrictions are satisfied---that is, whether the linear projection assumption holds equally for observed and missing subgroups:
+
+```{r}
+#| label: j-test-missing
+specTest(gmm_fit)
+```
+
+With 7 moments and 5 parameters, the J-test has $7 - 5 = 2$ degrees of freedom. A large p-value means we fail to reject the model specification.
+
+### Monte Carlo: comparing estimator properties
+
+```{r}
+#| label: missing-mc
+set.seed(77)
+B_mc <- 300
+n_mc <- 1000
+mc_results <- data.frame(method = character(), alpha_hat = numeric())
+
+for (b in 1:B_mc) {
+  iq_b <- rnorm(n_mc, 100, 15)
+  xi_b <- rnorm(n_mc)
+  bmi_b <- gamma_0_true + gamma_iq_true * iq_b + xi_b
+  eps_b <- rnorm(n_mc, sd = 1.5)
+  educ_b <- beta_0_true + alpha_true * bmi_b + beta_iq_true * iq_b + eps_b
+
+  prob_m <- plogis(-2 + 0.01 * iq_b)
+  m_b <- rbinom(n_mc, 1, prob_m)
+  bmi_obs_b <- ifelse(m_b == 0, bmi_b, 0)
+
+  # Complete case
+  cc_b <- lm(educ_b[m_b == 0] ~ bmi_b[m_b == 0] + iq_b[m_b == 0])
+
+  # Dummy variable
+  dv_b <- lm(educ_b ~ bmi_obs_b + iq_b + m_b)
+
+  # GMM
+  x_b <- cbind(educ_b, bmi_obs_b, iq_b, m_b)
+  proj_b <- lm(bmi_b[m_b == 0] ~ iq_b[m_b == 0])
+  start_b <- c(beta_0 = unname(coef(cc_b)[1]),
+               alpha = unname(coef(cc_b)[2]),
+               beta_iq = unname(coef(cc_b)[3]),
+               gamma_0 = unname(coef(proj_b)[1]),
+               gamma_iq = unname(coef(proj_b)[2]))
+
+  gmm_b <- tryCatch(
+    gmm(g_missing, x = x_b, t0 = start_b, type = "twoStep",
+        wmatrix = "ident", vcov = "HAC"),
+    error = function(e) NULL
+  )
+
+  mc_results <- rbind(mc_results,
+    data.frame(method = "Complete Case", alpha_hat = unname(coef(cc_b)[2])),
+    data.frame(method = "Dummy Variable", alpha_hat = unname(coef(dv_b)[2]))
+  )
+  if (!is.null(gmm_b)) {
+    mc_results <- rbind(mc_results,
+      data.frame(method = "GMM", alpha_hat = unname(coef(gmm_b)["alpha"])))
+  }
+}
+```
+
+```{r}
+#| label: missing-mc-results
+mc_summary <- aggregate(alpha_hat ~ method, data = mc_results,
+                        FUN = function(x) c(
+                          bias = mean(x) - alpha_true,
+                          variance = var(x),
+                          mse = mean((x - alpha_true)^2)
+                        ))
+mc_summary <- cbind(mc_summary[1], round(as.data.frame(mc_summary[[2]]), 6))
+names(mc_summary) <- c("Method", "Bias", "Variance", "MSE")
+mc_summary
+```
+
+```{r}
+#| label: missing-mc-plot
+ggplot(mc_results, aes(x = alpha_hat, fill = method)) +
+  geom_density(alpha = 0.4) +
+  geom_vline(xintercept = alpha_true, linetype = "dashed") +
+  labs(title = "Estimator comparison with missing data",
+       subtitle = paste0("True alpha = ", alpha_true, ", n = ", n_mc,
+                        ", ", B_mc, " replications"),
+       x = expression(hat(alpha)), y = "Density") +
+  theme_minimal() +
+  scale_fill_manual(values = c("steelblue", "coral", "forestgreen"))
+```
+
+## GMM as a unifying framework
+
+The progression through the course is a series of generalizations, each nesting the previous:
+
+| Estimator | Moment condition | Weight matrix | When efficient |
+|-----------|-----------------|---------------|----------------|
+| OLS | $\mathbb{E}[X_i e_i] = 0$ | $(X'X)^{-1}$ (implicit) | Homoskedastic, exogenous |
+| GLS | $\mathbb{E}[\bar{X}_i \Sigma^{-1} e_i] = 0$ | Known $\Sigma$ | Known error structure |
+| IV | $\mathbb{E}[Z_i e_i] = 0$ | $\ell = k$ (unique) | Just-identified |
+| 2SLS | $\mathbb{E}[Z_i e_i] = 0$ | $(Z'Z)^{-1}$ | Homoskedastic |
+| **GMM** | $\mathbb{E}[g_i(\beta)] = 0$ | $\hat\Omega^{-1}$ | **Always** (semiparametric bound) |
+
+Every test we have seen---$t$-tests, $F$-tests, Hausman tests, Sargan tests---is a special case of a GMM test, often valid under weaker assumptions.
+
+### Recovering OLS as GMM
+
+```{r}
+#| label: ols-as-gmm
+# OLS via gmm package (instruments = regressors)
+ols_gmm <- gmm(Y ~ X, ~ X, data = dat)
+ols_lm <- lm(Y ~ X, data = dat)
+cat("GMM (as OLS):", round(coef(ols_gmm)["X"], 4), "\n")
+cat("lm():        ", round(coef(ols_lm)["X"], 4), "\n")
+```
+
+When the instruments are the regressors themselves ($Z = X$), the model is just-identified and GMM reduces to OLS regardless of the weight matrix.
+
+## Connection to MTE
+
+The Marginal Treatment Effect (MTE) framework (Heckman & Vytlacil, 2005) uses GMM to estimate treatment effects that vary across the population:
+
+$$\Delta^{MTE}(u_D) = \mathbb{E}[Y_1 - Y_0 \mid U_D = u_D]$$
+
+where $U_D$ indexes resistance to treatment. The LATE estimated by IV is a weighted average of the MTE curve over the complier population. GMM estimation of MTE involves:
+
+- **Nonlinear moment conditions**: $\mathbb{E}[Y \mid X, Z]$ depends on $\int_0^{P(Z)} \Delta^{MTE}(u)\,du$, which is nonlinear in the MTE parameters.
+- **Overidentification from multiple instruments**: more instruments than MTE parameters.
+- **J-test**: tests whether the MTE specification (e.g., polynomial degree) fits the data.
+
+The `ivmte` package (Shea & Torgovitsky) implements this under the hood. Conceptually, the call looks like:
+
+```r
+# Not run -- requires ivmte package and appropriate data
+library(ivmte)
+result <- ivmte(
+  data = df,
+  outcome = "y",
+  treatment = "d",
+  instrument = "z",
+  target = "ate",             # or "att", "late", "prte"
+  m0 = ~ u + I(u^2),         # MTE polynomial for control
+  m1 = ~ u + I(u^2),         # MTE polynomial for treated
+  propensity = d ~ z
+)
+```
+
+The key insight from GMM: by specifying moment conditions rather than a full parametric model, we can estimate flexible treatment effect heterogeneity while maintaining testable restrictions via the J-test.
+
+## Summary
+
+- **GMM is a unifying framework**: OLS, GLS, IV, and 2SLS are all special cases of GMM with specific weight matrices.
+- **Efficient GMM** sets $W = \hat\Omega^{-1}$ (the inverse of the moment covariance), minimizing asymptotic variance. Two-step and iterated procedures achieve this.
+- **2SLS is efficient only under homoskedasticity**. Under heteroskedasticity, efficient GMM provides tighter estimates.
+- **The J-test** is a natural diagnostic for overidentified models. It tests whether the moment conditions are mutually consistent.
+- **Nonlinear GMM** (custom moment functions) handles problems like missing data (Abrevaya & Donald) and MTE estimation.
+- **The semiparametric efficiency bound** (Chamberlain, 1987): efficient GMM extracts the maximum information from moment conditions without distributional assumptions.
