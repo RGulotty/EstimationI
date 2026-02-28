@@ -429,9 +429,9 @@ do.call(rbind, results)
 
 Key patterns:
 
-- **Classical SEs** undercover when errors are heteroskedastic (they assume homoskedasticity)
-- **HC2 sandwich SEs** do well once $n$ is moderate, but can undercover with very small $n$ and heavy tails
-- **Bootstrap** tends to be robust across scenarios, especially with small $n$
+- **Classical SEs** undercover at every sample size because they assume homoskedasticity
+- **HC2 sandwich SEs** maintain near-nominal coverage across all sample sizes — the analytical leverage correction works even at $n = 20$
+- **Bootstrap percentile** does well once $n$ is moderate, but at $n = 20$ its coverage is nearly as bad as the classical — with so few observations and heavy-tailed heteroskedastic errors, resampling cannot reliably capture the tail behavior
 
 ### When the bootstrap breaks down
 
