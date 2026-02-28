@@ -86,7 +86,7 @@ c(definition = var_def, shortcut = var_short)
 
 In a sample, we can also write the variance as $\frac{1}{n}\sum(x_i - \bar{x})x_i$. This works because deviations from the mean always sum to zero: $\sum(x_i - \bar{x}) = 0$, so shifting the second factor by any constant changes nothing. This same algebra produces the OLS normal equations later.
 
-The interactive visualization below makes this concrete. Think of each term as the signed area of a rectangle with width $(x_i - \bar{x})$ and height $(x_i - c)$. Slide $c$ from $\bar{x}$ down to $0$: the rectangles change shape, but the total signed area stays constant.
+The interactive visualization below makes this concrete using the sample $x = \{1, 5, 6, 8\}$ with mean $\bar{x} = 5$. Think of each term as the signed area of a rectangle with width $(x_i - \bar{x})$ and height $(x_i - c)$. Slide $c$ from $\bar{x}$ down to $0$: the rectangles change shape, but the total signed area stays constant.
 
 ```{ojs}
 //| echo: false
