@@ -2,6 +2,9 @@ project:
   type: website
   output-dir: docs
 
+execute:
+  freeze: true
+
 website:
   title: "Estimation I: Computational Companion"
   description: "R companion for PLSC 30700 at the University of Chicago"
