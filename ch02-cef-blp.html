@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>2. The CEF and Best Linear Predictor – Estimation I: Computational Companion</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-8b4baf804e461d9b72633f0de59a0cac.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-3bbbbd466991e281563892c5dce73c3d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script>
+  MathJax = {
+    tex: {
+      macros: {
+        E: "\\mathbb{E}",
+        Var: "\\text{Var}",
+        Cov: "\\text{Cov}",
+        plim: "\\text{plim}",
+        inprob: "\\xrightarrow{p}",
+        indist: "\\xrightarrow{d}",
+        bhat: "\\hat{\\boldsymbol{\\beta}}",
+        N: "\\mathcal{N}",
+        tr: "\\text{tr}",
+        rank: "\\text{rank}",
+        SE: "\\text{SE}",
+        diag: "\\text{diag}"
+      }
+    }
+  };
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Estimation I: Computational Companion</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-chapters" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Chapters</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-chapters">    
+        <li>
+    <a class="dropdown-item" href="./ch01-review.html">
+ <span class="dropdown-text">1. Probability and Linear Algebra</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch02-cef-blp.html">
+ <span class="dropdown-text">2. The CEF and Best Linear Predictor</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch03-ols.html">
+ <span class="dropdown-text">3. Multivariate OLS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch04-sensitivity.html">
+ <span class="dropdown-text">4. Sensitivity and Leverage</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch05-gls.html">
+ <span class="dropdown-text">5. Efficiency and GLS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch06-small-sample.html">
+ <span class="dropdown-text">6. Small Sample Inference</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch07-probit.html">
+ <span class="dropdown-text">7. Probit and MLE</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch08-asymptotics.html">
+ <span class="dropdown-text">8. Asymptotics</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch09-testing.html">
+ <span class="dropdown-text">9. Hypothesis Testing</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch10-iv.html">
+ <span class="dropdown-text">10. Instrumental Variables and 2SLS</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch11-gmm.html">
+ <span class="dropdown-text">11. GMM</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch12-panel.html">
+ <span class="dropdown-text">12. Panel Data</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./ch13-fixed-effects.html">
+ <span class="dropdown-text">13. Fixed Effects and Modern DiD</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/UChicago-pol-methods/EstimationI"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#cef-error-mean-independence-is-not-independence" id="toc-cef-error-mean-independence-is-not-independence" class="nav-link active" data-scroll-target="#cef-error-mean-independence-is-not-independence"><span class="header-section-number">1</span> CEF error: mean independence is not independence</a></li>
+  <li><a href="#sec-cef-best" id="toc-sec-cef-best" class="nav-link" data-scroll-target="#sec-cef-best"><span class="header-section-number">2</span> The CEF is the best predictor</a></li>
+  <li><a href="#cef-vs.-blp-when-the-line-misses-the-curve" id="toc-cef-vs.-blp-when-the-line-misses-the-curve" class="nav-link" data-scroll-target="#cef-vs.-blp-when-the-line-misses-the-curve"><span class="header-section-number">3</span> CEF vs.&nbsp;BLP: when the line misses the curve</a></li>
+  <li><a href="#when-does-blp-cef" id="toc-when-does-blp-cef" class="nav-link" data-scroll-target="#when-does-blp-cef"><span class="header-section-number">4</span> When does BLP = CEF?</a></li>
+  <li><a href="#the-blp-in-formulas-and-code" id="toc-the-blp-in-formulas-and-code" class="nav-link" data-scroll-target="#the-blp-in-formulas-and-code"><span class="header-section-number">5</span> The BLP in formulas and code</a></li>
+  <li><a href="#dummy-variables-the-cef-for-discrete-x" id="toc-dummy-variables-the-cef-for-discrete-x" class="nav-link" data-scroll-target="#dummy-variables-the-cef-for-discrete-x"><span class="header-section-number">6</span> Dummy variables: the CEF for discrete X</a></li>
+  <li><a href="#interactions-when-the-slope-depends-on-a-group" id="toc-interactions-when-the-slope-depends-on-a-group" class="nav-link" data-scroll-target="#interactions-when-the-slope-depends-on-a-group"><span class="header-section-number">7</span> Interactions: when the slope depends on a group</a></li>
+  <li><a href="#sec-ovb" id="toc-sec-ovb" class="nav-link" data-scroll-target="#sec-ovb"><span class="header-section-number">8</span> Omitted variable bias</a>
+  <ul class="collapse">
+  <li><a href="#adding-variables-doesnt-always-help" id="toc-adding-variables-doesnt-always-help" class="nav-link" data-scroll-target="#adding-variables-doesnt-always-help"><span class="header-section-number">8.1</span> Adding variables doesn’t always help</a></li>
+  </ul></li>
+  <li><a href="#causal-interpretation-regression-as-a-weighted-average" id="toc-causal-interpretation-regression-as-a-weighted-average" class="nav-link" data-scroll-target="#causal-interpretation-regression-as-a-weighted-average"><span class="header-section-number">9</span> Causal interpretation: regression as a weighted average</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">10</span> Summary</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">2. The CEF and Best Linear Predictor</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+<p class="subtitle lead">Why regression approximates the CEF</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The conditional expectation function <span class="math inline">\(m(X) = \mathbb{E}[Y|X]\)</span> is the best predictor of <span class="math inline">\(Y\)</span> given <span class="math inline">\(X\)</span> — but we rarely know it. The best linear predictor (BLP) is the next best thing: a linear approximation that only requires knowing means, variances, and covariances. This chapter explores the gap between the two and what we gain (and lose) by going linear.</p>
+<p><strong>Questions this chapter answers:</strong></p>
+<ol type="1">
+<li>What is the best predictor of <span class="math inline">\(Y\)</span> given <span class="math inline">\(X\)</span>, and why is it the conditional expectation function?</li>
+<li>How does the best linear predictor (BLP) approximate a nonlinear CEF?</li>
+<li>When does the BLP equal the CEF, and why does joint normality guarantee linearity?</li>
+<li>How does omitted variable bias arise, and why don’t additional controls always help?</li>
+</ol>
+<section id="cef-error-mean-independence-is-not-independence" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="cef-error-mean-independence-is-not-independence"><span class="header-section-number">1</span> CEF error: mean independence is not independence</h2>
+<p>Define the CEF error as <span class="math inline">\(e = Y - m(X)\)</span>. By construction, <span class="math inline">\(\mathbb{E}[e|X] = 0\)</span> — this is called mean independence. But mean independence is weaker than full independence: the <em>variance</em> of <span class="math inline">\(e\)</span> can still depend on <span class="math inline">\(X\)</span>.</p>
+<p>Here’s the lecture’s example: <span class="math inline">\(X \sim \text{Uniform}(-1, 1)\)</span> and <span class="math inline">\(Y = X^2 + X\varepsilon\)</span>, where <span class="math inline">\(\varepsilon \sim N(0,1)\)</span> is independent of <span class="math inline">\(X\)</span>.</p>
+<div id="def-cef" class="theorem definition">
+<p><span class="theorem-title"><strong>Definition 1 (Conditional Expectation Function)</strong></span> The CEF is <span class="math inline">\(m(X) = \mathbb{E}[Y|X]\)</span>, the function that gives the mean of <span class="math inline">\(Y\)</span> for each value of <span class="math inline">\(X\)</span>. The CEF error <span class="math inline">\(e = Y - m(X)\)</span> satisfies mean independence: <span class="math inline">\(\mathbb{E}[e|X] = 0\)</span>.</p>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">307</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>eps <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> x <span class="sc">*</span> eps</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># CEF is m(X) = X^2</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>m_x <span class="ot">&lt;-</span> x<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>e <span class="ot">&lt;-</span> y <span class="sc">-</span> m_x</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean independence: E[e|X] ≈ 0 in every bin</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>bins <span class="ot">&lt;-</span> <span class="fu">cut</span>(x, <span class="at">breaks =</span> <span class="dv">20</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>bin_means <span class="ot">&lt;-</span> <span class="fu">tapply</span>(e, bins, mean)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(bin_means, <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         (-1,-0.9]        (-0.9,-0.8]        (-0.8,-0.7]        (-0.7,-0.6] 
+            -0.062              0.036              0.036              0.070 
+       (-0.6,-0.5]        (-0.5,-0.4]        (-0.4,-0.3]        (-0.3,-0.2] 
+            -0.006              0.021              0.012              0.018 
+       (-0.2,-0.1]   (-0.1,-0.000463] (-0.000463,0.0995]     (0.0995,0.199] 
+            -0.009              0.000              0.002              0.006 
+     (0.199,0.299]      (0.299,0.399]      (0.399,0.499]      (0.499,0.599] 
+            -0.007             -0.031             -0.056             -0.037 
+     (0.599,0.699]      (0.699,0.799]      (0.799,0.899]          (0.899,1] 
+             0.033             -0.003              0.016              0.026 </code></pre>
+</div>
+</div>
+<p>The conditional means of <span class="math inline">\(e\)</span> are all near zero. But the conditional <em>variance</em> grows with <span class="math inline">\(|X|\)</span>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x, <span class="at">e =</span> e)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(x, e)) <span class="sc">+</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.15</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"steelblue"</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"X"</span>, <span class="at">y =</span> <span class="st">"CEF error (e)"</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Mean independence holds, but errors are heteroskedastic"</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Var(e|X) = X², so spread increases with |X|"</span>) <span class="sc">+</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using formula = 'y ~ x'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ch02-cef-blp_files/figure-html/heteroskedastic-errors-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The smooth line hovers at zero (mean independence), but the spread fans out. This pattern — <span class="math inline">\(\text{Var}(e|X) = X^2\)</span> — is heteroskedasticity. The CEF decomposes <span class="math inline">\(Y\)</span> into signal and noise, but doesn’t guarantee the noise is uniform.</p>
+</section>
+<section id="sec-cef-best" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="sec-cef-best"><span class="header-section-number">2</span> The CEF is the best predictor</h2>
+<p>Among <em>all</em> functions of <span class="math inline">\(X\)</span>, the CEF minimizes mean squared prediction error. Let’s demonstrate by comparing the CEF to some alternatives for the same DGP.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># True CEF: m(X) = X^2</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Competitor 1: the unconditional mean</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Competitor 2: a linear predictor</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Competitor 3: a cubic predictor</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>mse_cef <span class="ot">&lt;-</span> <span class="fu">mean</span>((y <span class="sc">-</span> x<span class="sc">^</span><span class="dv">2</span>)<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>mse_mean <span class="ot">&lt;-</span> <span class="fu">mean</span>((y <span class="sc">-</span> <span class="fu">mean</span>(y))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>mse_linear <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">residuals</span>(<span class="fu">lm</span>(y <span class="sc">~</span> x))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>mse_cubic <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">residuals</span>(<span class="fu">lm</span>(y <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">I</span>(x<span class="sc">^</span><span class="dv">2</span>) <span class="sc">+</span> <span class="fu">I</span>(x<span class="sc">^</span><span class="dv">3</span>)))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">predictor =</span> <span class="fu">c</span>(<span class="st">"Unconditional mean"</span>, <span class="st">"Linear (BLP)"</span>, <span class="st">"Cubic"</span>, <span class="st">"CEF (X²)"</span>),</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">MSE =</span> <span class="fu">round</span>(<span class="fu">c</span>(mse_mean, mse_linear, mse_cubic, mse_cef), <span class="dv">4</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           predictor   MSE
+1 Unconditional mean 0.401
+2       Linear (BLP) 0.401
+3              Cubic 0.311
+4           CEF (X²) 0.312</code></pre>
+</div>
+</div>
+<p>The CEF has the lowest MSE. The cubic comes close because <span class="math inline">\(X^3\)</span> has mean zero for symmetric <span class="math inline">\(X\)</span>, so the cubic approximation is nearly <span class="math inline">\(X^2\)</span>. The linear predictor does worse — it can’t capture the curvature.</p>
+</section>
+<section id="cef-vs.-blp-when-the-line-misses-the-curve" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="cef-vs.-blp-when-the-line-misses-the-curve"><span class="header-section-number">3</span> CEF vs.&nbsp;BLP: when the line misses the curve</h2>
+<p>The BLP minimizes <span class="math inline">\(\mathbb{E}[(Y - a - bX)^2]\)</span> and yields <span class="math inline">\(b = \text{Cov}(X,Y)/\text{Var}(X)\)</span>. When the CEF is nonlinear, the BLP draws the best straight line through a curved relationship.</p>
+<div id="def-blp" class="theorem definition">
+<p><span class="theorem-title"><strong>Definition 2 (Best Linear Predictor)</strong></span> The BLP of <span class="math inline">\(Y\)</span> given <span class="math inline">\(X\)</span> is <span class="math inline">\(\alpha + \beta'X\)</span> where <span class="math inline">\(\beta = \text{Var}(X)^{-1}\text{Cov}(X, Y)\)</span>. The BLP error satisfies <span class="math inline">\(\mathbb{E}[Xe] = 0\)</span> (uncorrelated with <span class="math inline">\(X\)</span>) but not necessarily <span class="math inline">\(\mathbb{E}[e|X] = 0\)</span>.</p>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Same DGP: Y = X^2 + X*eps</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x, <span class="at">y =</span> y)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(x, y)) <span class="sc">+</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_function</span>(<span class="at">fun =</span> <span class="cf">function</span>(x) x<span class="sc">^</span><span class="dv">2</span>, <span class="fu">aes</span>(<span class="at">color =</span> <span class="st">"CEF: X²"</span>),</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="fu">aes</span>(<span class="at">color =</span> <span class="st">"BLP"</span>),</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"CEF: X²"</span> <span class="ot">=</span> <span class="st">"tomato"</span>, <span class="st">"BLP"</span> <span class="ot">=</span> <span class="st">"steelblue"</span>),</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>                     <span class="at">name =</span> <span class="st">""</span>) <span class="sc">+</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"X"</span>, <span class="at">y =</span> <span class="st">"Y"</span>,</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"The BLP is the best line through a curved CEF"</span>) <span class="sc">+</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using formula = 'y ~ x'</code></pre>
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="ch02-cef-blp_files/figure-html/cef-vs-blp-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>The BLP is the best line through a curved CEF</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The BLP residual <span class="math inline">\(e = Y - X'\beta\)</span> satisfies <span class="math inline">\(\mathbb{E}[Xe] = 0\)</span> (uncorrelated with <span class="math inline">\(X\)</span>), but <em>not</em> <span class="math inline">\(\mathbb{E}[e|X] = 0\)</span>. The residual still contains nonlinear structure: the BLP intercept absorbs <span class="math inline">\(\mathbb{E}[X^2] = 1/3\)</span>, so the conditional mean of the residual traces out <span class="math inline">\(X^2 - 1/3\)</span> rather than zero:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>blp_resid <span class="ot">&lt;-</span> <span class="fu">residuals</span>(mod)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(x, blp_resid)) <span class="sc">+</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"tomato"</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"X"</span>, <span class="at">y =</span> <span class="st">"BLP residual"</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"BLP residuals still contain nonlinear structure"</span>,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"E[e|X] ≠ 0, but E[Xe] = 0"</span>) <span class="sc">+</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using formula = 'y ~ x'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ch02-cef-blp_files/figure-html/blp-residual-pattern-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="when-does-blp-cef" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="when-does-blp-cef"><span class="header-section-number">4</span> When does BLP = CEF?</h2>
+<p>The BLP equals the CEF when the CEF is actually linear. An important sufficient condition: if <span class="math inline">\((X, Y)\)</span> are jointly normal, the CEF is linear. Let’s verify.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MASS)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Jointly normal (X, Y)</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>Sigma <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.7</span>, <span class="fl">0.7</span>, <span class="dv">1</span>), <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>joint <span class="ot">&lt;-</span> <span class="fu">mvrnorm</span>(<span class="dv">5000</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>x_norm <span class="ot">&lt;-</span> joint[, <span class="dv">1</span>]</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>y_norm <span class="ot">&lt;-</span> joint[, <span class="dv">2</span>]</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>df_norm <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x_norm, <span class="at">y =</span> y_norm)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_norm, <span class="fu">aes</span>(x, y)) <span class="sc">+</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="fu">aes</span>(<span class="at">color =</span> <span class="st">"BLP"</span>), <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="fu">aes</span>(<span class="at">color =</span> <span class="st">"CEF (loess)"</span>), <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"BLP"</span> <span class="ot">=</span> <span class="st">"steelblue"</span>, <span class="st">"CEF (loess)"</span> <span class="ot">=</span> <span class="st">"tomato"</span>),</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>                     <span class="at">name =</span> <span class="st">""</span>) <span class="sc">+</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Jointly normal: the BLP and CEF coincide"</span>,</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"X"</span>, <span class="at">y =</span> <span class="st">"Y"</span>) <span class="sc">+</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using formula = 'y ~ x'
+`geom_smooth()` using formula = 'y ~ x'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ch02-cef-blp_files/figure-html/blp-equals-cef-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The two lines overlap because the CEF is genuinely linear when the data are jointly normal.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Joint Normality Implies Linear CEF
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If <span class="math inline">\((X, Y)\)</span> are jointly normal, the conditional expectation <span class="math inline">\(\mathbb{E}[Y|X]\)</span> is exactly linear in <span class="math inline">\(X\)</span>, and the BLP equals the CEF. This is a sufficient but not necessary condition — other distributions can also produce linear CEFs.</p>
+</div>
+</div>
+</section>
+<section id="the-blp-in-formulas-and-code" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="the-blp-in-formulas-and-code"><span class="header-section-number">5</span> The BLP in formulas and code</h2>
+<p>The population BLP coefficient is <span class="math inline">\(\beta = \text{Var}(X)^{-1}\text{Cov}(X, Y)\)</span>. In a sample, OLS estimates this:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Bivariate: beta = Cov(X,Y) / Var(X)</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>beta_formula <span class="ot">&lt;-</span> <span class="fu">cov</span>(x_norm, y_norm) <span class="sc">/</span> <span class="fu">var</span>(x_norm)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>alpha_formula <span class="ot">&lt;-</span> <span class="fu">mean</span>(y_norm) <span class="sc">-</span> beta_formula <span class="sc">*</span> <span class="fu">mean</span>(x_norm)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co"># OLS gives the same thing</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>beta_ols <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_norm <span class="sc">~</span> x_norm))</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">formula =</span> <span class="fu">c</span>(alpha_formula, beta_formula),</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">OLS =</span> beta_ols)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             formula      OLS
+(Intercept) -0.00942 -0.00942
+x_norm       0.69753  0.69753</code></pre>
+</div>
+</div>
+</section>
+<section id="dummy-variables-the-cef-for-discrete-x" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="dummy-variables-the-cef-for-discrete-x"><span class="header-section-number">6</span> Dummy variables: the CEF for discrete X</h2>
+<p>When <span class="math inline">\(X\)</span> is a categorical variable, the CEF is just group means. Regression with dummies recovers these exactly.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">300</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>party <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">"Dem"</span>, <span class="st">"Rep"</span>, <span class="st">"Ind"</span>), n, <span class="at">replace =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">prob =</span> <span class="fu">c</span>(<span class="fl">0.4</span>, <span class="fl">0.35</span>, <span class="fl">0.25</span>))</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>approval <span class="ot">&lt;-</span> <span class="dv">50</span> <span class="sc">+</span> <span class="dv">10</span> <span class="sc">*</span> (party <span class="sc">==</span> <span class="st">"Dem"</span>) <span class="sc">-</span> <span class="dv">5</span> <span class="sc">*</span> (party <span class="sc">==</span> <span class="st">"Rep"</span>) <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="at">sd =</span> <span class="dv">8</span>)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>df_party <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">party =</span> <span class="fu">factor</span>(party), <span class="at">approval =</span> approval)</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Group means = the CEF</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="fu">tapply</span>(df_party<span class="sc">$</span>approval, df_party<span class="sc">$</span>party, mean)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Dem  Ind  Rep 
+59.6 50.7 45.9 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Regression with dummies (R does this automatically)</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm</span>(approval <span class="sc">~</span> party, <span class="at">data =</span> df_party))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>(Intercept)    partyInd    partyRep 
+       59.6        -8.9       -13.7 </code></pre>
+</div>
+</div>
+<p>The intercept is the mean for the baseline group (alphabetically first: Dem), and the coefficients are differences from that baseline.</p>
+</section>
+<section id="interactions-when-the-slope-depends-on-a-group" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="interactions-when-the-slope-depends-on-a-group"><span class="header-section-number">7</span> Interactions: when the slope depends on a group</h2>
+<p>An interaction term <span class="math inline">\(D_i \times x_i\)</span> allows the effect of <span class="math inline">\(x\)</span> to differ by group. This is a richer model than parallel slopes.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>n_int <span class="ot">&lt;-</span> <span class="dv">400</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>group <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">1</span>, n_int, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>x_int <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_int)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Group 0: slope = 2, Group 1: slope = -1</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>y_int <span class="ot">&lt;-</span> <span class="dv">3</span> <span class="sc">+</span> <span class="fl">1.5</span> <span class="sc">*</span> group <span class="sc">+</span> <span class="dv">2</span> <span class="sc">*</span> x_int <span class="sc">-</span> <span class="dv">3</span> <span class="sc">*</span> group <span class="sc">*</span> x_int <span class="sc">+</span> <span class="fu">rnorm</span>(n_int)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>df_int <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x_int, <span class="at">y =</span> y_int, <span class="at">group =</span> <span class="fu">factor</span>(group))</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Parallel slopes (no interaction)</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>mod_parallel <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> group <span class="sc">+</span> x, <span class="at">data =</span> df_int)</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Interaction model</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>mod_interact <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> group <span class="sc">*</span> x, <span class="at">data =</span> df_int)</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_int, <span class="fu">aes</span>(x, y, <span class="at">color =</span> group)) <span class="sc">+</span></span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"steelblue"</span>, <span class="st">"tomato"</span>), <span class="at">name =</span> <span class="st">"Group"</span>) <span class="sc">+</span></span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Interaction: different slopes for each group"</span>,</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"X"</span>, <span class="at">y =</span> <span class="st">"Y"</span>) <span class="sc">+</span></span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using formula = 'y ~ x'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ch02-cef-blp_files/figure-html/interactions-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(mod_interact)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>(Intercept)      group1           x    group1:x 
+       2.91        1.58        1.98       -2.85 </code></pre>
+</div>
+</div>
+<p>The <code>group1:x</code> coefficient (<span class="math inline">\(\approx -3\)</span>) is the <em>difference</em> in slopes between group 1 and group 0. The marginal effect of <span class="math inline">\(x\)</span> for group 1 is <code>x</code> + <code>group1:x</code>.</p>
+</section>
+<section id="sec-ovb" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="sec-ovb"><span class="header-section-number">8</span> Omitted variable bias</h2>
+<p>If the true model is <span class="math inline">\(Y = X_1'\beta_1 + X_2'\beta_2 + e\)</span> but we only regress on <span class="math inline">\(X_1\)</span>, we get <span class="math inline">\(\gamma_1 = \beta_1 + \Gamma_{12}\beta_2\)</span>, where <span class="math inline">\(\Gamma_{12}\)</span> is the regression of <span class="math inline">\(X_2\)</span> on <span class="math inline">\(X_1\)</span>. The bias has a clear direction when we know the signs.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>n_ovb <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co"># X2 (institutions) is correlated with X1 (democracy)</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>x1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_ovb)                        <span class="co"># democracy</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>x2 <span class="ot">&lt;-</span> <span class="fl">0.6</span> <span class="sc">*</span> x1 <span class="sc">+</span> <span class="fu">rnorm</span>(n_ovb, <span class="at">sd =</span> <span class="fl">0.8</span>)  <span class="co"># institutions (correlated)</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>y_ovb <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> x1 <span class="sc">+</span> <span class="dv">2</span> <span class="sc">*</span> x2 <span class="sc">+</span> <span class="fu">rnorm</span>(n_ovb)  <span class="co"># growth</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="co"># True model</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm</span>(y_ovb <span class="sc">~</span> x1 <span class="sc">+</span> x2))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>(Intercept)          x1          x2 
+      0.967       0.511       1.962 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Short regression (omit x2)</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm</span>(y_ovb <span class="sc">~</span> x1))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>(Intercept)          x1 
+      0.942       1.661 </code></pre>
+</div>
+</div>
+<p>The true effect of democracy (<span class="math inline">\(\beta_1\)</span>) is 0.5, but the short regression gives <span class="math inline">\(\gamma_1 \approx 1.7\)</span>. The bias is <span class="math inline">\(\Gamma_{12} \times \beta_2 \approx 0.6 \times 2 = 1.2\)</span>, inflating the estimate because institutions are positively correlated with democracy and positively affect growth.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify the OVB formula</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>gamma_12 <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(x2 <span class="sc">~</span> x1))[<span class="dv">2</span>]  <span class="co"># regression of X2 on X1</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>beta_2 <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ovb <span class="sc">~</span> x1 <span class="sc">+</span> x2))[<span class="dv">3</span>]</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">short_coef =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ovb <span class="sc">~</span> x1))[<span class="dv">2</span>],</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">long_coef_plus_bias =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ovb <span class="sc">~</span> x1 <span class="sc">+</span> x2))[<span class="dv">2</span>] <span class="sc">+</span> gamma_12 <span class="sc">*</span> beta_2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>         short_coef.x1 long_coef_plus_bias.x1 
+                  1.66                   1.66 </code></pre>
+</div>
+</div>
+<p>The OVB formula <span class="math inline">\(\gamma_1 = \beta_1 + \Gamma_{12}\beta_2\)</span> matches exactly.</p>
+<div id="thm-ovb" class="theorem">
+<p><span class="theorem-title"><strong>Theorem 1 (Omitted Variable Bias)</strong></span> If the true model is <span class="math inline">\(Y = X_1'\beta_1 + X_2'\beta_2 + e\)</span> and we regress <span class="math inline">\(Y\)</span> on <span class="math inline">\(X_1\)</span> alone, the short regression coefficient is <span class="math inline">\(\gamma_1 = \beta_1 + \Gamma_{12}\beta_2\)</span>, where <span class="math inline">\(\Gamma_{12}\)</span> is the coefficient from regressing <span class="math inline">\(X_2\)</span> on <span class="math inline">\(X_1\)</span>. The bias <span class="math inline">\(\Gamma_{12}\beta_2\)</span> depends on both the correlation between <span class="math inline">\(X_1\)</span> and <span class="math inline">\(X_2\)</span> and the effect of <span class="math inline">\(X_2\)</span> on <span class="math inline">\(Y\)</span>.</p>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>OVB Is About Population, Not Sample
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The omitted variable bias formula <span class="math inline">\(\gamma_1 = \beta_1 + \Gamma_{12}\beta_2\)</span> is an exact population relationship between projection coefficients. It does not require large samples, normality, or any distributional assumption — it follows purely from the algebra of linear projection.</p>
+</div>
+</div>
+<section id="adding-variables-doesnt-always-help" class="level3" data-number="8.1">
+<h3 data-number="8.1" class="anchored" data-anchor-id="adding-variables-doesnt-always-help"><span class="header-section-number">8.1</span> Adding variables doesn’t always help</h3>
+<p>A subtlety from the lecture: if the true model has three variables and you can’t observe <span class="math inline">\(X_3\)</span>, adding <span class="math inline">\(X_2\)</span> can make the bias on <span class="math inline">\(\beta_1\)</span> worse, depending on the correlation structure.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>n_ow <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>z1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_ow)</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>z2 <span class="ot">&lt;-</span> <span class="fl">0.3</span> <span class="sc">*</span> z1 <span class="sc">+</span> <span class="fu">rnorm</span>(n_ow)</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>z3 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.8</span> <span class="sc">*</span> z1 <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> z2 <span class="sc">+</span> <span class="fu">rnorm</span>(n_ow)</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>y_ow <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">+</span> <span class="dv">1</span> <span class="sc">*</span> z1 <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> z2 <span class="sc">+</span> <span class="dv">3</span> <span class="sc">*</span> z3 <span class="sc">+</span> <span class="fu">rnorm</span>(n_ow)</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="co"># True beta_1 = 1</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">true =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ow <span class="sc">~</span> z1 <span class="sc">+</span> z2 <span class="sc">+</span> z3))[<span class="dv">2</span>],</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">short =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ow <span class="sc">~</span> z1))[<span class="dv">2</span>],</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">medium =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ow <span class="sc">~</span> z1 <span class="sc">+</span> z2))[<span class="dv">2</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  true.z1  short.z1 medium.z1 
+    1.015    -0.886    -1.408 </code></pre>
+</div>
+</div>
+<p>Why does adding <span class="math inline">\(X_2\)</span> make things worse? Apply the OVB formula to the medium regression: omitting <span class="math inline">\(X_3\)</span> biases <span class="math inline">\(\hat\beta_1\)</span> by <span class="math inline">\(\Gamma_{13\cdot 2}\beta_3\)</span>, where <span class="math inline">\(\Gamma_{13\cdot 2}\)</span> is the coefficient on <span class="math inline">\(X_1\)</span> in the regression of <span class="math inline">\(X_3\)</span> on <span class="math inline">\((X_1, X_2)\)</span>. Conditioning on <span class="math inline">\(X_2\)</span> can change the partial correlation between <span class="math inline">\(X_1\)</span> and <span class="math inline">\(X_3\)</span>, amplifying the bias.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># OVB decomposition for the medium model</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>gamma_13_2 <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(z3 <span class="sc">~</span> z1 <span class="sc">+</span> z2))[<span class="dv">2</span>]  <span class="co"># partial effect of z1 on z3, controlling for z2</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>beta_3 <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ow <span class="sc">~</span> z1 <span class="sc">+</span> z2 <span class="sc">+</span> z3))[<span class="dv">4</span>]</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">medium_bias =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ow <span class="sc">~</span> z1 <span class="sc">+</span> z2))[<span class="dv">2</span>] <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">ovb_formula =</span> gamma_13_2 <span class="sc">*</span> beta_3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>medium_bias.z1 ovb_formula.z1 
+         -2.41          -2.42 </code></pre>
+</div>
+</div>
+<p>Depending on the correlation structure, the “medium” model (with <span class="math inline">\(X_2\)</span> but not <span class="math inline">\(X_3\)</span>) may be further from the truth than the “short” model. More controls are not automatically better.</p>
+</section>
+</section>
+<section id="causal-interpretation-regression-as-a-weighted-average" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="causal-interpretation-regression-as-a-weighted-average"><span class="header-section-number">9</span> Causal interpretation: regression as a weighted average</h2>
+<p>The lecture ends with a deep result: when you regress <span class="math inline">\(Y\)</span> on a treatment dummy <span class="math inline">\(D\)</span> and controls <span class="math inline">\(X\)</span>, the regression coefficient is a weighted average of the group-specific treatment effects <span class="math inline">\(\delta_X = \mathbb{E}[Y|X, D=1] - \mathbb{E}[Y|X, D=0]\)</span>, with weights proportional to the conditional variance of <span class="math inline">\(D\)</span> given <span class="math inline">\(X\)</span>.</p>
+<p><span id="eq-blp"><span class="math display">\[\delta_R = \frac{\mathbb{E}[\sigma^2_{D|X} \cdot \delta_X]}{\mathbb{E}[\sigma^2_{D|X}]} \tag{1}\]</span></span></p>
+<p>Groups where treatment is most variable (closest to a 50/50 split) get the most weight.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>n_cw <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="co"># X determines both treatment probability and treatment effect</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>x_cw <span class="ot">&lt;-</span> <span class="fu">runif</span>(n_cw, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>prob_treat <span class="ot">&lt;-</span> x_cw<span class="sc">^</span><span class="dv">2</span>  <span class="co"># treatment rare for low X, common for high X</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>D <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n_cw, <span class="dv">1</span>, prob_treat)</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Heterogeneous treatment effect: large for low X, negative for high X</span></span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>delta_x <span class="ot">&lt;-</span> <span class="dv">10</span> <span class="sc">-</span> <span class="dv">16</span> <span class="sc">*</span> x_cw   <span class="co"># ranges from +10 at X=0 to -6 at X=1</span></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>y_cw <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">+</span> <span class="dv">3</span> <span class="sc">*</span> x_cw <span class="sc">+</span> delta_x <span class="sc">*</span> D <span class="sc">+</span> <span class="fu">rnorm</span>(n_cw)</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Regression coefficient</span></span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>delta_R <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_cw <span class="sc">~</span> D <span class="sc">+</span> x_cw))[<span class="dv">2</span>]</span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Weighted average with weights = Var(D|X) = p(1-p)</span></span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>wt <span class="ot">&lt;-</span> prob_treat <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> prob_treat)</span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>delta_weighted <span class="ot">&lt;-</span> <span class="fu">sum</span>(wt <span class="sc">*</span> delta_x) <span class="sc">/</span> <span class="fu">sum</span>(wt)</span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">regression =</span> delta_R, <span class="at">weighted_avg =</span> delta_weighted,</span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">unweighted_avg =</span> <span class="fu">mean</span>(delta_x))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  regression.D   weighted_avg unweighted_avg 
+       -0.4937         0.0374         2.0417 </code></pre>
+</div>
+</div>
+<p>The unweighted average treatment effect is about 2, but the regression coefficient is near 0. That’s because treatment assignment <span class="math inline">\(p(X) = X^2\)</span> is most variable around <span class="math inline">\(X \approx 0.7\)</span> (where <span class="math inline">\(p(1-p)\)</span> peaks), and at that point the treatment effect <span class="math inline">\(\delta(X) = 10 - 16(0.7) \approx -1\)</span> is near zero or negative. The regression upweights these observations and downweights the large positive effects at low <span class="math inline">\(X\)</span>, where treatment is rare and <span class="math inline">\(\text{Var}(D|X)\)</span> is small.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>df_cw <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x_cw, <span class="at">delta =</span> delta_x, <span class="at">weight =</span> wt)</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_cw, <span class="fu">aes</span>(x)) <span class="sc">+</span></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> delta, <span class="at">color =</span> <span class="st">"Treatment effect δ(X)"</span>), <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> weight <span class="sc">*</span> <span class="dv">40</span>, <span class="at">color =</span> <span class="st">"Weight: Var(D|X) (rescaled)"</span>),</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(</span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">"Treatment effect δ(X)"</span>,</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">sec.axis =</span> <span class="fu">sec_axis</span>(<span class="sc">~</span> . <span class="sc">/</span> <span class="dv">40</span>, <span class="at">name =</span> <span class="st">"Var(D|X)"</span>)</span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Treatment effect δ(X)"</span> <span class="ot">=</span> <span class="st">"tomato"</span>,</span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"Weight: Var(D|X) (rescaled)"</span> <span class="ot">=</span> <span class="st">"steelblue"</span>),</span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>                     <span class="at">name =</span> <span class="st">""</span>) <span class="sc">+</span></span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"X"</span>, <span class="at">title =</span> <span class="st">"Regression weights favor where treatment is most variable"</span>) <span class="sc">+</span></span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ch02-cef-blp_files/figure-html/causal-weights-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>This is why a randomized experiment with <span class="math inline">\(p = 0.5\)</span> for everyone gives equal weight to all subgroups: when <span class="math inline">\(\text{Var}(D|X)\)</span> is constant, the variance-weighted average reduces to the simple average.</p>
+</section>
+<section id="summary" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="summary"><span class="header-section-number">10</span> Summary</h2>
+<ul>
+<li>The <strong>CEF</strong> <span class="math inline">\(m(X) = \mathbb{E}[Y|X]\)</span> is the best predictor, but the CEF error can be heteroskedastic (mean independence <span class="math inline">\(\neq\)</span> independence).</li>
+<li>The <strong>BLP</strong> <span class="math inline">\(X'\beta\)</span> is the best <em>linear</em> approximation. It equals the CEF when the CEF is linear (e.g., jointly normal data).</li>
+<li>BLP residuals satisfy <span class="math inline">\(\mathbb{E}[Xe] = 0\)</span> (weaker than <span class="math inline">\(\mathbb{E}[e|X] = 0\)</span>), so nonlinear patterns can remain.</li>
+<li><strong>Dummy variables</strong> make the CEF discrete: the regression recovers group means.</li>
+<li><strong>Interactions</strong> allow slopes to vary by group or by the value of a moderator.</li>
+<li><strong>Omitted variable bias</strong> has a precise formula: <span class="math inline">\(\gamma_1 = \beta_1 + \Gamma_{12}\beta_2\)</span>. Adding controls doesn’t always reduce bias.</li>
+<li><strong>Causal interpretation</strong>: regression weights treatment effects by the conditional variance of treatment assignment.</li>
+</ul>
+<p>Next: <a href="./ch03-ols.html">Multivariate OLS</a> — moving from population quantities to sample estimation.</p>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/UChicago-pol-methods\.github\.io\/EstimationI\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "2. The CEF and Best Linear Predictor"</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "Why regression approximates the CEF"</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: setup</span></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">digits =</span> <span class="dv">3</span>)</span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>The conditional expectation function $m(X) = \mathbb{E}<span class="co">[</span><span class="ot">Y|X</span><span class="co">]</span>$ is the best predictor of $Y$ given $X$ — but we rarely know it. The best linear predictor (BLP) is the next best thing: a linear approximation that only requires knowing means, variances, and covariances. This chapter explores the gap between the two and what we gain (and lose) by going linear.</span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>**Questions this chapter answers:**</span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>What is the best predictor of $Y$ given $X$, and why is it the conditional expectation function?</span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>How does the best linear predictor (BLP) approximate a nonlinear CEF?</span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>When does the BLP equal the CEF, and why does joint normality guarantee linearity?</span>
+<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>How does omitted variable bias arise, and why don't additional controls always help?</span>
+<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a><span class="fu">## CEF error: mean independence is not independence</span></span>
+<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a>Define the CEF error as $e = Y - m(X)$. By construction, $\mathbb{E}<span class="co">[</span><span class="ot">e|X</span><span class="co">]</span> = 0$ — this is called mean independence. But mean independence is weaker than full independence: the *variance* of $e$ can still depend on $X$.</span>
+<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-28"><a href="#cb37-28" aria-hidden="true" tabindex="-1"></a>Here's the lecture's example: $X \sim \text{Uniform}(-1, 1)$ and $Y = X^2 + X\varepsilon$, where $\varepsilon \sim N(0,1)$ is independent of $X$.</span>
+<span id="cb37-29"><a href="#cb37-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-30"><a href="#cb37-30" aria-hidden="true" tabindex="-1"></a>::: {#def-cef}</span>
+<span id="cb37-31"><a href="#cb37-31" aria-hidden="true" tabindex="-1"></a><span class="fu">## Conditional Expectation Function</span></span>
+<span id="cb37-32"><a href="#cb37-32" aria-hidden="true" tabindex="-1"></a>The CEF is $m(X) = \mathbb{E}<span class="co">[</span><span class="ot">Y|X</span><span class="co">]</span>$, the function that gives the mean of $Y$ for each value of $X$. The CEF error $e = Y - m(X)$ satisfies mean independence: $\mathbb{E}<span class="co">[</span><span class="ot">e|X</span><span class="co">]</span> = 0$.</span>
+<span id="cb37-33"><a href="#cb37-33" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb37-34"><a href="#cb37-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-37"><a href="#cb37-37" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-38"><a href="#cb37-38" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: mean-independence</span></span>
+<span id="cb37-39"><a href="#cb37-39" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">307</span>)</span>
+<span id="cb37-40"><a href="#cb37-40" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
+<span id="cb37-41"><a href="#cb37-41" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb37-42"><a href="#cb37-42" aria-hidden="true" tabindex="-1"></a>eps <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n)</span>
+<span id="cb37-43"><a href="#cb37-43" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> x <span class="sc">*</span> eps</span>
+<span id="cb37-44"><a href="#cb37-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-45"><a href="#cb37-45" aria-hidden="true" tabindex="-1"></a><span class="co"># CEF is m(X) = X^2</span></span>
+<span id="cb37-46"><a href="#cb37-46" aria-hidden="true" tabindex="-1"></a>m_x <span class="ot">&lt;-</span> x<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb37-47"><a href="#cb37-47" aria-hidden="true" tabindex="-1"></a>e <span class="ot">&lt;-</span> y <span class="sc">-</span> m_x</span>
+<span id="cb37-48"><a href="#cb37-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-49"><a href="#cb37-49" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean independence: E[e|X] ≈ 0 in every bin</span></span>
+<span id="cb37-50"><a href="#cb37-50" aria-hidden="true" tabindex="-1"></a>bins <span class="ot">&lt;-</span> <span class="fu">cut</span>(x, <span class="at">breaks =</span> <span class="dv">20</span>)</span>
+<span id="cb37-51"><a href="#cb37-51" aria-hidden="true" tabindex="-1"></a>bin_means <span class="ot">&lt;-</span> <span class="fu">tapply</span>(e, bins, mean)</span>
+<span id="cb37-52"><a href="#cb37-52" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(bin_means, <span class="dv">3</span>)</span>
+<span id="cb37-53"><a href="#cb37-53" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-54"><a href="#cb37-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-55"><a href="#cb37-55" aria-hidden="true" tabindex="-1"></a>The conditional means of $e$ are all near zero. But the conditional *variance* grows with $|X|$:</span>
+<span id="cb37-56"><a href="#cb37-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-59"><a href="#cb37-59" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-60"><a href="#cb37-60" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: heteroskedastic-errors</span></span>
+<span id="cb37-61"><a href="#cb37-61" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x, <span class="at">e =</span> e)</span>
+<span id="cb37-62"><a href="#cb37-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-63"><a href="#cb37-63" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(x, e)) <span class="sc">+</span></span>
+<span id="cb37-64"><a href="#cb37-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.15</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb37-65"><a href="#cb37-65" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"steelblue"</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb37-66"><a href="#cb37-66" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"X"</span>, <span class="at">y =</span> <span class="st">"CEF error (e)"</span>,</span>
+<span id="cb37-67"><a href="#cb37-67" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Mean independence holds, but errors are heteroskedastic"</span>,</span>
+<span id="cb37-68"><a href="#cb37-68" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Var(e|X) = X², so spread increases with |X|"</span>) <span class="sc">+</span></span>
+<span id="cb37-69"><a href="#cb37-69" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb37-70"><a href="#cb37-70" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-71"><a href="#cb37-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-72"><a href="#cb37-72" aria-hidden="true" tabindex="-1"></a>The smooth line hovers at zero (mean independence), but the spread fans out. This pattern — $\text{Var}(e|X) = X^2$ — is heteroskedasticity. The CEF decomposes $Y$ into signal and noise, but doesn't guarantee the noise is uniform.</span>
+<span id="cb37-73"><a href="#cb37-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-74"><a href="#cb37-74" aria-hidden="true" tabindex="-1"></a><span class="fu">## The CEF is the best predictor {#sec-cef-best}</span></span>
+<span id="cb37-75"><a href="#cb37-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-76"><a href="#cb37-76" aria-hidden="true" tabindex="-1"></a>Among *all* functions of $X$, the CEF minimizes mean squared prediction error. Let's demonstrate by comparing the CEF to some alternatives for the same DGP.</span>
+<span id="cb37-77"><a href="#cb37-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-80"><a href="#cb37-80" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-81"><a href="#cb37-81" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: cef-best-predictor</span></span>
+<span id="cb37-82"><a href="#cb37-82" aria-hidden="true" tabindex="-1"></a><span class="co"># True CEF: m(X) = X^2</span></span>
+<span id="cb37-83"><a href="#cb37-83" aria-hidden="true" tabindex="-1"></a><span class="co"># Competitor 1: the unconditional mean</span></span>
+<span id="cb37-84"><a href="#cb37-84" aria-hidden="true" tabindex="-1"></a><span class="co"># Competitor 2: a linear predictor</span></span>
+<span id="cb37-85"><a href="#cb37-85" aria-hidden="true" tabindex="-1"></a><span class="co"># Competitor 3: a cubic predictor</span></span>
+<span id="cb37-86"><a href="#cb37-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-87"><a href="#cb37-87" aria-hidden="true" tabindex="-1"></a>mse_cef <span class="ot">&lt;-</span> <span class="fu">mean</span>((y <span class="sc">-</span> x<span class="sc">^</span><span class="dv">2</span>)<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb37-88"><a href="#cb37-88" aria-hidden="true" tabindex="-1"></a>mse_mean <span class="ot">&lt;-</span> <span class="fu">mean</span>((y <span class="sc">-</span> <span class="fu">mean</span>(y))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb37-89"><a href="#cb37-89" aria-hidden="true" tabindex="-1"></a>mse_linear <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">residuals</span>(<span class="fu">lm</span>(y <span class="sc">~</span> x))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb37-90"><a href="#cb37-90" aria-hidden="true" tabindex="-1"></a>mse_cubic <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">residuals</span>(<span class="fu">lm</span>(y <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">I</span>(x<span class="sc">^</span><span class="dv">2</span>) <span class="sc">+</span> <span class="fu">I</span>(x<span class="sc">^</span><span class="dv">3</span>)))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb37-91"><a href="#cb37-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-92"><a href="#cb37-92" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
+<span id="cb37-93"><a href="#cb37-93" aria-hidden="true" tabindex="-1"></a>  <span class="at">predictor =</span> <span class="fu">c</span>(<span class="st">"Unconditional mean"</span>, <span class="st">"Linear (BLP)"</span>, <span class="st">"Cubic"</span>, <span class="st">"CEF (X²)"</span>),</span>
+<span id="cb37-94"><a href="#cb37-94" aria-hidden="true" tabindex="-1"></a>  <span class="at">MSE =</span> <span class="fu">round</span>(<span class="fu">c</span>(mse_mean, mse_linear, mse_cubic, mse_cef), <span class="dv">4</span>)</span>
+<span id="cb37-95"><a href="#cb37-95" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb37-96"><a href="#cb37-96" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-97"><a href="#cb37-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-98"><a href="#cb37-98" aria-hidden="true" tabindex="-1"></a>The CEF has the lowest MSE. The cubic comes close because $X^3$ has mean zero for symmetric $X$, so the cubic approximation is nearly $X^2$. The linear predictor does worse — it can't capture the curvature.</span>
+<span id="cb37-99"><a href="#cb37-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-100"><a href="#cb37-100" aria-hidden="true" tabindex="-1"></a><span class="fu">## CEF vs. BLP: when the line misses the curve</span></span>
+<span id="cb37-101"><a href="#cb37-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-102"><a href="#cb37-102" aria-hidden="true" tabindex="-1"></a>The BLP minimizes $\mathbb{E}<span class="co">[</span><span class="ot">(Y - a - bX)^2</span><span class="co">]</span>$ and yields $b = \text{Cov}(X,Y)/\text{Var}(X)$. When the CEF is nonlinear, the BLP draws the best straight line through a curved relationship.</span>
+<span id="cb37-103"><a href="#cb37-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-104"><a href="#cb37-104" aria-hidden="true" tabindex="-1"></a>::: {#def-blp}</span>
+<span id="cb37-105"><a href="#cb37-105" aria-hidden="true" tabindex="-1"></a><span class="fu">## Best Linear Predictor</span></span>
+<span id="cb37-106"><a href="#cb37-106" aria-hidden="true" tabindex="-1"></a>The BLP of $Y$ given $X$ is $\alpha + \beta'X$ where $\beta = \text{Var}(X)^{-1}\text{Cov}(X, Y)$. The BLP error satisfies $\mathbb{E}<span class="co">[</span><span class="ot">Xe</span><span class="co">]</span> = 0$ (uncorrelated with $X$) but not necessarily $\mathbb{E}<span class="co">[</span><span class="ot">e|X</span><span class="co">]</span> = 0$.</span>
+<span id="cb37-107"><a href="#cb37-107" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb37-108"><a href="#cb37-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-111"><a href="#cb37-111" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-112"><a href="#cb37-112" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: cef-vs-blp</span></span>
+<span id="cb37-113"><a href="#cb37-113" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "The BLP is the best line through a curved CEF"</span></span>
+<span id="cb37-114"><a href="#cb37-114" aria-hidden="true" tabindex="-1"></a><span class="co"># Same DGP: Y = X^2 + X*eps</span></span>
+<span id="cb37-115"><a href="#cb37-115" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x, <span class="at">y =</span> y)</span>
+<span id="cb37-116"><a href="#cb37-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-117"><a href="#cb37-117" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(x, y)) <span class="sc">+</span></span>
+<span id="cb37-118"><a href="#cb37-118" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb37-119"><a href="#cb37-119" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_function</span>(<span class="at">fun =</span> <span class="cf">function</span>(x) x<span class="sc">^</span><span class="dv">2</span>, <span class="fu">aes</span>(<span class="at">color =</span> <span class="st">"CEF: X²"</span>),</span>
+<span id="cb37-120"><a href="#cb37-120" aria-hidden="true" tabindex="-1"></a>                <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb37-121"><a href="#cb37-121" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="fu">aes</span>(<span class="at">color =</span> <span class="st">"BLP"</span>),</span>
+<span id="cb37-122"><a href="#cb37-122" aria-hidden="true" tabindex="-1"></a>              <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb37-123"><a href="#cb37-123" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"CEF: X²"</span> <span class="ot">=</span> <span class="st">"tomato"</span>, <span class="st">"BLP"</span> <span class="ot">=</span> <span class="st">"steelblue"</span>),</span>
+<span id="cb37-124"><a href="#cb37-124" aria-hidden="true" tabindex="-1"></a>                     <span class="at">name =</span> <span class="st">""</span>) <span class="sc">+</span></span>
+<span id="cb37-125"><a href="#cb37-125" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"X"</span>, <span class="at">y =</span> <span class="st">"Y"</span>,</span>
+<span id="cb37-126"><a href="#cb37-126" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"The BLP is the best line through a curved CEF"</span>) <span class="sc">+</span></span>
+<span id="cb37-127"><a href="#cb37-127" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb37-128"><a href="#cb37-128" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-129"><a href="#cb37-129" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-130"><a href="#cb37-130" aria-hidden="true" tabindex="-1"></a>The BLP residual $e = Y - X'\beta$ satisfies $\mathbb{E}<span class="co">[</span><span class="ot">Xe</span><span class="co">]</span> = 0$ (uncorrelated with $X$), but *not* $\mathbb{E}<span class="co">[</span><span class="ot">e|X</span><span class="co">]</span> = 0$. The residual still contains nonlinear structure: the BLP intercept absorbs $\mathbb{E}<span class="co">[</span><span class="ot">X^2</span><span class="co">]</span> = 1/3$, so the conditional mean of the residual traces out $X^2 - 1/3$ rather than zero:</span>
+<span id="cb37-131"><a href="#cb37-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-134"><a href="#cb37-134" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-135"><a href="#cb37-135" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: blp-residual-pattern</span></span>
+<span id="cb37-136"><a href="#cb37-136" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x)</span>
+<span id="cb37-137"><a href="#cb37-137" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>blp_resid <span class="ot">&lt;-</span> <span class="fu">residuals</span>(mod)</span>
+<span id="cb37-138"><a href="#cb37-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-139"><a href="#cb37-139" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(x, blp_resid)) <span class="sc">+</span></span>
+<span id="cb37-140"><a href="#cb37-140" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb37-141"><a href="#cb37-141" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"tomato"</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb37-142"><a href="#cb37-142" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb37-143"><a href="#cb37-143" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"X"</span>, <span class="at">y =</span> <span class="st">"BLP residual"</span>,</span>
+<span id="cb37-144"><a href="#cb37-144" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"BLP residuals still contain nonlinear structure"</span>,</span>
+<span id="cb37-145"><a href="#cb37-145" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"E[e|X] ≠ 0, but E[Xe] = 0"</span>) <span class="sc">+</span></span>
+<span id="cb37-146"><a href="#cb37-146" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb37-147"><a href="#cb37-147" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-148"><a href="#cb37-148" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-149"><a href="#cb37-149" aria-hidden="true" tabindex="-1"></a><span class="fu">## When does BLP = CEF?</span></span>
+<span id="cb37-150"><a href="#cb37-150" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-151"><a href="#cb37-151" aria-hidden="true" tabindex="-1"></a>The BLP equals the CEF when the CEF is actually linear. An important sufficient condition: if $(X, Y)$ are jointly normal, the CEF is linear. Let's verify.</span>
+<span id="cb37-152"><a href="#cb37-152" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-155"><a href="#cb37-155" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-156"><a href="#cb37-156" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: blp-equals-cef</span></span>
+<span id="cb37-157"><a href="#cb37-157" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MASS)</span>
+<span id="cb37-158"><a href="#cb37-158" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb37-159"><a href="#cb37-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-160"><a href="#cb37-160" aria-hidden="true" tabindex="-1"></a><span class="co"># Jointly normal (X, Y)</span></span>
+<span id="cb37-161"><a href="#cb37-161" aria-hidden="true" tabindex="-1"></a>Sigma <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.7</span>, <span class="fl">0.7</span>, <span class="dv">1</span>), <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb37-162"><a href="#cb37-162" aria-hidden="true" tabindex="-1"></a>joint <span class="ot">&lt;-</span> <span class="fu">mvrnorm</span>(<span class="dv">5000</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma)</span>
+<span id="cb37-163"><a href="#cb37-163" aria-hidden="true" tabindex="-1"></a>x_norm <span class="ot">&lt;-</span> joint[, <span class="dv">1</span>]</span>
+<span id="cb37-164"><a href="#cb37-164" aria-hidden="true" tabindex="-1"></a>y_norm <span class="ot">&lt;-</span> joint[, <span class="dv">2</span>]</span>
+<span id="cb37-165"><a href="#cb37-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-166"><a href="#cb37-166" aria-hidden="true" tabindex="-1"></a>df_norm <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x_norm, <span class="at">y =</span> y_norm)</span>
+<span id="cb37-167"><a href="#cb37-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-168"><a href="#cb37-168" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_norm, <span class="fu">aes</span>(x, y)) <span class="sc">+</span></span>
+<span id="cb37-169"><a href="#cb37-169" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>, <span class="at">size =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb37-170"><a href="#cb37-170" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="fu">aes</span>(<span class="at">color =</span> <span class="st">"BLP"</span>), <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb37-171"><a href="#cb37-171" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="fu">aes</span>(<span class="at">color =</span> <span class="st">"CEF (loess)"</span>), <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb37-172"><a href="#cb37-172" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"BLP"</span> <span class="ot">=</span> <span class="st">"steelblue"</span>, <span class="st">"CEF (loess)"</span> <span class="ot">=</span> <span class="st">"tomato"</span>),</span>
+<span id="cb37-173"><a href="#cb37-173" aria-hidden="true" tabindex="-1"></a>                     <span class="at">name =</span> <span class="st">""</span>) <span class="sc">+</span></span>
+<span id="cb37-174"><a href="#cb37-174" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Jointly normal: the BLP and CEF coincide"</span>,</span>
+<span id="cb37-175"><a href="#cb37-175" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"X"</span>, <span class="at">y =</span> <span class="st">"Y"</span>) <span class="sc">+</span></span>
+<span id="cb37-176"><a href="#cb37-176" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb37-177"><a href="#cb37-177" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-178"><a href="#cb37-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-179"><a href="#cb37-179" aria-hidden="true" tabindex="-1"></a>The two lines overlap because the CEF is genuinely linear when the data are jointly normal.</span>
+<span id="cb37-180"><a href="#cb37-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-181"><a href="#cb37-181" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb37-182"><a href="#cb37-182" aria-hidden="true" tabindex="-1"></a><span class="fu">## Joint Normality Implies Linear CEF</span></span>
+<span id="cb37-183"><a href="#cb37-183" aria-hidden="true" tabindex="-1"></a>If $(X, Y)$ are jointly normal, the conditional expectation $\mathbb{E}<span class="co">[</span><span class="ot">Y|X</span><span class="co">]</span>$ is exactly linear in $X$, and the BLP equals the CEF. This is a sufficient but not necessary condition — other distributions can also produce linear CEFs.</span>
+<span id="cb37-184"><a href="#cb37-184" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb37-185"><a href="#cb37-185" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-186"><a href="#cb37-186" aria-hidden="true" tabindex="-1"></a><span class="fu">## The BLP in formulas and code</span></span>
+<span id="cb37-187"><a href="#cb37-187" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-188"><a href="#cb37-188" aria-hidden="true" tabindex="-1"></a>The population BLP coefficient is $\beta = \text{Var}(X)^{-1}\text{Cov}(X, Y)$. In a sample, OLS estimates this:</span>
+<span id="cb37-189"><a href="#cb37-189" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-192"><a href="#cb37-192" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-193"><a href="#cb37-193" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: blp-formulas</span></span>
+<span id="cb37-194"><a href="#cb37-194" aria-hidden="true" tabindex="-1"></a><span class="co"># Bivariate: beta = Cov(X,Y) / Var(X)</span></span>
+<span id="cb37-195"><a href="#cb37-195" aria-hidden="true" tabindex="-1"></a>beta_formula <span class="ot">&lt;-</span> <span class="fu">cov</span>(x_norm, y_norm) <span class="sc">/</span> <span class="fu">var</span>(x_norm)</span>
+<span id="cb37-196"><a href="#cb37-196" aria-hidden="true" tabindex="-1"></a>alpha_formula <span class="ot">&lt;-</span> <span class="fu">mean</span>(y_norm) <span class="sc">-</span> beta_formula <span class="sc">*</span> <span class="fu">mean</span>(x_norm)</span>
+<span id="cb37-197"><a href="#cb37-197" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-198"><a href="#cb37-198" aria-hidden="true" tabindex="-1"></a><span class="co"># OLS gives the same thing</span></span>
+<span id="cb37-199"><a href="#cb37-199" aria-hidden="true" tabindex="-1"></a>beta_ols <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_norm <span class="sc">~</span> x_norm))</span>
+<span id="cb37-200"><a href="#cb37-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-201"><a href="#cb37-201" aria-hidden="true" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">formula =</span> <span class="fu">c</span>(alpha_formula, beta_formula),</span>
+<span id="cb37-202"><a href="#cb37-202" aria-hidden="true" tabindex="-1"></a>      <span class="at">OLS =</span> beta_ols)</span>
+<span id="cb37-203"><a href="#cb37-203" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-204"><a href="#cb37-204" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-205"><a href="#cb37-205" aria-hidden="true" tabindex="-1"></a><span class="fu">## Dummy variables: the CEF for discrete X</span></span>
+<span id="cb37-206"><a href="#cb37-206" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-207"><a href="#cb37-207" aria-hidden="true" tabindex="-1"></a>When $X$ is a categorical variable, the CEF is just group means. Regression with dummies recovers these exactly.</span>
+<span id="cb37-208"><a href="#cb37-208" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-211"><a href="#cb37-211" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-212"><a href="#cb37-212" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: dummies</span></span>
+<span id="cb37-213"><a href="#cb37-213" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb37-214"><a href="#cb37-214" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">300</span></span>
+<span id="cb37-215"><a href="#cb37-215" aria-hidden="true" tabindex="-1"></a>party <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">"Dem"</span>, <span class="st">"Rep"</span>, <span class="st">"Ind"</span>), n, <span class="at">replace =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb37-216"><a href="#cb37-216" aria-hidden="true" tabindex="-1"></a>                <span class="at">prob =</span> <span class="fu">c</span>(<span class="fl">0.4</span>, <span class="fl">0.35</span>, <span class="fl">0.25</span>))</span>
+<span id="cb37-217"><a href="#cb37-217" aria-hidden="true" tabindex="-1"></a>approval <span class="ot">&lt;-</span> <span class="dv">50</span> <span class="sc">+</span> <span class="dv">10</span> <span class="sc">*</span> (party <span class="sc">==</span> <span class="st">"Dem"</span>) <span class="sc">-</span> <span class="dv">5</span> <span class="sc">*</span> (party <span class="sc">==</span> <span class="st">"Rep"</span>) <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="at">sd =</span> <span class="dv">8</span>)</span>
+<span id="cb37-218"><a href="#cb37-218" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-219"><a href="#cb37-219" aria-hidden="true" tabindex="-1"></a>df_party <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">party =</span> <span class="fu">factor</span>(party), <span class="at">approval =</span> approval)</span>
+<span id="cb37-220"><a href="#cb37-220" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-221"><a href="#cb37-221" aria-hidden="true" tabindex="-1"></a><span class="co"># Group means = the CEF</span></span>
+<span id="cb37-222"><a href="#cb37-222" aria-hidden="true" tabindex="-1"></a><span class="fu">tapply</span>(df_party<span class="sc">$</span>approval, df_party<span class="sc">$</span>party, mean)</span>
+<span id="cb37-223"><a href="#cb37-223" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-224"><a href="#cb37-224" aria-hidden="true" tabindex="-1"></a><span class="co"># Regression with dummies (R does this automatically)</span></span>
+<span id="cb37-225"><a href="#cb37-225" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm</span>(approval <span class="sc">~</span> party, <span class="at">data =</span> df_party))</span>
+<span id="cb37-226"><a href="#cb37-226" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-227"><a href="#cb37-227" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-228"><a href="#cb37-228" aria-hidden="true" tabindex="-1"></a>The intercept is the mean for the baseline group (alphabetically first: Dem), and the coefficients are differences from that baseline.</span>
+<span id="cb37-229"><a href="#cb37-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-230"><a href="#cb37-230" aria-hidden="true" tabindex="-1"></a><span class="fu">## Interactions: when the slope depends on a group</span></span>
+<span id="cb37-231"><a href="#cb37-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-232"><a href="#cb37-232" aria-hidden="true" tabindex="-1"></a>An interaction term $D_i \times x_i$ allows the effect of $x$ to differ by group. This is a richer model than parallel slopes.</span>
+<span id="cb37-233"><a href="#cb37-233" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-236"><a href="#cb37-236" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-237"><a href="#cb37-237" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: interactions</span></span>
+<span id="cb37-238"><a href="#cb37-238" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb37-239"><a href="#cb37-239" aria-hidden="true" tabindex="-1"></a>n_int <span class="ot">&lt;-</span> <span class="dv">400</span></span>
+<span id="cb37-240"><a href="#cb37-240" aria-hidden="true" tabindex="-1"></a>group <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">1</span>, n_int, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb37-241"><a href="#cb37-241" aria-hidden="true" tabindex="-1"></a>x_int <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_int)</span>
+<span id="cb37-242"><a href="#cb37-242" aria-hidden="true" tabindex="-1"></a><span class="co"># Group 0: slope = 2, Group 1: slope = -1</span></span>
+<span id="cb37-243"><a href="#cb37-243" aria-hidden="true" tabindex="-1"></a>y_int <span class="ot">&lt;-</span> <span class="dv">3</span> <span class="sc">+</span> <span class="fl">1.5</span> <span class="sc">*</span> group <span class="sc">+</span> <span class="dv">2</span> <span class="sc">*</span> x_int <span class="sc">-</span> <span class="dv">3</span> <span class="sc">*</span> group <span class="sc">*</span> x_int <span class="sc">+</span> <span class="fu">rnorm</span>(n_int)</span>
+<span id="cb37-244"><a href="#cb37-244" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-245"><a href="#cb37-245" aria-hidden="true" tabindex="-1"></a>df_int <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x_int, <span class="at">y =</span> y_int, <span class="at">group =</span> <span class="fu">factor</span>(group))</span>
+<span id="cb37-246"><a href="#cb37-246" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-247"><a href="#cb37-247" aria-hidden="true" tabindex="-1"></a><span class="co"># Parallel slopes (no interaction)</span></span>
+<span id="cb37-248"><a href="#cb37-248" aria-hidden="true" tabindex="-1"></a>mod_parallel <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> group <span class="sc">+</span> x, <span class="at">data =</span> df_int)</span>
+<span id="cb37-249"><a href="#cb37-249" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-250"><a href="#cb37-250" aria-hidden="true" tabindex="-1"></a><span class="co"># Interaction model</span></span>
+<span id="cb37-251"><a href="#cb37-251" aria-hidden="true" tabindex="-1"></a>mod_interact <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> group <span class="sc">*</span> x, <span class="at">data =</span> df_int)</span>
+<span id="cb37-252"><a href="#cb37-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-253"><a href="#cb37-253" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_int, <span class="fu">aes</span>(x, y, <span class="at">color =</span> group)) <span class="sc">+</span></span>
+<span id="cb37-254"><a href="#cb37-254" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb37-255"><a href="#cb37-255" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb37-256"><a href="#cb37-256" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"steelblue"</span>, <span class="st">"tomato"</span>), <span class="at">name =</span> <span class="st">"Group"</span>) <span class="sc">+</span></span>
+<span id="cb37-257"><a href="#cb37-257" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Interaction: different slopes for each group"</span>,</span>
+<span id="cb37-258"><a href="#cb37-258" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"X"</span>, <span class="at">y =</span> <span class="st">"Y"</span>) <span class="sc">+</span></span>
+<span id="cb37-259"><a href="#cb37-259" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb37-260"><a href="#cb37-260" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-261"><a href="#cb37-261" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-264"><a href="#cb37-264" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-265"><a href="#cb37-265" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: interaction-coefficients</span></span>
+<span id="cb37-266"><a href="#cb37-266" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(mod_interact)</span>
+<span id="cb37-267"><a href="#cb37-267" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-268"><a href="#cb37-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-269"><a href="#cb37-269" aria-hidden="true" tabindex="-1"></a>The <span class="in">`group1:x`</span> coefficient ($\approx -3$) is the *difference* in slopes between group 1 and group 0. The marginal effect of $x$ for group 1 is <span class="in">`x`</span> + <span class="in">`group1:x`</span>.</span>
+<span id="cb37-270"><a href="#cb37-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-271"><a href="#cb37-271" aria-hidden="true" tabindex="-1"></a><span class="fu">## Omitted variable bias {#sec-ovb}</span></span>
+<span id="cb37-272"><a href="#cb37-272" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-273"><a href="#cb37-273" aria-hidden="true" tabindex="-1"></a>If the true model is $Y = X_1'\beta_1 + X_2'\beta_2 + e$ but we only regress on $X_1$, we get $\gamma_1 = \beta_1 + \Gamma_{12}\beta_2$, where $\Gamma_{12}$ is the regression of $X_2$ on $X_1$. The bias has a clear direction when we know the signs.</span>
+<span id="cb37-274"><a href="#cb37-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-277"><a href="#cb37-277" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-278"><a href="#cb37-278" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: ovb-simulation</span></span>
+<span id="cb37-279"><a href="#cb37-279" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb37-280"><a href="#cb37-280" aria-hidden="true" tabindex="-1"></a>n_ovb <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb37-281"><a href="#cb37-281" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-282"><a href="#cb37-282" aria-hidden="true" tabindex="-1"></a><span class="co"># X2 (institutions) is correlated with X1 (democracy)</span></span>
+<span id="cb37-283"><a href="#cb37-283" aria-hidden="true" tabindex="-1"></a>x1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_ovb)                        <span class="co"># democracy</span></span>
+<span id="cb37-284"><a href="#cb37-284" aria-hidden="true" tabindex="-1"></a>x2 <span class="ot">&lt;-</span> <span class="fl">0.6</span> <span class="sc">*</span> x1 <span class="sc">+</span> <span class="fu">rnorm</span>(n_ovb, <span class="at">sd =</span> <span class="fl">0.8</span>)  <span class="co"># institutions (correlated)</span></span>
+<span id="cb37-285"><a href="#cb37-285" aria-hidden="true" tabindex="-1"></a>y_ovb <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> x1 <span class="sc">+</span> <span class="dv">2</span> <span class="sc">*</span> x2 <span class="sc">+</span> <span class="fu">rnorm</span>(n_ovb)  <span class="co"># growth</span></span>
+<span id="cb37-286"><a href="#cb37-286" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-287"><a href="#cb37-287" aria-hidden="true" tabindex="-1"></a><span class="co"># True model</span></span>
+<span id="cb37-288"><a href="#cb37-288" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm</span>(y_ovb <span class="sc">~</span> x1 <span class="sc">+</span> x2))</span>
+<span id="cb37-289"><a href="#cb37-289" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-290"><a href="#cb37-290" aria-hidden="true" tabindex="-1"></a><span class="co"># Short regression (omit x2)</span></span>
+<span id="cb37-291"><a href="#cb37-291" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">lm</span>(y_ovb <span class="sc">~</span> x1))</span>
+<span id="cb37-292"><a href="#cb37-292" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-293"><a href="#cb37-293" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-294"><a href="#cb37-294" aria-hidden="true" tabindex="-1"></a>The true effect of democracy ($\beta_1$) is 0.5, but the short regression gives $\gamma_1 \approx 1.7$. The bias is $\Gamma_{12} \times \beta_2 \approx 0.6 \times 2 = 1.2$, inflating the estimate because institutions are positively correlated with democracy and positively affect growth.</span>
+<span id="cb37-295"><a href="#cb37-295" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-298"><a href="#cb37-298" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-299"><a href="#cb37-299" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: ovb-formula</span></span>
+<span id="cb37-300"><a href="#cb37-300" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify the OVB formula</span></span>
+<span id="cb37-301"><a href="#cb37-301" aria-hidden="true" tabindex="-1"></a>gamma_12 <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(x2 <span class="sc">~</span> x1))[<span class="dv">2</span>]  <span class="co"># regression of X2 on X1</span></span>
+<span id="cb37-302"><a href="#cb37-302" aria-hidden="true" tabindex="-1"></a>beta_2 <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ovb <span class="sc">~</span> x1 <span class="sc">+</span> x2))[<span class="dv">3</span>]</span>
+<span id="cb37-303"><a href="#cb37-303" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-304"><a href="#cb37-304" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">short_coef =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ovb <span class="sc">~</span> x1))[<span class="dv">2</span>],</span>
+<span id="cb37-305"><a href="#cb37-305" aria-hidden="true" tabindex="-1"></a>  <span class="at">long_coef_plus_bias =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ovb <span class="sc">~</span> x1 <span class="sc">+</span> x2))[<span class="dv">2</span>] <span class="sc">+</span> gamma_12 <span class="sc">*</span> beta_2)</span>
+<span id="cb37-306"><a href="#cb37-306" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-307"><a href="#cb37-307" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-308"><a href="#cb37-308" aria-hidden="true" tabindex="-1"></a>The OVB formula $\gamma_1 = \beta_1 + \Gamma_{12}\beta_2$ matches exactly.</span>
+<span id="cb37-309"><a href="#cb37-309" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-310"><a href="#cb37-310" aria-hidden="true" tabindex="-1"></a>::: {#thm-ovb}</span>
+<span id="cb37-311"><a href="#cb37-311" aria-hidden="true" tabindex="-1"></a><span class="fu">## Omitted Variable Bias</span></span>
+<span id="cb37-312"><a href="#cb37-312" aria-hidden="true" tabindex="-1"></a>If the true model is $Y = X_1'\beta_1 + X_2'\beta_2 + e$ and we regress $Y$ on $X_1$ alone, the short regression coefficient is $\gamma_1 = \beta_1 + \Gamma_{12}\beta_2$, where $\Gamma_{12}$ is the coefficient from regressing $X_2$ on $X_1$. The bias $\Gamma_{12}\beta_2$ depends on both the correlation between $X_1$ and $X_2$ and the effect of $X_2$ on $Y$.</span>
+<span id="cb37-313"><a href="#cb37-313" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb37-314"><a href="#cb37-314" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-315"><a href="#cb37-315" aria-hidden="true" tabindex="-1"></a>::: {.callout-warning}</span>
+<span id="cb37-316"><a href="#cb37-316" aria-hidden="true" tabindex="-1"></a><span class="fu">## OVB Is About Population, Not Sample</span></span>
+<span id="cb37-317"><a href="#cb37-317" aria-hidden="true" tabindex="-1"></a>The omitted variable bias formula $\gamma_1 = \beta_1 + \Gamma_{12}\beta_2$ is an exact population relationship between projection coefficients. It does not require large samples, normality, or any distributional assumption — it follows purely from the algebra of linear projection.</span>
+<span id="cb37-318"><a href="#cb37-318" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb37-319"><a href="#cb37-319" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-320"><a href="#cb37-320" aria-hidden="true" tabindex="-1"></a><span class="fu">### Adding variables doesn't always help</span></span>
+<span id="cb37-321"><a href="#cb37-321" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-322"><a href="#cb37-322" aria-hidden="true" tabindex="-1"></a>A subtlety from the lecture: if the true model has three variables and you can't observe $X_3$, adding $X_2$ can make the bias on $\beta_1$ worse, depending on the correlation structure.</span>
+<span id="cb37-323"><a href="#cb37-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-326"><a href="#cb37-326" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-327"><a href="#cb37-327" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: ovb-worse</span></span>
+<span id="cb37-328"><a href="#cb37-328" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb37-329"><a href="#cb37-329" aria-hidden="true" tabindex="-1"></a>n_ow <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb37-330"><a href="#cb37-330" aria-hidden="true" tabindex="-1"></a>z1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_ow)</span>
+<span id="cb37-331"><a href="#cb37-331" aria-hidden="true" tabindex="-1"></a>z2 <span class="ot">&lt;-</span> <span class="fl">0.3</span> <span class="sc">*</span> z1 <span class="sc">+</span> <span class="fu">rnorm</span>(n_ow)</span>
+<span id="cb37-332"><a href="#cb37-332" aria-hidden="true" tabindex="-1"></a>z3 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.8</span> <span class="sc">*</span> z1 <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> z2 <span class="sc">+</span> <span class="fu">rnorm</span>(n_ow)</span>
+<span id="cb37-333"><a href="#cb37-333" aria-hidden="true" tabindex="-1"></a>y_ow <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">+</span> <span class="dv">1</span> <span class="sc">*</span> z1 <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> z2 <span class="sc">+</span> <span class="dv">3</span> <span class="sc">*</span> z3 <span class="sc">+</span> <span class="fu">rnorm</span>(n_ow)</span>
+<span id="cb37-334"><a href="#cb37-334" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-335"><a href="#cb37-335" aria-hidden="true" tabindex="-1"></a><span class="co"># True beta_1 = 1</span></span>
+<span id="cb37-336"><a href="#cb37-336" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">true =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ow <span class="sc">~</span> z1 <span class="sc">+</span> z2 <span class="sc">+</span> z3))[<span class="dv">2</span>],</span>
+<span id="cb37-337"><a href="#cb37-337" aria-hidden="true" tabindex="-1"></a>  <span class="at">short =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ow <span class="sc">~</span> z1))[<span class="dv">2</span>],</span>
+<span id="cb37-338"><a href="#cb37-338" aria-hidden="true" tabindex="-1"></a>  <span class="at">medium =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ow <span class="sc">~</span> z1 <span class="sc">+</span> z2))[<span class="dv">2</span>])</span>
+<span id="cb37-339"><a href="#cb37-339" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-340"><a href="#cb37-340" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-341"><a href="#cb37-341" aria-hidden="true" tabindex="-1"></a>Why does adding $X_2$ make things worse? Apply the OVB formula to the medium regression: omitting $X_3$ biases $\hat\beta_1$ by $\Gamma_{13\cdot 2}\beta_3$, where $\Gamma_{13\cdot 2}$ is the coefficient on $X_1$ in the regression of $X_3$ on $(X_1, X_2)$. Conditioning on $X_2$ can change the partial correlation between $X_1$ and $X_3$, amplifying the bias.</span>
+<span id="cb37-342"><a href="#cb37-342" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-345"><a href="#cb37-345" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-346"><a href="#cb37-346" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: ovb-worse-decomposition</span></span>
+<span id="cb37-347"><a href="#cb37-347" aria-hidden="true" tabindex="-1"></a><span class="co"># OVB decomposition for the medium model</span></span>
+<span id="cb37-348"><a href="#cb37-348" aria-hidden="true" tabindex="-1"></a>gamma_13_2 <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(z3 <span class="sc">~</span> z1 <span class="sc">+</span> z2))[<span class="dv">2</span>]  <span class="co"># partial effect of z1 on z3, controlling for z2</span></span>
+<span id="cb37-349"><a href="#cb37-349" aria-hidden="true" tabindex="-1"></a>beta_3 <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ow <span class="sc">~</span> z1 <span class="sc">+</span> z2 <span class="sc">+</span> z3))[<span class="dv">4</span>]</span>
+<span id="cb37-350"><a href="#cb37-350" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-351"><a href="#cb37-351" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">medium_bias =</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_ow <span class="sc">~</span> z1 <span class="sc">+</span> z2))[<span class="dv">2</span>] <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb37-352"><a href="#cb37-352" aria-hidden="true" tabindex="-1"></a>  <span class="at">ovb_formula =</span> gamma_13_2 <span class="sc">*</span> beta_3)</span>
+<span id="cb37-353"><a href="#cb37-353" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-354"><a href="#cb37-354" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-355"><a href="#cb37-355" aria-hidden="true" tabindex="-1"></a>Depending on the correlation structure, the "medium" model (with $X_2$ but not $X_3$) may be further from the truth than the "short" model. More controls are not automatically better.</span>
+<span id="cb37-356"><a href="#cb37-356" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-357"><a href="#cb37-357" aria-hidden="true" tabindex="-1"></a><span class="fu">## Causal interpretation: regression as a weighted average</span></span>
+<span id="cb37-358"><a href="#cb37-358" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-359"><a href="#cb37-359" aria-hidden="true" tabindex="-1"></a>The lecture ends with a deep result: when you regress $Y$ on a treatment dummy $D$ and controls $X$, the regression coefficient is a weighted average of the group-specific treatment effects $\delta_X = \mathbb{E}<span class="co">[</span><span class="ot">Y|X, D=1</span><span class="co">]</span> - \mathbb{E}<span class="co">[</span><span class="ot">Y|X, D=0</span><span class="co">]</span>$, with weights proportional to the conditional variance of $D$ given $X$.</span>
+<span id="cb37-360"><a href="#cb37-360" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-361"><a href="#cb37-361" aria-hidden="true" tabindex="-1"></a>$$\delta_R = \frac{\mathbb{E}<span class="co">[</span><span class="ot">\sigma^2_{D|X} \cdot \delta_X</span><span class="co">]</span>}{\mathbb{E}<span class="co">[</span><span class="ot">\sigma^2_{D|X}</span><span class="co">]</span>}$$ {#eq-blp}</span>
+<span id="cb37-362"><a href="#cb37-362" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-363"><a href="#cb37-363" aria-hidden="true" tabindex="-1"></a>Groups where treatment is most variable (closest to a 50/50 split) get the most weight.</span>
+<span id="cb37-364"><a href="#cb37-364" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-367"><a href="#cb37-367" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-368"><a href="#cb37-368" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: causal-weights</span></span>
+<span id="cb37-369"><a href="#cb37-369" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb37-370"><a href="#cb37-370" aria-hidden="true" tabindex="-1"></a>n_cw <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
+<span id="cb37-371"><a href="#cb37-371" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-372"><a href="#cb37-372" aria-hidden="true" tabindex="-1"></a><span class="co"># X determines both treatment probability and treatment effect</span></span>
+<span id="cb37-373"><a href="#cb37-373" aria-hidden="true" tabindex="-1"></a>x_cw <span class="ot">&lt;-</span> <span class="fu">runif</span>(n_cw, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb37-374"><a href="#cb37-374" aria-hidden="true" tabindex="-1"></a>prob_treat <span class="ot">&lt;-</span> x_cw<span class="sc">^</span><span class="dv">2</span>  <span class="co"># treatment rare for low X, common for high X</span></span>
+<span id="cb37-375"><a href="#cb37-375" aria-hidden="true" tabindex="-1"></a>D <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n_cw, <span class="dv">1</span>, prob_treat)</span>
+<span id="cb37-376"><a href="#cb37-376" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-377"><a href="#cb37-377" aria-hidden="true" tabindex="-1"></a><span class="co"># Heterogeneous treatment effect: large for low X, negative for high X</span></span>
+<span id="cb37-378"><a href="#cb37-378" aria-hidden="true" tabindex="-1"></a>delta_x <span class="ot">&lt;-</span> <span class="dv">10</span> <span class="sc">-</span> <span class="dv">16</span> <span class="sc">*</span> x_cw   <span class="co"># ranges from +10 at X=0 to -6 at X=1</span></span>
+<span id="cb37-379"><a href="#cb37-379" aria-hidden="true" tabindex="-1"></a>y_cw <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">+</span> <span class="dv">3</span> <span class="sc">*</span> x_cw <span class="sc">+</span> delta_x <span class="sc">*</span> D <span class="sc">+</span> <span class="fu">rnorm</span>(n_cw)</span>
+<span id="cb37-380"><a href="#cb37-380" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-381"><a href="#cb37-381" aria-hidden="true" tabindex="-1"></a><span class="co"># Regression coefficient</span></span>
+<span id="cb37-382"><a href="#cb37-382" aria-hidden="true" tabindex="-1"></a>delta_R <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y_cw <span class="sc">~</span> D <span class="sc">+</span> x_cw))[<span class="dv">2</span>]</span>
+<span id="cb37-383"><a href="#cb37-383" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-384"><a href="#cb37-384" aria-hidden="true" tabindex="-1"></a><span class="co"># Weighted average with weights = Var(D|X) = p(1-p)</span></span>
+<span id="cb37-385"><a href="#cb37-385" aria-hidden="true" tabindex="-1"></a>wt <span class="ot">&lt;-</span> prob_treat <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> prob_treat)</span>
+<span id="cb37-386"><a href="#cb37-386" aria-hidden="true" tabindex="-1"></a>delta_weighted <span class="ot">&lt;-</span> <span class="fu">sum</span>(wt <span class="sc">*</span> delta_x) <span class="sc">/</span> <span class="fu">sum</span>(wt)</span>
+<span id="cb37-387"><a href="#cb37-387" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-388"><a href="#cb37-388" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">regression =</span> delta_R, <span class="at">weighted_avg =</span> delta_weighted,</span>
+<span id="cb37-389"><a href="#cb37-389" aria-hidden="true" tabindex="-1"></a>  <span class="at">unweighted_avg =</span> <span class="fu">mean</span>(delta_x))</span>
+<span id="cb37-390"><a href="#cb37-390" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-391"><a href="#cb37-391" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-392"><a href="#cb37-392" aria-hidden="true" tabindex="-1"></a>The unweighted average treatment effect is about 2, but the regression coefficient is near 0. That's because treatment assignment $p(X) = X^2$ is most variable around $X \approx 0.7$ (where $p(1-p)$ peaks), and at that point the treatment effect $\delta(X) = 10 - 16(0.7) \approx -1$ is near zero or negative. The regression upweights these observations and downweights the large positive effects at low $X$, where treatment is rare and $\text{Var}(D|X)$ is small.</span>
+<span id="cb37-393"><a href="#cb37-393" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-396"><a href="#cb37-396" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb37-397"><a href="#cb37-397" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: causal-weights-plot</span></span>
+<span id="cb37-398"><a href="#cb37-398" aria-hidden="true" tabindex="-1"></a>df_cw <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x_cw, <span class="at">delta =</span> delta_x, <span class="at">weight =</span> wt)</span>
+<span id="cb37-399"><a href="#cb37-399" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-400"><a href="#cb37-400" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_cw, <span class="fu">aes</span>(x)) <span class="sc">+</span></span>
+<span id="cb37-401"><a href="#cb37-401" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> delta, <span class="at">color =</span> <span class="st">"Treatment effect δ(X)"</span>), <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb37-402"><a href="#cb37-402" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> weight <span class="sc">*</span> <span class="dv">40</span>, <span class="at">color =</span> <span class="st">"Weight: Var(D|X) (rescaled)"</span>),</span>
+<span id="cb37-403"><a href="#cb37-403" aria-hidden="true" tabindex="-1"></a>            <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb37-404"><a href="#cb37-404" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(</span>
+<span id="cb37-405"><a href="#cb37-405" aria-hidden="true" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">"Treatment effect δ(X)"</span>,</span>
+<span id="cb37-406"><a href="#cb37-406" aria-hidden="true" tabindex="-1"></a>    <span class="at">sec.axis =</span> <span class="fu">sec_axis</span>(<span class="sc">~</span> . <span class="sc">/</span> <span class="dv">40</span>, <span class="at">name =</span> <span class="st">"Var(D|X)"</span>)</span>
+<span id="cb37-407"><a href="#cb37-407" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb37-408"><a href="#cb37-408" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Treatment effect δ(X)"</span> <span class="ot">=</span> <span class="st">"tomato"</span>,</span>
+<span id="cb37-409"><a href="#cb37-409" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"Weight: Var(D|X) (rescaled)"</span> <span class="ot">=</span> <span class="st">"steelblue"</span>),</span>
+<span id="cb37-410"><a href="#cb37-410" aria-hidden="true" tabindex="-1"></a>                     <span class="at">name =</span> <span class="st">""</span>) <span class="sc">+</span></span>
+<span id="cb37-411"><a href="#cb37-411" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb37-412"><a href="#cb37-412" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"X"</span>, <span class="at">title =</span> <span class="st">"Regression weights favor where treatment is most variable"</span>) <span class="sc">+</span></span>
+<span id="cb37-413"><a href="#cb37-413" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb37-414"><a href="#cb37-414" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb37-415"><a href="#cb37-415" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-416"><a href="#cb37-416" aria-hidden="true" tabindex="-1"></a>This is why a randomized experiment with $p = 0.5$ for everyone gives equal weight to all subgroups: when $\text{Var}(D|X)$ is constant, the variance-weighted average reduces to the simple average.</span>
+<span id="cb37-417"><a href="#cb37-417" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-418"><a href="#cb37-418" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
+<span id="cb37-419"><a href="#cb37-419" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-420"><a href="#cb37-420" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The **CEF** $m(X) = \mathbb{E}<span class="co">[</span><span class="ot">Y|X</span><span class="co">]</span>$ is the best predictor, but the CEF error can be heteroskedastic (mean independence $\neq$ independence).</span>
+<span id="cb37-421"><a href="#cb37-421" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>The **BLP** $X'\beta$ is the best *linear* approximation. It equals the CEF when the CEF is linear (e.g., jointly normal data).</span>
+<span id="cb37-422"><a href="#cb37-422" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>BLP residuals satisfy $\mathbb{E}<span class="co">[</span><span class="ot">Xe</span><span class="co">]</span> = 0$ (weaker than $\mathbb{E}<span class="co">[</span><span class="ot">e|X</span><span class="co">]</span> = 0$), so nonlinear patterns can remain.</span>
+<span id="cb37-423"><a href="#cb37-423" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Dummy variables** make the CEF discrete: the regression recovers group means.</span>
+<span id="cb37-424"><a href="#cb37-424" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Interactions** allow slopes to vary by group or by the value of a moderator.</span>
+<span id="cb37-425"><a href="#cb37-425" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Omitted variable bias** has a precise formula: $\gamma_1 = \beta_1 + \Gamma_{12}\beta_2$. Adding controls doesn't always reduce bias.</span>
+<span id="cb37-426"><a href="#cb37-426" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Causal interpretation**: regression weights treatment effects by the conditional variance of treatment assignment.</span>
+<span id="cb37-427"><a href="#cb37-427" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-428"><a href="#cb37-428" aria-hidden="true" tabindex="-1"></a>Next: <span class="co">[</span><span class="ot">Multivariate OLS</span><span class="co">](ch03-ols.qmd)</span> — moving from population quantities to sample estimation.</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
