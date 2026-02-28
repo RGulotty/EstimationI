@@ -2201,58 +2201,82 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <span id="cb63-642"><a href="#cb63-642" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Homoskedasticity</span>
 <span id="cb63-643"><a href="#cb63-643" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Known, correct model specification</span>
 <span id="cb63-644"><a href="#cb63-644" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-645"><a href="#cb63-645" aria-hidden="true" tabindex="-1"></a>What happens when normality fails? Let's simulate with heavy-tailed errors:</span>
+<span id="cb63-645"><a href="#cb63-645" aria-hidden="true" tabindex="-1"></a>What happens when we have heteroskedastic errors? Let's compare three approaches to 95% confidence intervals — classical (assuming homoskedasticity), HC2 robust, and the pairs bootstrap — across different sample sizes.</span>
 <span id="cb63-646"><a href="#cb63-646" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-649"><a href="#cb63-649" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb63-650"><a href="#cb63-650" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: non-normal-coverage</span></span>
-<span id="cb63-651"><a href="#cb63-651" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
-<span id="cb63-652"><a href="#cb63-652" aria-hidden="true" tabindex="-1"></a>B <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
-<span id="cb63-653"><a href="#cb63-653" aria-hidden="true" tabindex="-1"></a>cover_normal <span class="ot">&lt;-</span> cover_t5 <span class="ot">&lt;-</span> <span class="fu">logical</span>(B)</span>
-<span id="cb63-654"><a href="#cb63-654" aria-hidden="true" tabindex="-1"></a>beta_ed <span class="ot">&lt;-</span> <span class="fu">coef</span>(mod)[<span class="st">"Education"</span>]</span>
-<span id="cb63-655"><a href="#cb63-655" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-656"><a href="#cb63-656" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (b <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>B) {</span>
-<span id="cb63-657"><a href="#cb63-657" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Normal errors</span></span>
-<span id="cb63-658"><a href="#cb63-658" aria-hidden="true" tabindex="-1"></a>  e_norm <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="fu">sigma</span>(mod))</span>
-<span id="cb63-659"><a href="#cb63-659" aria-hidden="true" tabindex="-1"></a>  y_norm <span class="ot">&lt;-</span> X <span class="sc">%*%</span> <span class="fu">coef</span>(mod) <span class="sc">+</span> e_norm</span>
-<span id="cb63-660"><a href="#cb63-660" aria-hidden="true" tabindex="-1"></a>  fit_norm <span class="ot">&lt;-</span> <span class="fu">lm</span>(y_norm <span class="sc">~</span> X <span class="sc">-</span> <span class="dv">1</span>)</span>
-<span id="cb63-661"><a href="#cb63-661" aria-hidden="true" tabindex="-1"></a>  ci_norm <span class="ot">&lt;-</span> <span class="fu">confint</span>(fit_norm)[j, ]</span>
-<span id="cb63-662"><a href="#cb63-662" aria-hidden="true" tabindex="-1"></a>  cover_normal[b] <span class="ot">&lt;-</span> ci_norm[<span class="dv">1</span>] <span class="sc">&lt;</span> beta_ed <span class="sc">&amp;</span> beta_ed <span class="sc">&lt;</span> ci_norm[<span class="dv">2</span>]</span>
-<span id="cb63-663"><a href="#cb63-663" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-664"><a href="#cb63-664" aria-hidden="true" tabindex="-1"></a>  <span class="co"># t(5) errors (heavy tails, same variance)</span></span>
-<span id="cb63-665"><a href="#cb63-665" aria-hidden="true" tabindex="-1"></a>  e_t5 <span class="ot">&lt;-</span> <span class="fu">rt</span>(n, <span class="at">df =</span> <span class="dv">5</span>) <span class="sc">*</span> <span class="fu">sigma</span>(mod) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="dv">5</span><span class="sc">/</span><span class="dv">3</span>)</span>
-<span id="cb63-666"><a href="#cb63-666" aria-hidden="true" tabindex="-1"></a>  y_t5 <span class="ot">&lt;-</span> X <span class="sc">%*%</span> <span class="fu">coef</span>(mod) <span class="sc">+</span> e_t5</span>
-<span id="cb63-667"><a href="#cb63-667" aria-hidden="true" tabindex="-1"></a>  fit_t5 <span class="ot">&lt;-</span> <span class="fu">lm</span>(y_t5 <span class="sc">~</span> X <span class="sc">-</span> <span class="dv">1</span>)</span>
-<span id="cb63-668"><a href="#cb63-668" aria-hidden="true" tabindex="-1"></a>  ci_t5 <span class="ot">&lt;-</span> <span class="fu">confint</span>(fit_t5)[j, ]</span>
-<span id="cb63-669"><a href="#cb63-669" aria-hidden="true" tabindex="-1"></a>  cover_t5[b] <span class="ot">&lt;-</span> ci_t5[<span class="dv">1</span>] <span class="sc">&lt;</span> beta_ed <span class="sc">&amp;</span> beta_ed <span class="sc">&lt;</span> ci_t5[<span class="dv">2</span>]</span>
-<span id="cb63-670"><a href="#cb63-670" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb63-671"><a href="#cb63-671" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-672"><a href="#cb63-672" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">normal_errors =</span> <span class="fu">mean</span>(cover_normal),</span>
-<span id="cb63-673"><a href="#cb63-673" aria-hidden="true" tabindex="-1"></a>  <span class="at">t5_errors     =</span> <span class="fu">mean</span>(cover_t5))</span>
-<span id="cb63-674"><a href="#cb63-674" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb63-675"><a href="#cb63-675" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-676"><a href="#cb63-676" aria-hidden="true" tabindex="-1"></a>With normal errors, coverage is close to 95%. With $t_5$ errors (heavier tails), coverage degrades — the exact $t$-distribution no longer applies. In practice, this is where robust SEs and asymptotic approximations (Chapters 9–11) take over.</span>
+<span id="cb63-647"><a href="#cb63-647" aria-hidden="true" tabindex="-1"></a>The DGP has a slope of $\beta_1 = 2$ with heteroskedastic errors: $e_i \sim N(0, \, (1 + x_i^2))$, so variance grows with $x$.</span>
+<span id="cb63-648"><a href="#cb63-648" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-651"><a href="#cb63-651" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb63-652"><a href="#cb63-652" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: non-normal-coverage</span></span>
+<span id="cb63-653"><a href="#cb63-653" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb63-654"><a href="#cb63-654" aria-hidden="true" tabindex="-1"></a>B <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
+<span id="cb63-655"><a href="#cb63-655" aria-hidden="true" tabindex="-1"></a>sample_sizes <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">20</span>, <span class="dv">50</span>, <span class="dv">200</span>)</span>
+<span id="cb63-656"><a href="#cb63-656" aria-hidden="true" tabindex="-1"></a>beta_true <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb63-657"><a href="#cb63-657" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-658"><a href="#cb63-658" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>()</span>
+<span id="cb63-659"><a href="#cb63-659" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-660"><a href="#cb63-660" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (nn <span class="cf">in</span> sample_sizes) {</span>
+<span id="cb63-661"><a href="#cb63-661" aria-hidden="true" tabindex="-1"></a>  cover_classical <span class="ot">&lt;-</span> cover_hc2 <span class="ot">&lt;-</span> cover_boot <span class="ot">&lt;-</span> <span class="fu">logical</span>(B)</span>
+<span id="cb63-662"><a href="#cb63-662" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-663"><a href="#cb63-663" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (b <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>B) {</span>
+<span id="cb63-664"><a href="#cb63-664" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(nn)</span>
+<span id="cb63-665"><a href="#cb63-665" aria-hidden="true" tabindex="-1"></a>    e <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(nn, <span class="dv">0</span>, <span class="at">sd =</span> <span class="fu">sqrt</span>(<span class="dv">1</span> <span class="sc">+</span> x<span class="sc">^</span><span class="dv">2</span>))</span>
+<span id="cb63-666"><a href="#cb63-666" aria-hidden="true" tabindex="-1"></a>    y <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">+</span> beta_true <span class="sc">*</span> x <span class="sc">+</span> e</span>
+<span id="cb63-667"><a href="#cb63-667" aria-hidden="true" tabindex="-1"></a>    fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x)</span>
+<span id="cb63-668"><a href="#cb63-668" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-669"><a href="#cb63-669" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Classical CI (assumes homoskedasticity)</span></span>
+<span id="cb63-670"><a href="#cb63-670" aria-hidden="true" tabindex="-1"></a>    ci_class <span class="ot">&lt;-</span> <span class="fu">confint</span>(fit)[<span class="st">"x"</span>, ]</span>
+<span id="cb63-671"><a href="#cb63-671" aria-hidden="true" tabindex="-1"></a>    cover_classical[b] <span class="ot">&lt;-</span> ci_class[<span class="dv">1</span>] <span class="sc">&lt;</span> beta_true <span class="sc">&amp;</span> beta_true <span class="sc">&lt;</span> ci_class[<span class="dv">2</span>]</span>
+<span id="cb63-672"><a href="#cb63-672" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-673"><a href="#cb63-673" aria-hidden="true" tabindex="-1"></a>    <span class="co"># HC2 robust CI</span></span>
+<span id="cb63-674"><a href="#cb63-674" aria-hidden="true" tabindex="-1"></a>    se_hc2 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">vcovHC</span>(fit, <span class="at">type =</span> <span class="st">"HC2"</span>)[<span class="st">"x"</span>, <span class="st">"x"</span>])</span>
+<span id="cb63-675"><a href="#cb63-675" aria-hidden="true" tabindex="-1"></a>    ci_hc2 <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit)[<span class="st">"x"</span>] <span class="sc">+</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>) <span class="sc">*</span> <span class="fu">qt</span>(<span class="fl">0.975</span>, nn <span class="sc">-</span> <span class="dv">2</span>) <span class="sc">*</span> se_hc2</span>
+<span id="cb63-676"><a href="#cb63-676" aria-hidden="true" tabindex="-1"></a>    cover_hc2[b] <span class="ot">&lt;-</span> ci_hc2[<span class="dv">1</span>] <span class="sc">&lt;</span> beta_true <span class="sc">&amp;</span> beta_true <span class="sc">&lt;</span> ci_hc2[<span class="dv">2</span>]</span>
 <span id="cb63-677"><a href="#cb63-677" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-678"><a href="#cb63-678" aria-hidden="true" tabindex="-1"></a>::: {.callout-warning}</span>
-<span id="cb63-679"><a href="#cb63-679" aria-hidden="true" tabindex="-1"></a><span class="fu">## Heavy Tails Break Exact Tests</span></span>
-<span id="cb63-680"><a href="#cb63-680" aria-hidden="true" tabindex="-1"></a>The $t$- and $F$-distributions are exact only under normality. With heavy-tailed errors (e.g., $t_5$), coverage of confidence intervals degrades noticeably. In practice, use robust SEs and asymptotic theory (Chapters 8-9) when normality is suspect. The <span class="co">[</span><span class="ot">CLT</span><span class="co">](ch08-asymptotics.qmd#thm-clt)</span> will justify this asymptotically in Chapter 8.</span>
-<span id="cb63-681"><a href="#cb63-681" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb63-682"><a href="#cb63-682" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-683"><a href="#cb63-683" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
-<span id="cb63-684"><a href="#cb63-684" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-685"><a href="#cb63-685" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Concept <span class="pp">|</span> Formula <span class="pp">|</span> R code <span class="pp">|</span></span>
-<span id="cb63-686"><a href="#cb63-686" aria-hidden="true" tabindex="-1"></a><span class="pp">|---------|---------|--------|</span></span>
-<span id="cb63-687"><a href="#cb63-687" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Log-likelihood <span class="pp">|</span> $\ell = -\frac{n}{2}\log(2\pi\sigma^2) - \frac{1}{2\sigma^2}\sum e_i^2$ <span class="pp">|</span> <span class="in">`logLik(mod)`</span> <span class="pp">|</span></span>
-<span id="cb63-688"><a href="#cb63-688" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> MLE of $\beta$ <span class="pp">|</span> $(X'X)^{-1}X'y$ (= OLS) <span class="pp">|</span> <span class="in">`coef(lm(...))`</span> <span class="pp">|</span></span>
-<span id="cb63-689"><a href="#cb63-689" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> MLE of $\sigma^2$ <span class="pp">|</span> $\frac{1}{n}\sum \hat{e}_i^2$ (biased) <span class="pp">|</span> <span class="in">`sum(resid(mod)^2) / n`</span> <span class="pp">|</span></span>
-<span id="cb63-690"><a href="#cb63-690" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> AIC / BIC <span class="pp">|</span> $-2\ell + 2K$ / $-2\ell + K\log n$ <span class="pp">|</span> <span class="in">`AIC(mod)`</span>, <span class="in">`BIC(mod)`</span> <span class="pp">|</span></span>
-<span id="cb63-691"><a href="#cb63-691" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> $t$-statistic <span class="pp">|</span> $\hat{\beta}_j / \text{SE}(\hat{\beta}_j) \sim t_{n-K}$ <span class="pp">|</span> <span class="in">`summary(mod)$coefficients`</span> <span class="pp">|</span></span>
-<span id="cb63-692"><a href="#cb63-692" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Confidence interval <span class="pp">|</span> $\hat{\beta}_j \pm t_{n-K,\,0.975} \cdot \text{SE}$ <span class="pp">|</span> <span class="in">`confint(mod)`</span> <span class="pp">|</span></span>
-<span id="cb63-693"><a href="#cb63-693" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> $F$-test <span class="pp">|</span> $\frac{(RSS_R - RSS_U)/q}{RSS_U/(n-K)} \sim F_{q,n-K}$ <span class="pp">|</span> <span class="in">`anova(mod_r, mod_u)`</span> <span class="pp">|</span></span>
-<span id="cb63-694"><a href="#cb63-694" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Joint hypothesis <span class="pp">|</span> $R\beta = r$ <span class="pp">|</span> <span class="in">`linearHypothesis(mod, ...)`</span> <span class="pp">|</span></span>
-<span id="cb63-695"><a href="#cb63-695" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Robust $F$-test <span class="pp">|</span> — <span class="pp">|</span> <span class="in">`linearHypothesis(mod, ..., vcov = vcovHC)`</span> <span class="pp">|</span></span>
-<span id="cb63-696"><a href="#cb63-696" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Prediction interval <span class="pp">|</span> $\hat{y}_0 \pm t \cdot s\sqrt{1 + x_0'(X'X)^{-1}x_0}$ <span class="pp">|</span> <span class="in">`predict(mod, interval = "prediction")`</span> <span class="pp">|</span></span>
-<span id="cb63-697"><a href="#cb63-697" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb63-698"><a href="#cb63-698" aria-hidden="true" tabindex="-1"></a>**Key takeaway.** The normal linear model gives us exact finite-sample distributions: $\hat{\beta}$ is normal, $s^2$ is chi-squared, their ratio gives $t$, and nested model comparisons give $F$. These are the foundation of every regression table. But they rely on normality and homoskedasticity — when those fail, use robust SEs and asymptotic theory instead.</span>
+<span id="cb63-678"><a href="#cb63-678" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Pairs bootstrap CI (percentile method)</span></span>
+<span id="cb63-679"><a href="#cb63-679" aria-hidden="true" tabindex="-1"></a>    boot_coefs <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="dv">499</span>)</span>
+<span id="cb63-680"><a href="#cb63-680" aria-hidden="true" tabindex="-1"></a>    dat <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x, <span class="at">y =</span> y)</span>
+<span id="cb63-681"><a href="#cb63-681" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (r <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">499</span>) {</span>
+<span id="cb63-682"><a href="#cb63-682" aria-hidden="true" tabindex="-1"></a>      idx <span class="ot">&lt;-</span> <span class="fu">sample</span>(nn, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb63-683"><a href="#cb63-683" aria-hidden="true" tabindex="-1"></a>      boot_coefs[r] <span class="ot">&lt;-</span> <span class="fu">coef</span>(<span class="fu">lm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> dat[idx, ]))[<span class="st">"x"</span>]</span>
+<span id="cb63-684"><a href="#cb63-684" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb63-685"><a href="#cb63-685" aria-hidden="true" tabindex="-1"></a>    ci_boot <span class="ot">&lt;-</span> <span class="fu">quantile</span>(boot_coefs, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span>
+<span id="cb63-686"><a href="#cb63-686" aria-hidden="true" tabindex="-1"></a>    cover_boot[b] <span class="ot">&lt;-</span> ci_boot[<span class="dv">1</span>] <span class="sc">&lt;</span> beta_true <span class="sc">&amp;</span> beta_true <span class="sc">&lt;</span> ci_boot[<span class="dv">2</span>]</span>
+<span id="cb63-687"><a href="#cb63-687" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb63-688"><a href="#cb63-688" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-689"><a href="#cb63-689" aria-hidden="true" tabindex="-1"></a>  results <span class="ot">&lt;-</span> <span class="fu">rbind</span>(results, <span class="fu">data.frame</span>(</span>
+<span id="cb63-690"><a href="#cb63-690" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> nn,</span>
+<span id="cb63-691"><a href="#cb63-691" aria-hidden="true" tabindex="-1"></a>    <span class="at">Classical =</span> <span class="fu">mean</span>(cover_classical),</span>
+<span id="cb63-692"><a href="#cb63-692" aria-hidden="true" tabindex="-1"></a>    <span class="at">HC2 =</span> <span class="fu">mean</span>(cover_hc2),</span>
+<span id="cb63-693"><a href="#cb63-693" aria-hidden="true" tabindex="-1"></a>    <span class="at">Bootstrap =</span> <span class="fu">mean</span>(cover_boot)</span>
+<span id="cb63-694"><a href="#cb63-694" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb63-695"><a href="#cb63-695" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb63-696"><a href="#cb63-696" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-697"><a href="#cb63-697" aria-hidden="true" tabindex="-1"></a>results</span>
+<span id="cb63-698"><a href="#cb63-698" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb63-699"><a href="#cb63-699" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-700"><a href="#cb63-700" aria-hidden="true" tabindex="-1"></a>HC2 robust CIs maintain near-nominal coverage across all sample sizes. Classical CIs undercover because they ignore heteroskedasticity. The pairs bootstrap does well at $n = 200$ but at $n = 20$ its coverage is nearly as poor as the classical — with so few observations, resampling can't reliably estimate the tail behavior.</span>
+<span id="cb63-701"><a href="#cb63-701" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-702"><a href="#cb63-702" aria-hidden="true" tabindex="-1"></a>::: {.callout-warning}</span>
+<span id="cb63-703"><a href="#cb63-703" aria-hidden="true" tabindex="-1"></a><span class="fu">## Small-Sample Bootstrap Can Underperform</span></span>
+<span id="cb63-704"><a href="#cb63-704" aria-hidden="true" tabindex="-1"></a>The pairs bootstrap relies on resampling, which needs enough observations to represent the data distribution. At $n = 20$, bootstrap percentile intervals can undercover just like classical CIs. HC2 robust standard errors, which use an analytical correction for leverage, are more reliable in small samples under heteroskedasticity.</span>
+<span id="cb63-705"><a href="#cb63-705" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb63-706"><a href="#cb63-706" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-707"><a href="#cb63-707" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
+<span id="cb63-708"><a href="#cb63-708" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-709"><a href="#cb63-709" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Concept <span class="pp">|</span> Formula <span class="pp">|</span> R code <span class="pp">|</span></span>
+<span id="cb63-710"><a href="#cb63-710" aria-hidden="true" tabindex="-1"></a><span class="pp">|---------|---------|--------|</span></span>
+<span id="cb63-711"><a href="#cb63-711" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Log-likelihood <span class="pp">|</span> $\ell = -\frac{n}{2}\log(2\pi\sigma^2) - \frac{1}{2\sigma^2}\sum e_i^2$ <span class="pp">|</span> <span class="in">`logLik(mod)`</span> <span class="pp">|</span></span>
+<span id="cb63-712"><a href="#cb63-712" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> MLE of $\beta$ <span class="pp">|</span> $(X'X)^{-1}X'y$ (= OLS) <span class="pp">|</span> <span class="in">`coef(lm(...))`</span> <span class="pp">|</span></span>
+<span id="cb63-713"><a href="#cb63-713" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> MLE of $\sigma^2$ <span class="pp">|</span> $\frac{1}{n}\sum \hat{e}_i^2$ (biased) <span class="pp">|</span> <span class="in">`sum(resid(mod)^2) / n`</span> <span class="pp">|</span></span>
+<span id="cb63-714"><a href="#cb63-714" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> AIC / BIC <span class="pp">|</span> $-2\ell + 2K$ / $-2\ell + K\log n$ <span class="pp">|</span> <span class="in">`AIC(mod)`</span>, <span class="in">`BIC(mod)`</span> <span class="pp">|</span></span>
+<span id="cb63-715"><a href="#cb63-715" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> $t$-statistic <span class="pp">|</span> $\hat{\beta}_j / \text{SE}(\hat{\beta}_j) \sim t_{n-K}$ <span class="pp">|</span> <span class="in">`summary(mod)$coefficients`</span> <span class="pp">|</span></span>
+<span id="cb63-716"><a href="#cb63-716" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Confidence interval <span class="pp">|</span> $\hat{\beta}_j \pm t_{n-K,\,0.975} \cdot \text{SE}$ <span class="pp">|</span> <span class="in">`confint(mod)`</span> <span class="pp">|</span></span>
+<span id="cb63-717"><a href="#cb63-717" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> $F$-test <span class="pp">|</span> $\frac{(RSS_R - RSS_U)/q}{RSS_U/(n-K)} \sim F_{q,n-K}$ <span class="pp">|</span> <span class="in">`anova(mod_r, mod_u)`</span> <span class="pp">|</span></span>
+<span id="cb63-718"><a href="#cb63-718" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Joint hypothesis <span class="pp">|</span> $R\beta = r$ <span class="pp">|</span> <span class="in">`linearHypothesis(mod, ...)`</span> <span class="pp">|</span></span>
+<span id="cb63-719"><a href="#cb63-719" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Robust $F$-test <span class="pp">|</span> — <span class="pp">|</span> <span class="in">`linearHypothesis(mod, ..., vcov = vcovHC)`</span> <span class="pp">|</span></span>
+<span id="cb63-720"><a href="#cb63-720" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Prediction interval <span class="pp">|</span> $\hat{y}_0 \pm t \cdot s\sqrt{1 + x_0'(X'X)^{-1}x_0}$ <span class="pp">|</span> <span class="in">`predict(mod, interval = "prediction")`</span> <span class="pp">|</span></span>
+<span id="cb63-721"><a href="#cb63-721" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-722"><a href="#cb63-722" aria-hidden="true" tabindex="-1"></a>**Key takeaway.** The normal linear model gives us exact finite-sample distributions: $\hat{\beta}$ is normal, $s^2$ is chi-squared, their ratio gives $t$, and nested model comparisons give $F$. These are the foundation of every regression table. But they rely on normality and homoskedasticity — when those fail, use robust SEs and asymptotic theory instead.</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

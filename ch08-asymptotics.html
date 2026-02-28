@@ -783,9 +783,9 @@ Calculations and Intervals on Original Scale</code></pre>
 </div>
 <p>Key patterns:</p>
 <ul>
-<li><strong>Classical SEs</strong> undercover when errors are heteroskedastic (they assume homoskedasticity)</li>
-<li><strong>HC2 sandwich SEs</strong> do well once <span class="math inline">\(n\)</span> is moderate, but can undercover with very small <span class="math inline">\(n\)</span> and heavy tails</li>
-<li><strong>Bootstrap</strong> tends to be robust across scenarios, especially with small <span class="math inline">\(n\)</span></li>
+<li><strong>Classical SEs</strong> undercover at every sample size because they assume homoskedasticity</li>
+<li><strong>HC2 sandwich SEs</strong> maintain near-nominal coverage across all sample sizes — the analytical leverage correction works even at <span class="math inline">\(n = 20\)</span></li>
+<li><strong>Bootstrap percentile</strong> does well once <span class="math inline">\(n\)</span> is moderate, but at <span class="math inline">\(n = 20\)</span> its coverage is nearly as bad as the classical — with so few observations and heavy-tailed heteroskedastic errors, resampling cannot reliably capture the tail behavior</li>
 </ul>
 </section>
 <section id="when-the-bootstrap-breaks-down" class="level3" data-number="6.2">
@@ -2012,9 +2012,9 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <span id="cb37-457"><a href="#cb37-457" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb37-458"><a href="#cb37-458" aria-hidden="true" tabindex="-1"></a>Key patterns:</span>
 <span id="cb37-459"><a href="#cb37-459" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-460"><a href="#cb37-460" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Classical SEs** undercover when errors are heteroskedastic (they assume homoskedasticity)</span>
-<span id="cb37-461"><a href="#cb37-461" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**HC2 sandwich SEs** do well once $n$ is moderate, but can undercover with very small $n$ and heavy tails</span>
-<span id="cb37-462"><a href="#cb37-462" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Bootstrap** tends to be robust across scenarios, especially with small $n$</span>
+<span id="cb37-460"><a href="#cb37-460" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Classical SEs** undercover at every sample size because they assume homoskedasticity</span>
+<span id="cb37-461"><a href="#cb37-461" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**HC2 sandwich SEs** maintain near-nominal coverage across all sample sizes — the analytical leverage correction works even at $n = 20$</span>
+<span id="cb37-462"><a href="#cb37-462" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Bootstrap percentile** does well once $n$ is moderate, but at $n = 20$ its coverage is nearly as bad as the classical — with so few observations and heavy-tailed heteroskedastic errors, resampling cannot reliably capture the tail behavior</span>
 <span id="cb37-463"><a href="#cb37-463" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb37-464"><a href="#cb37-464" aria-hidden="true" tabindex="-1"></a><span class="fu">### When the bootstrap breaks down</span></span>
 <span id="cb37-465"><a href="#cb37-465" aria-hidden="true" tabindex="-1"></a></span>
