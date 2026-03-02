@@ -19,6 +19,11 @@ The conditional expectation function $m(X) = \mathbb{E}[Y|X]$ is the best predic
 3. When does the BLP equal the CEF, and why does joint normality guarantee linearity?
 4. How does omitted variable bias arise, and why don't additional controls always help?
 
+::: {.callout-important}
+## Population Quantities vs. Sample Estimates
+The CEF and BLP are **population quantities** defined through expectations — $m(X) = \mathbb{E}[Y|X]$ and $\beta = \text{Var}(X)^{-1}\text{Cov}(X,Y)$ — and describe properties of the joint distribution of $(X,Y)$, not of any dataset. Running `lm()` in R performs OLS on a sample and produces *estimates* of the BLP. Running `loess()` produces a nonparametric smooth of sample data — an *estimate* of the CEF, not the CEF itself. In this chapter we often know the true data-generating process and can write down the CEF analytically (e.g., $m(X) = X^2$). When we can, we plot the true population CEF directly rather than approximating it from data.
+:::
+
 ## CEF error: mean independence is not independence
 
 Define the CEF error as $e = Y - m(X)$. By construction, $\mathbb{E}[e|X] = 0$ — this is called mean independence. But mean independence is weaker than full independence: the *variance* of $e$ can still depend on $X$.
@@ -82,7 +87,7 @@ mse_linear <- mean(residuals(lm(y ~ x))^2)
 mse_cubic <- mean(residuals(lm(y ~ x + I(x^2) + I(x^3)))^2)
 
 data.frame(
-  predictor = c("Unconditional mean", "Linear (BLP)", "Cubic", "CEF (X²)"),
+  predictor = c("Unconditional mean", "OLS (linear)", "OLS (cubic)", "True CEF (X²)"),
   MSE = round(c(mse_mean, mse_linear, mse_cubic, mse_cef), 4)
 )
 ```
@@ -106,31 +111,34 @@ df <- data.frame(x = x, y = y)
 
 ggplot(df, aes(x, y)) +
   geom_point(alpha = 0.1, size = 0.5) +
-  stat_function(fun = function(x) x^2, aes(color = "CEF: X²"),
+  stat_function(fun = function(x) x^2, aes(color = "True CEF: X²"),
                 linewidth = 1.2) +
-  geom_smooth(method = "lm", se = FALSE, aes(color = "BLP"),
-              linewidth = 1.2) +
-  scale_color_manual(values = c("CEF: X²" = "tomato", "BLP" = "steelblue"),
+  stat_function(fun = function(x) 1/3, aes(color = "True BLP: 1/3"),
+                linewidth = 1.2) +
+  scale_color_manual(values = c("True CEF: X²" = "tomato",
+                                "True BLP: 1/3" = "steelblue"),
                      name = "") +
   labs(x = "X", y = "Y",
        title = "The BLP is the best line through a curved CEF") +
   theme_minimal()
 ```
 
-The BLP residual $e = Y - X'\beta$ satisfies $\mathbb{E}[Xe] = 0$ (uncorrelated with $X$), but *not* $\mathbb{E}[e|X] = 0$. The residual still contains nonlinear structure: the BLP intercept absorbs $\mathbb{E}[X^2] = 1/3$, so the conditional mean of the residual traces out $X^2 - 1/3$ rather than zero:
+The true BLP is a flat line at $1/3$ because $\text{Cov}(X,Y) = \mathbb{E}[X^3] = 0$ by symmetry of $X$, giving slope $\beta = 0$ and intercept $\alpha = \mathbb{E}[Y] = \mathbb{E}[X^2] = 1/3$. The BLP does the best any line can, but it cannot capture the curvature.
+
+The BLP residual $e = Y - \alpha - \beta X$ satisfies $\mathbb{E}[Xe] = 0$ (uncorrelated with $X$), but *not* $\mathbb{E}[e|X] = 0$. The residual still contains nonlinear structure: the conditional mean of the residual traces out $X^2 - 1/3$ rather than zero:
 
 ```{r}
 #| label: blp-residual-pattern
-mod <- lm(y ~ x)
-df$blp_resid <- residuals(mod)
+# True BLP: α = 1/3, β = 0, so residual is Y − 1/3
+df$blp_resid <- y - 1/3
 
 ggplot(df, aes(x, blp_resid)) +
   geom_point(alpha = 0.1, size = 0.5) +
-  geom_smooth(method = "loess", se = FALSE, color = "tomato", linewidth = 1) +
+  stat_function(fun = function(x) x^2 - 1/3, color = "tomato", linewidth = 1) +
   geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(x = "X", y = "BLP residual",
+  labs(x = "X", y = "BLP residual (Y − 1/3)",
        title = "BLP residuals still contain nonlinear structure",
-       subtitle = "E[e|X] ≠ 0, but E[Xe] = 0") +
+       subtitle = "True E[e|X] = X² − 1/3 ≠ 0, but E[Xe] = 0") +
   theme_minimal()
 ```
 
@@ -153,16 +161,19 @@ df_norm <- data.frame(x = x_norm, y = y_norm)
 
 ggplot(df_norm, aes(x, y)) +
   geom_point(alpha = 0.1, size = 0.5) +
-  geom_smooth(method = "lm", se = FALSE, aes(color = "BLP"), linewidth = 1.2) +
-  geom_smooth(method = "loess", se = FALSE, aes(color = "CEF (loess)"), linewidth = 1.2) +
-  scale_color_manual(values = c("BLP" = "steelblue", "CEF (loess)" = "tomato"),
+  stat_function(fun = function(x) 0.7 * x, aes(color = "True CEF: 0.7X"),
+                linewidth = 1.2) +
+  geom_smooth(method = "lm", se = FALSE, aes(color = "OLS fit"),
+              linewidth = 1.2, linetype = "dashed") +
+  scale_color_manual(values = c("True CEF: 0.7X" = "tomato",
+                                "OLS fit" = "steelblue"),
                      name = "") +
-  labs(title = "Jointly normal: the BLP and CEF coincide",
+  labs(title = "Jointly normal: the true CEF is linear and OLS recovers it",
        x = "X", y = "Y") +
   theme_minimal()
 ```
 
-The two lines overlap because the CEF is genuinely linear when the data are jointly normal.
+The OLS line (dashed) sits on top of the true CEF because the CEF is genuinely linear when the data are jointly normal. We can verify analytically: with $\mu = 0$ and $\Sigma_{XY}/\Sigma_{XX} = 0.7$, the true CEF is $\mathbb{E}[Y|X] = 0.7X$, which is also the BLP. The OLS fit *estimates* this population line from the sample and, with $n = 5{,}000$, comes very close — but the population CEF and BLP exist before any data are drawn.
 
 ::: {.callout-note}
 ## Joint Normality Implies Linear CEF
@@ -175,14 +186,16 @@ The population BLP coefficient is $\beta = \text{Var}(X)^{-1}\text{Cov}(X, Y)$. 
 
 ```{r}
 #| label: blp-formulas
-# Bivariate: beta = Cov(X,Y) / Var(X)
+# True population BLP: alpha = 0, beta = Sigma_XY / Sigma_XX = 0.7
+# Sample analog using cov/var
 beta_formula <- cov(x_norm, y_norm) / var(x_norm)
 alpha_formula <- mean(y_norm) - beta_formula * mean(x_norm)
 
-# OLS gives the same thing
+# OLS gives the same sample answer
 beta_ols <- coef(lm(y_norm ~ x_norm))
 
-cbind(formula = c(alpha_formula, beta_formula),
+cbind(population = c(0, 0.7),
+      sample_analog = c(alpha_formula, beta_formula),
       OLS = beta_ols)
 ```
 
