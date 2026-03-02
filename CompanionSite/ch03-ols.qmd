@@ -57,7 +57,26 @@ c(manual = sum(x_vec * y_vec),
   crossprod = as.numeric(crossprod(x_vec, y_vec)))
 ```
 
-`crossprod(X)` computes $X'X$ faster than `t(X) %*% X`, and `crossprod(X, y)` computes $X'y$. We'll use these constantly.
+`crossprod(X)` computes $X'X$ and `crossprod(X, y)` computes $X'y$. We'll use these constantly — and they are faster than the explicit `t(X) %*% X`. Why?
+
+**Why `crossprod` is faster.** The expression `t(X) %*% X` does two things: first it allocates a new $K \times n$ matrix for the transpose, then it calls a general matrix multiply (DGEMM in the BLAS library) that treats the two inputs as unrelated. `crossprod(X)` skips the transpose allocation entirely and calls a specialized routine (DSYRK) that exploits the fact that $X'X$ is symmetric — it only computes the upper triangle, roughly halving the floating-point work.
+
+```{r}
+#| label: crossprod-benchmark
+# Benchmark on a moderately large matrix
+n_bench <- 5000
+p_bench <- 50
+X_bench <- matrix(rnorm(n_bench * p_bench), n_bench, p_bench)
+
+t_explicit <- system.time(for (i in 1:200) t(X_bench) %*% X_bench)[["elapsed"]]
+t_crossprod <- system.time(for (i in 1:200) crossprod(X_bench))[["elapsed"]]
+
+c(explicit_sec = t_explicit,
+  crossprod_sec = t_crossprod,
+  speedup = t_explicit / t_crossprod)
+```
+
+The speedup depends on the BLAS implementation your R uses (Apple Accelerate, OpenBLAS, MKL, etc.) and on the matrix dimensions. For our course-sized examples ($n$ in the hundreds) the difference is negligible, but it's good practice — and when $n$ reaches the tens of thousands it adds up.
 
 ## Geometry: projection in two dimensions
 
