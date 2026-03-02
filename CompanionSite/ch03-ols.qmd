@@ -273,6 +273,58 @@ Note: `solve(A, b)` is preferred over `solve(A) %*% b` — it avoids computing t
 The OLS estimator $\hat\beta = (X'X)^{-1}X'y$ is the unique minimizer of $\text{SSE}(\beta) = (y - X\beta)'(y - X\beta)$ when $X'X$ is positive definite.
 :::
 
+### What `lm()` actually computes {#sec-qr}
+
+We derived $\hat\beta$ by solving the normal equations $X'X\hat\beta = X'y$, and the code above uses `solve()` to do exactly that. But `lm()` takes a different route: it never forms $X'X$. Instead it uses a **QR decomposition**.
+
+**Why avoid the normal equations?** Every matrix has a condition number $\kappa$ that measures how close it is to singular. Forming $X'X$ *squares* the condition number: if $\kappa(X) = 10^4$, then $\kappa(X'X) = 10^8$, and with ~16 digits of floating-point precision you've lost half your significant digits. For well-conditioned data this doesn't matter, but with near-collinear regressors it can produce garbage.
+
+**The QR approach.** Factor $X = QR$ where $Q$ is $n \times K$ with orthonormal columns ($Q'Q = I_K$) and $R$ is $K \times K$ upper triangular. Then:
+
+$$X'X\hat\beta = X'y \;\;\Longrightarrow\;\; R'Q'QR\hat\beta = R'Q'y \;\;\Longrightarrow\;\; R\hat\beta = Q'y$$
+
+The system $R\hat\beta = Q'y$ is upper triangular, so it's solved by **back-substitution** — starting from the last equation (one unknown) and working up. No matrix inversion needed.
+
+R uses **pivoted Householder reflections** to compute the QR factorization (via LAPACK's DGEQP3). Householder reflections are orthogonal transformations that zero out entries below the diagonal one column at a time — they are more numerically stable than the classical Gram-Schmidt process. The "pivoted" part means R reorders columns to put the most linearly independent ones first, which helps detect rank deficiency (this is how `lm()` drops collinear variables automatically).
+
+```{r}
+#| label: qr-decomposition
+# lm() stores the QR decomposition
+mod <- lm(prestige ~ education + income, data = Prestige)
+
+# Extract Q and R
+qr_obj <- qr(X)
+Q <- qr.Q(qr_obj)
+R <- qr.R(qr_obj)
+
+# Q has orthonormal columns
+round(crossprod(Q), 10)
+
+# R is upper triangular
+R
+```
+
+```{r}
+#| label: qr-solve
+# Solve R * beta = Q'y by back-substitution
+beta_qr <- backsolve(R, crossprod(Q, y))
+
+# Compare all three approaches
+cbind(normal_eq = beta_hat, QR = beta_qr, lm = coef(mod))
+```
+
+All three agree. The condition number tells us why QR is safer:
+
+```{r}
+#| label: condition-numbers
+kappa_X <- kappa(X)
+kappa_XtX <- kappa(XtX)
+
+c(kappa_X = kappa_X, kappa_XtX = kappa_XtX, ratio = kappa_XtX / kappa_X)
+```
+
+The ratio is approximately $\kappa(X)$ — forming $X'X$ squares the condition number, as expected. For this well-conditioned dataset the normal equations work fine, but `lm()` uses QR as a safeguard.
+
 ### The second-order condition
 
 The second derivative of $\text{SSE}$ is $2X'X$. This is a minimum when $X'X$ is positive definite — all eigenvalues are positive:
@@ -700,7 +752,9 @@ The OLS estimator is a sequence of matrix operations:
 |------|---|-------------|
 | $X'X$ | `crossprod(X)` | Gram matrix of regressors |
 | $(X'X)^{-1}$ | `solve(crossprod(X))` | Inverse |
-| $\hat\beta = (X'X)^{-1}X'y$ | `solve(crossprod(X), crossprod(X, y))` | OLS coefficients |
+| $\hat\beta = (X'X)^{-1}X'y$ | `solve(crossprod(X), crossprod(X, y))` | OLS coefficients (normal equations) |
+| $X = QR$ | `qr(X)` | QR decomposition (what `lm()` uses) |
+| $R\hat\beta = Q'y$ | `backsolve(qr.R(qr(X)), crossprod(qr.Q(qr(X)), y))` | OLS via back-substitution |
 | $P = X(X'X)^{-1}X'$ | `X %*% solve(crossprod(X)) %*% t(X)` | Projection (hat matrix) |
 | $M = I - P$ | `diag(n) - P` | Annihilator |
 | $\text{tr}(M)$ | `sum(diag(M))` | Degrees of freedom ($n - K$) |
@@ -715,6 +769,7 @@ Key facts:
 - $\text{tr}(P) = K$ and $\text{tr}(M) = n - K$ count dimensions.
 - The **trace trick** proves $s_e^2$ is unbiased: $\mathbb{E}[e'Me] = \sigma^2 \text{tr}(M) = \sigma^2(n-K)$.
 - Eigenvalues of $(X'X)^{-1}$ are reciprocals of those of $X'X$: near-collinearity inflates variance.
+- `lm()` uses **QR decomposition** (pivoted Householder reflections), not the normal equations — this avoids squaring the condition number of $X$.
 - **Regression to the mean** is a consequence of $\hat\beta_1 < 1$ when $|\rho| < 1$.
 
 Next: [Sensitivity and Leverage](ch04-sensitivity.qmd) — the Frisch-Waugh-Lovell theorem, partial $R^2$, and influential observations.
