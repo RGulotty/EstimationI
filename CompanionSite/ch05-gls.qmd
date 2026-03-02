@@ -43,7 +43,7 @@ The "bread" is $(X'X)^{-1}$ and the "meat" is $X'\Omega X = \sum_{i=1}^n \sigma_
 Under heteroskedasticity ($\text{Var}[e|X] = \Omega \neq \sigma^2 I$), the variance of OLS is $(X'X)^{-1}(X'\Omega X)(X'X)^{-1}$. The HC estimators replace $\Omega$ with diagonal matrices of squared residuals, possibly adjusted for leverage.
 :::
 
-### Simulation: when classical standard errors lie
+### Example: when classical standard errors lie
 
 We design a DGP with strong heteroskedasticity: the error standard deviation grows as $x^2$, so variance ranges from 1 (at $x = 1$) to 10,000 (at $x = 10$). This makes the problem impossible to miss.
 
@@ -261,6 +261,10 @@ mod_wls <- lm(prestige ~ education + income + women, data = Prestige, weights = 
 cbind(OLS = coef(mod_ols), WLS = coef(mod_wls))
 ```
 
+The interpretation: each coefficient gives the predicted change in prestige for a one-unit increase in that variable, holding the others constant. Under OLS, a one-year increase in average education is associated with about `r round(coef(mod_ols)[2], 1)` more prestige points. Under WLS (weighting by $1/\text{income}$), the education coefficient shifts to `r round(coef(mod_wls)[2], 1)` — WLS gives more influence to low-income occupations (which get weight $w_i = 1/\text{income}_i$), and in this group education may matter more for prestige. The income coefficient is small in both cases because income is in dollars: a \$1,000 increase predicts about `r round(coef(mod_ols)[3] * 1000, 1)` prestige points under OLS. The coefficient on `women` (percent female) is negative in both, reflecting a well-known pattern: more female-dominated occupations tend to have lower prestige scores, conditional on education and income.
+
+The key point is that WLS changes the *point estimates*, not just the standard errors. It answers a subtly different question: "what is the relationship, weighting observations by their precision?"
+
 ### WLS as a transformed regression
 
 WLS is equivalent to pre-multiplying the model by $W^{1/2}$:
@@ -355,7 +359,7 @@ The GLS estimator $\hat\beta_{GLS} = (X'\Omega^{-1}X)^{-1}X'\Omega^{-1}y$ is the
 Under the assumptions $\mathbb{E}[e|X] = 0$ and $\text{Var}[e|X] = \sigma^2 I$ (homoskedasticity), OLS is BLUE — the Best Linear Unbiased Estimator. No other linear unbiased estimator has smaller variance. When homoskedasticity fails, GLS replaces OLS as BLUE.
 :::
 
-### Simulation: GLS with correlated errors
+### Monte Carlo: GLS with correlated errors
 
 ```{r}
 #| label: gls-ar1-sim
@@ -695,6 +699,111 @@ The fan shape is visible in all three (because the true DGP is heteroskedastic),
 # Studentized ≈ standardized, but uses leave-one-out sigma
 max(abs(rstudent(mod_diag) - rstandard(mod_diag)))
 ```
+
+## Bootstrap and permutation inference {#sec-bootstrap-perm}
+
+The sandwich estimators (HC0–HC2) are analytical corrections — they adjust the standard error formula using leverage and squared residuals. **Bootstrap** and **permutation** methods take a different approach: they estimate the sampling distribution directly by resampling the data. No formula for $\Omega$ is needed.
+
+### Pairs bootstrap
+
+The simplest bootstrap resamples *rows* of $(y_i, x_i)$ with replacement and re-estimates $\hat\beta$ each time. The standard deviation of the bootstrap distribution estimates the standard error:
+
+```{r}
+#| label: pairs-bootstrap
+set.seed(42)
+B_boot <- 2000
+beta_boot <- numeric(B_boot)
+
+for (b in 1:B_boot) {
+  idx <- sample(n, replace = TRUE)
+  beta_boot[b] <- coef(lm(y[idx] ~ x[idx]))[2]
+}
+
+se_boot_pairs <- sd(beta_boot)
+```
+
+The pairs bootstrap is robust to heteroskedasticity because each resample inherits the variance structure of the original data — high-variance observations naturally appear with their high variance.
+
+### Wild bootstrap
+
+The **wild bootstrap** is designed specifically for heteroskedastic regression. Instead of resampling rows, it keeps $X$ fixed and generates new responses by multiplying the residuals by random signs:
+
+$$y_i^* = \hat{y}_i + \frac{\hat{e}_i}{\sqrt{1 - h_{ii}}} \cdot v_i, \quad v_i \stackrel{iid}{\sim} \text{Rademacher}(\pm 1)$$
+
+The $1/\sqrt{1-h_{ii}}$ correction (the same leverage adjustment behind HC2) ensures the resampled errors have the right conditional variance.
+
+```{r}
+#| label: wild-bootstrap
+set.seed(42)
+fitted_vals <- fitted(mod_diag)
+e_scaled <- resid(mod_diag) / sqrt(1 - h)
+
+beta_wild <- numeric(B_boot)
+for (b in 1:B_boot) {
+  v <- sample(c(-1, 1), n, replace = TRUE)  # Rademacher weights
+  y_star <- fitted_vals + e_scaled * v
+  beta_wild[b] <- coef(lm(y_star ~ x))[2]
+}
+
+se_boot_wild <- sd(beta_wild)
+```
+
+### Permutation test
+
+A **permutation test** asks a different question: under the sharp null hypothesis that $\beta_1 = 0$ (i.e., $y$ is unrelated to $x$), how extreme is the observed coefficient? Under the null, the pairing of $y_i$ with $x_i$ is arbitrary, so we can shuffle $y$ and recompute $\hat\beta$ to build a null distribution.
+
+```{r}
+#| label: permutation-test
+set.seed(42)
+B_perm <- 5000
+beta_obs <- coef(mod_diag)[2]
+beta_perm <- numeric(B_perm)
+
+for (b in 1:B_perm) {
+  y_perm <- sample(y)  # break the (y, x) pairing
+  beta_perm[b] <- coef(lm(y_perm ~ x))[2]
+}
+
+p_perm <- mean(abs(beta_perm) >= abs(beta_obs))
+```
+
+The permutation p-value is exact under the null — no distributional assumptions required. But note two limitations: the permutation test targets the **sharp null** ($y_i \perp\!\!\!\perp x_i$, not just $\beta = 0$), and it does not naturally produce confidence intervals (though inversion is possible).
+
+### Comparing all approaches
+
+```{r}
+#| label: inference-comparison
+se_classical <- summary(mod_diag)$coefficients[2, 2]
+se_hc2 <- sqrt(vcovHC(mod_diag, type = "HC2")[2, 2])
+
+se_compare_all <- data.frame(
+  method = c("Classical", "HC2 (sandwich)", "Pairs bootstrap",
+             "Wild bootstrap", "Permutation"),
+  SE = round(c(se_classical, se_hc2, se_boot_pairs,
+               se_boot_wild, NA), 4),
+  p_value = formatC(c(
+    summary(mod_diag)$coefficients[2, 4],
+    coeftest(mod_diag, vcov = vcovHC(mod_diag, type = "HC2"))[2, 4],
+    # Bootstrap p-values: fraction of bootstrap dist. beyond zero (two-sided)
+    2 * min(mean(beta_boot >= 0), mean(beta_boot <= 0)),
+    2 * min(mean(beta_wild >= 0), mean(beta_wild <= 0)),
+    p_perm
+  ), format = "g", digits = 3)
+)
+se_compare_all
+```
+
+The approaches differ in what they assume:
+
+| Method | Assumes | Gives SEs? | Gives p-values? |
+|--------|---------|------------|-----------------|
+| Classical | Homoskedasticity, normality | Yes | Yes |
+| HC2 (sandwich) | Nothing about $\Omega$ | Yes | Yes |
+| Pairs bootstrap | $(y_i, x_i)$ are iid | Yes (SD of bootstrap dist.) | Yes (percentile) |
+| Wild bootstrap | $X$ fixed, heteroskedastic errors | Yes | Yes |
+| Permutation | Sharp null: $y \perp\!\!\!\perp x$ | No (by default) | Yes (exact) |
+
+For cross-sectional data with heteroskedasticity, **HC2** and the **wild bootstrap** are the most appropriate. The pairs bootstrap is simple and widely used but can undercover in small samples with high leverage. The permutation test is assumption-free but answers a narrower question. We return to bootstrap methods in [Chapter 8 (Asymptotics)](ch08-asymptotics.qmd).
 
 ## Estimating $\sigma^2$
 
