@@ -1,3 +1,4 @@
 # Estimation I
 
 Lecture slides for Estimation I (PLSC 30700), University of Chicago. Taught by Robert Gulotty.
+R companion here: https://uchicago-pol-methods.github.io/EstimationI/
