@@ -36,7 +36,6 @@ text}{fg=darkpurple}
 \usepackage{tikz}
 \usetikzlibrary{arrows}
 \usepackage{colortbl}
-
 \renewcommand{\familydefault}{cmss}
 %\usepackage[all]{xy}
 
@@ -512,7 +511,7 @@ The projection error $e$ is a function of X, and $\mathbb{E}[e|X]\neq 0$.
 \textbf{Key insight:}  $\mathbb{E}[Xe]=0$ (BLP errors uncorrelated with $X$) is \emph{weaker} than $\mathbb{E}[e|X]=0$ (CEF errors mean-independent of $X$).  The BLP projection ``uses up'' the linear information in $X$, but may leave nonlinear patterns in the residual.
 \end{frame}
 
-\begin{frame}{BLP in R: From Formula to Code}
+\begin{frame}[fragile]{BLP in R: From Formula to Code}
 \begin{lstlisting}[language=R]
 # Population formula: beta = Cov(X,Y) / Var(X)
 beta_formula <- cov(x, y) / var(x)
@@ -584,7 +583,7 @@ y_i&=b_1+b_2 d_{2i}+b_3 d_{3i}+e_i
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Dummies and Interactions in R}
+\begin{frame}[fragile]{Dummies and Interactions in R}
 \begin{lstlisting}[language=R]
 # R handles dummies automatically with factor()
 df$party <- factor(df$party)  # R, D, I
