@@ -1,9 +1,9 @@
 ---
 title: "7. Probit and MLE"
-subtitle: "Binary outcomes and maximum likelihood estimation"
+subtitle: "Binary outcomes, nonnegative outcomes, and quasi-maximum likelihood"
 ---
 
-Chapter 6 developed the likelihood for the normal linear model, where MLE turned out to be OLS. This chapter applies the same MLE toolkit to a genuinely nonlinear problem: modeling binary outcomes. We start with the linear probability model (LPM), motivate the probit link, write the probit likelihood and score by hand, implement Newton--Raphson, and compare everything to R's built-in `glm()`. The running theme is that the score equation $\sum s_i(\beta) = 0$ is just another moment condition --- the same logic that gave us OLS, but now for a nonlinear model.
+Chapter 6 developed the likelihood for the normal linear model, where MLE turned out to be OLS. This chapter applies the same MLE toolkit to genuinely nonlinear problems: modeling binary outcomes with probit, and modeling nonnegative outcomes with the exponential conditional mean. We start with the linear probability model (LPM), motivate the probit link, write the probit likelihood and score by hand, implement Newton--Raphson, and compare everything to R's built-in `glm()`. We then turn to Poisson quasi-maximum likelihood estimation (QMLE) for nonnegative data, following Wooldridge (2023). The running theme is that the score equation $\sum s_i(\beta) = 0$ is just another moment condition --- the same logic that gave us OLS, but now for nonlinear models.
 
 **Questions this chapter answers:**
 
@@ -11,6 +11,7 @@ Chapter 6 developed the likelihood for the normal linear model, where MLE turned
 2. What is the probit model, and how does it arise from a latent variable representation?
 3. How do we interpret probit coefficients — and why are marginal effects needed?
 4. How does Newton-Raphson find the MLE, and why does it converge so fast?
+5. What is Poisson QMLE, and why is it consistent even when $Y$ is not a count?
 
 ```{r}
 #| label: setup
@@ -513,82 +514,232 @@ The LPM and probit give nearly identical results when predicted probabilities ar
 
 For estimating average marginal effects, the LPM is a robust baseline that doesn't require correct specification of the link function.
 
-## Logit: the main alternative
+## Poisson QMLE for nonnegative outcomes {#sec-poisson-qmle}
 
-The logit model uses the logistic CDF $\Lambda(z) = e^z/(1 + e^z)$ instead of $\Phi$:
+Probit addresses binary outcomes ($Y \in \{0, 1\}$) by passing a linear index through $\Phi$. But what about **nonnegative** outcomes --- counts, dollar amounts, rates, or any $Y \geq 0$? A linear model $E[Y \mid X] = X'\beta$ can predict negative values, just as the LPM predicts outside $[0,1]$. The natural fix is an **exponential conditional mean**:
+
+$$E[Y \mid X] = \exp(X'\beta)$$
+
+This guarantees nonnegative predictions. The question is how to estimate $\beta$.
+
+### The Poisson log-likelihood as a working likelihood
+
+The Poisson distribution has mass function $P(Y = y) = e^{-\mu}\mu^y / y!$ with mean $\mu$. Its log-likelihood for observation $i$ is:
+
+$$\ell_i(\beta) = Y_i \cdot X_i'\beta - \exp(X_i'\beta) - \log(Y_i!)$$
+
+The key insight, emphasized by Gourieroux, Monfort, and Trognon (1984) and developed extensively in Wooldridge (2010, Ch. 18; 2023), is that **maximizing this likelihood yields consistent estimates of $\beta$ even when $Y$ is not Poisson** --- as long as the conditional mean $E[Y \mid X] = \exp(X'\beta)$ is correctly specified. This is **quasi-maximum likelihood estimation** (QMLE).
+
+::: {#def-qmle}
+## Quasi-Maximum Likelihood Estimation (QMLE)
+QMLE uses a likelihood function as a device for estimation without assuming the full distribution is correct. For the Poisson QMLE, consistency of $\hat{\beta}$ requires only that $E[Y \mid X] = \exp(X'\beta)$. The response need not be a count, need not be integer-valued, and can even be continuous.
+:::
+
+Wooldridge (2023) develops the broader framework of QMLE using **linear exponential family** (LEF) distributions. The key pairings are:
+
+| Conditional mean | LEF density | Use case |
+|-----------------|-------------|----------|
+| Linear | Normal | Any response; leads to OLS |
+| Logistic | Bernoulli | Binary or fractional response |
+| Exponential | Poisson | Nonnegative response (count, corner), no natural upper bound |
+
+When $G^{-1}(\cdot)$ is the canonical link function associated with the chosen LEF density, pooled QMLE has especially attractive properties, including equivalence with imputation estimators in causal inference settings.
+
+### The score is a moment condition
+
+The Poisson score (gradient of the log-likelihood) is:
+
+$$s_i(\beta) = \left(Y_i - \exp(X_i'\beta)\right) X_i$$
+
+Setting the sum of scores to zero gives the estimating equation:
+
+$$\sum_{i=1}^n \left(Y_i - \exp(X_i'\beta)\right) X_i = 0$$
+
+Compare this to OLS and probit:
+
+| Estimator | Moment condition | Mean function |
+|-----------|-----------------|---------------|
+| OLS | $\sum X_i(Y_i - X_i'\beta) = 0$ | $E[Y\mid X] = X'\beta$ |
+| Probit MLE | $\sum w_i(Y_i - \Phi(X_i'\beta))X_i = 0$ | $E[Y\mid X] = \Phi(X'\beta)$ |
+| Poisson QMLE | $\sum X_i(Y_i - \exp(X_i'\beta)) = 0$ | $E[Y\mid X] = \exp(X'\beta)$ |
+
+All three are **method-of-moments estimators** that set sample moment conditions to zero. The Poisson score is simpler than the probit score --- no observation-specific weights $w_i$.
+
+::: {.callout-tip}
+## Poisson QMLE Is Nonlinear GMM
+The Poisson score equation $\sum X_i(Y_i - \exp(X_i'\beta)) = 0$ is a system of $K$ nonlinear moment conditions in $K$ unknowns. This makes Poisson QMLE a **just-identified nonlinear GMM estimator** (Chapter 11). Unlike the probit score, the Poisson score has equal weights on all observations. The connection between QMLE and GMM is developed further in Wooldridge (2023), who shows that pooled Poisson QMLE extends naturally to difference-in-differences and panel data settings.
+:::
+
+### Implementation in R
+
+We simulate data that is clearly **not Poisson** --- continuous, with variance $\mu^2$ instead of $\mu$ --- but has the correct exponential conditional mean.
 
 ```{r}
-#| label: logit-comparison
-logit <- glm(lfp_bin ~ k5 + k618 + age + wc + inc,
-             data = Mroz, family = binomial(link = "logit"))
+#| label: poisson-qmle-sim
+set.seed(307)
+n_pois <- 1000
+x1_p <- rnorm(n_pois)
+x2_p <- rnorm(n_pois)
 
-# Probit and logit fitted values are nearly identical
-max(abs(predict(probit, type = "response") - predict(logit, type = "response")))
+# True conditional mean: exp(0.5 + 0.8*x1 - 0.3*x2)
+beta_true_pois <- c(0.5, 0.8, -0.3)
+X_pois <- cbind(1, x1_p, x2_p)
+mu_true <- as.numeric(exp(X_pois %*% beta_true_pois))
+
+# Generate Y that is NOT Poisson: continuous with exponential mean
+# Y = mu * V where V ~ Exponential(1), so E[Y|X] = mu, Var(Y|X) = mu^2
+y_cont <- mu_true * rexp(n_pois)
+
+c(min = min(y_cont), median = median(y_cont),
+  mean = mean(y_cont), max = max(y_cont),
+  frac_zero = mean(y_cont == 0))
 ```
 
+The data is continuous, not integer-valued, and the variance is $\mu^2$ (not $\mu$ as Poisson requires). Nevertheless, Poisson QMLE consistently estimates $\beta$:
+
 ```{r}
-#| label: probit-logit-coefs
-# Coefficients differ by approximately a factor of 1.6
+#| label: poisson-qmle-fit
+#| warning: false
+pois_fit <- glm(y_cont ~ x1_p + x2_p, family = poisson)
+
 data.frame(
-  Variable = names(coef(probit)),
-  Probit = round(coef(probit), 4),
-  Logit = round(coef(logit), 4),
-  Ratio = round(coef(logit) / coef(probit), 3)
+  Parameter = c("intercept", "x1", "x2"),
+  True = beta_true_pois,
+  QMLE = round(coef(pois_fit), 4)
 )
 ```
 
-The ratio of logit to probit coefficients is approximately $\pi/\sqrt{3} \approx 1.81$, because the logistic distribution has variance $\pi^2/3$ while the standard normal has variance 1. The fitted probabilities are nearly indistinguishable.
+### Why sandwich standard errors are mandatory
 
-## Simulation: verifying asymptotic normality
-
-The MLE theory from Chapter 6 says $\sqrt{n}(\hat{\beta} - \beta_0) \to N(0, \mathcal{I}^{-1})$. Let's verify with a controlled simulation:
+The model-based (Poisson) standard errors assume $\text{Var}(Y \mid X) = E[Y \mid X] = \exp(X'\beta)$. In our simulation, $\text{Var}(Y \mid X) = \exp(X'\beta)^2$ --- far from the Poisson assumption. The information matrix equality fails, so model-based SEs are wrong:
 
 ```{r}
-#| label: asymptotic-sim
-#| fig-width: 7
-#| fig-height: 4
-set.seed(42)
-B <- 2000
-n_sim <- 500
-beta_true <- c(0.3, -0.5, 0.8)  # intercept, x1, x2
-K_sim <- length(beta_true)
+#| label: poisson-sandwich
+se_model <- summary(pois_fit)$coefficients[, "Std. Error"]
+se_sandwich <- sqrt(diag(vcovHC(pois_fit, type = "HC1")))
 
-b_sim <- matrix(NA, B, K_sim)
-for (b in 1:B) {
-  x1 <- rnorm(n_sim)
-  x2 <- rnorm(n_sim)
-  X_sim <- cbind(1, x1, x2)
-  p_sim <- pnorm(X_sim %*% beta_true)
-  y_sim <- rbinom(n_sim, 1, p_sim)
-  fit <- glm(y_sim ~ x1 + x2, family = binomial(link = "probit"))
-  b_sim[b, ] <- coef(fit)
-}
+data.frame(
+  Parameter = names(coef(pois_fit)),
+  Model_based = round(se_model, 4),
+  Sandwich = round(se_sandwich, 4),
+  Ratio = round(se_sandwich / se_model, 2)
+)
+```
 
-# Focus on x1 coefficient
-j_sim <- 2
-c(true = beta_true[j_sim],
-  mean_bhat = mean(b_sim[, j_sim]),
-  sd_bhat = sd(b_sim[, j_sim]))
+The sandwich SEs are substantially larger --- exactly the same lesson as probit with a misspecified link. **Always use sandwich standard errors with Poisson QMLE.**
+
+```{r}
+#| label: poisson-robust-test
+# Proper inference with sandwich SEs
+coeftest(pois_fit, vcov = vcovHC(pois_fit, type = "HC1"))
+```
+
+### Comparing to OLS
+
+What happens if we fit a linear model to the same nonnegative data?
+
+```{r}
+#| label: poisson-vs-ols
+ols_nonneg <- lm(y_cont ~ x1_p + x2_p)
+
+# OLS predicts negative values
+c(min_ols_fitted = min(fitted(ols_nonneg)),
+  n_negative = sum(fitted(ols_nonneg) < 0))
 ```
 
 ```{r}
-#| label: asymptotic-sim-plot
+#| label: poisson-vs-ols-plot
 #| fig-width: 7
 #| fig-height: 4
-df_sim <- data.frame(b_hat = b_sim[, j_sim])
-ggplot(df_sim, aes(b_hat)) +
+df_fit_compare <- data.frame(
+  ols = fitted(ols_nonneg),
+  poisson = fitted(pois_fit),
+  y = y_cont
+)
+
+ggplot(df_fit_compare, aes(ols, poisson)) +
+  geom_point(alpha = 0.3) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, color = "gray") +
+  geom_vline(xintercept = 0, color = "gray") +
+  labs(title = "OLS vs. Poisson QMLE fitted values",
+       subtitle = "OLS can predict negative; Poisson QMLE is always positive",
+       x = "Ŷ (OLS)", y = "Ŷ (Poisson QMLE)")
+```
+
+### Interpreting Poisson QMLE coefficients
+
+Because $E[Y \mid X] = \exp(X'\beta)$, a one-unit change in $x_j$ multiplies the conditional mean by $\exp(\beta_j)$:
+
+$$\frac{E[Y \mid x_j + 1, \mathbf{x}_{-j}]}{E[Y \mid x_j, \mathbf{x}_{-j}]} = \exp(\beta_j)$$
+
+So $\beta_j$ is a **log-proportional effect**: a one-unit increase in $x_j$ changes $E[Y \mid X]$ by approximately $100 \cdot \beta_j$ percent (for small $\beta_j$). This semi-elasticity interpretation is one reason the exponential mean is popular in applied work.
+
+```{r}
+#| label: poisson-interpretation
+# Percentage effect interpretation
+data.frame(
+  Parameter = names(coef(pois_fit)),
+  Coefficient = round(coef(pois_fit), 4),
+  Pct_effect = paste0(round(100 * coef(pois_fit), 1), "%"),
+  Exact_multiplier = round(exp(coef(pois_fit)), 4)
+)
+```
+
+### Monte Carlo: verifying consistency
+
+To confirm that Poisson QMLE is consistent even with misspecified variance, we run a Monte Carlo with **Gamma-distributed** data (not Poisson, not even integer):
+
+```{r}
+#| label: poisson-monte-carlo
+#| fig-width: 7
+#| fig-height: 4
+#| warning: false
+set.seed(42)
+B_pois <- 2000
+n_mc <- 500
+
+beta_pois_store <- matrix(NA, B_pois, 3)
+for (b in 1:B_pois) {
+  x1_b <- rnorm(n_mc)
+  x2_b <- rnorm(n_mc)
+  mu_b <- exp(0.5 + 0.8 * x1_b - 0.3 * x2_b)
+  # Gamma-distributed Y: E[Y|X] = mu, Var(Y|X) = mu^2 / shape
+  y_b <- rgamma(n_mc, shape = 2, rate = 2 / mu_b)
+  fit_b <- suppressWarnings(glm(y_b ~ x1_b + x2_b, family = poisson))
+  beta_pois_store[b, ] <- coef(fit_b)
+}
+
+# Sampling distribution of beta_x1
+df_mc <- data.frame(b_hat = beta_pois_store[, 2])
+ggplot(df_mc, aes(b_hat)) +
   geom_histogram(aes(y = after_stat(density)), bins = 50, alpha = 0.5) +
   stat_function(fun = dnorm,
-                args = list(mean = mean(b_sim[, j_sim]),
-                            sd = sd(b_sim[, j_sim])),
-                color = "red", linewidth = 1) +
-  geom_vline(xintercept = beta_true[j_sim], linetype = "dashed") +
-  labs(title = "Sampling distribution of probit MLE",
-       subtitle = paste("n =", n_sim, "— centered on true β, approximately normal"),
+                args = list(mean = mean(beta_pois_store[, 2]),
+                            sd = sd(beta_pois_store[, 2])),
+                color = "blue", linewidth = 1) +
+  geom_vline(xintercept = 0.8, linetype = "dashed") +
+  labs(title = "Poisson QMLE sampling distribution",
+       subtitle = "Data is Gamma (not Poisson) — estimator is still consistent and normal",
        x = expression(hat(beta)[x1]))
 ```
 
-The MLE is centered on the true value (unbiased in large samples) and approximately normal, as the theory predicts.
+```{r}
+#| label: poisson-mc-summary
+data.frame(
+  Parameter = c("intercept", "x1", "x2"),
+  True = c(0.5, 0.8, -0.3),
+  MC_mean = round(colMeans(beta_pois_store), 4),
+  MC_sd = round(apply(beta_pois_store, 2, sd), 4)
+)
+```
+
+The Poisson QMLE is centered on the true values and approximately normal, confirming the asymptotic theory. The data is Gamma-distributed --- nowhere near Poisson --- but the exponential mean is correctly specified, which is all that matters.
+
+::: {.callout-warning}
+## When Poisson QMLE Fails
+Poisson QMLE is consistent **only** if $E[Y \mid X] = \exp(X'\beta)$. If the true conditional mean is not exponential --- for example, if $E[Y \mid X]$ is linear or follows a different nonlinear form --- the estimator is inconsistent. This is the same as probit: if the true link is not $\Phi$, the probit MLE is inconsistent for the index parameters. Comparing linear and exponential model estimates is a useful robustness check (Wooldridge, 2023).
+:::
 
 ## Prediction and classification
 
@@ -618,24 +769,28 @@ The probit score equation, the OLS normal equation, and the GLS estimating equat
 
 $$\frac{1}{n} \sum_{i=1}^n g(W_i, \theta) = 0$$
 
-| Estimator | Moment condition $g(W_i, \theta)$ |
-|-----------|----------------------------------|
-| OLS | $X_i(Y_i - X_i'\beta)$ |
-| WLS | $W_i^{1/2} X_i(Y_i - X_i'\beta)$ |
-| Probit MLE | $w_i(Y_i - \Phi(X_i'\beta)) X_i$ |
+| Estimator | Moment condition $g(W_i, \theta)$ | Mean function |
+|-----------|----------------------------------|---------------|
+| OLS | $X_i(Y_i - X_i'\beta)$ | $X'\beta$ (linear) |
+| WLS | $W_i^{1/2} X_i(Y_i - X_i'\beta)$ | $X'\beta$ (linear) |
+| Probit MLE | $w_i(Y_i - \Phi(X_i'\beta)) X_i$ | $\Phi(X'\beta)$ (binary) |
+| Poisson QMLE | $X_i(Y_i - \exp(X_i'\beta))$ | $\exp(X'\beta)$ (nonneg) |
 
 ```{r}
 #| label: moment-conditions
-# All three are sample moment conditions that equal zero at the estimate
+# All four are sample moment conditions that equal zero at the estimate
 
 # OLS
 max(abs(t(X) %*% (y - X %*% coef(lpm_ols))))
 
 # Probit score
 max(abs(probit_score(coef(probit))))
+
+# Poisson QMLE score
+max(abs(t(model.matrix(pois_fit)) %*% (y_cont - fitted(pois_fit))))
 ```
 
-When there are more moment conditions than parameters, the **generalized method of moments** (Chapter 13) provides the efficient way to combine them.
+When there are more moment conditions than parameters, the **generalized method of moments** (Chapter 11) provides the efficient way to combine them.
 
 ## Summary
 
@@ -647,8 +802,8 @@ When there are more moment conditions than parameters, the **generalized method 
 | Score | $\sum w_i(Y_i - \Phi(X_i'\beta))X_i = 0$ | manual (see above) |
 | Newton--Raphson | $\beta^{(t+1)} = \beta^{(t)} - H^{-1}S$ | `glm()` does this internally |
 | Average marginal effect | $\frac{1}{n}\sum \phi(X_i'\hat\beta)\hat\beta_j$ | `mean(dnorm(Xb)) * coef(probit)` |
-| Model-based SEs | $\sqrt{[-H_n(\hat\beta)]^{-1}_{jj}}$ | `summary(probit)` |
-| Sandwich SEs | $\sqrt{[H^{-1}(\sum s_is_i')H^{-1}]_{jj}}$ | `vcovHC(probit, type = "HC1")` |
-| Logit | $P(Y=1\mid X) = \Lambda(X'\beta)$ | `family = binomial(link = "logit")` |
+| Poisson QMLE | $E[Y\mid X] = \exp(X'\beta)$, $Y \geq 0$ | `glm(y ~ x, family = poisson)` |
+| Poisson score | $\sum X_i(Y_i - \exp(X_i'\beta)) = 0$ | nonlinear GMM moment condition |
+| Sandwich SEs | $\sqrt{[H^{-1}(\sum s_is_i')H^{-1}]_{jj}}$ | `vcovHC(fit, type = "HC1")` |
 
-**Key takeaway.** The probit model is the natural extension of MLE to binary outcomes. The coefficients are not marginal effects (compute AME instead), the score equation is a moment condition just like OLS normal equations, and sandwich SEs protect against misspecification of the link function. The LPM remains a robust baseline for estimating average effects.
+**Key takeaway.** Probit and Poisson QMLE extend the moment-condition logic of OLS to nonlinear settings: binary outcomes ($Y \in \{0,1\}$, probit) and nonnegative outcomes ($Y \geq 0$, exponential mean). In both cases, the score equation $\sum g_i(\beta) = 0$ is a nonlinear GMM estimating equation. Sandwich standard errors protect against distributional misspecification --- they are optional for probit under correct specification, but **mandatory** for Poisson QMLE since the Poisson variance assumption is almost never correct. The LPM remains a robust baseline for binary outcomes; similarly, OLS can serve as a linear check against the exponential mean model for nonnegative outcomes (Wooldridge, 2023).

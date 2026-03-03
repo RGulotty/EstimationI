@@ -26,7 +26,7 @@ website:
             href: ch05-gls.qmd
           - text: "6. Small Sample Inference"
             href: ch06-small-sample.qmd
-          - text: "7. Probit and MLE"
+          - text: "7. Probit, Poisson QMLE, and Nonlinear Models"
             href: ch07-probit.qmd
           - text: "8. Asymptotics"
             href: ch08-asymptotics.qmd
