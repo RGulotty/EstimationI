@@ -618,7 +618,7 @@ bptest(mod_diag)
 
 A large test statistic tells you heteroskedasticity is present, which is useful information for understanding your data. But the right response is to always use robust SEs — not to condition your estimator on the test result.
 
-## Residual types
+## Residual types {#sec-residual-types}
 
 OLS residuals are $\hat{e} = My$, but they are **not** equal to the true errors. The lecture develops three residual types using projection matrices. Each applies a different diagonal scaling matrix $M^*$ to correct for leverage.
 
@@ -855,6 +855,72 @@ c(trace_M = tr(M_d), n_minus_K = n - K)
 ```
 
 The standardized estimator $\bar{\sigma}^2 = \frac{1}{n}\sum (1-h_{ii})^{-1}\hat{e}_i^2$ is unbiased even under heteroskedasticity — it corrects each squared residual for its leverage. This is the logic behind HC2 standard errors: replace $\hat{e}_i^2$ with $\hat{e}_i^2 / (1 - h_{ii})$ in the sandwich meat. HC3 goes further, using $\hat{e}_i^2 / (1 - h_{ii})^2$ — the extra factor makes it equivalent to the jackknife and more conservative at high-leverage points.
+
+## Hansen's $\tilde{R}^2$: cross-validated fit {#sec-r2-tilde}
+
+The standard $R^2 = 1 - \text{SSE}/\text{SST}$ measures in-sample fit: how well does the model predict the data it was trained on? This is biased upward — adding regressors always increases $R^2$, even if they are pure noise. The adjusted $R^2$ applies a degrees-of-freedom correction, but it is still based on in-sample residuals $\hat{e}_i$.
+
+Hansen recommends a more honest measure: replace the in-sample residuals with the **prediction errors** (leave-one-out residuals) $\tilde{e}_i = \hat{e}_i / (1 - h_{ii})$. These are the same prediction errors from @sec-residual-types — each $\tilde{e}_i$ is the error you would make predicting observation $i$ from a model fit *without* observation $i$.
+
+$$\tilde{R}^2 = 1 - \frac{\sum_{i=1}^n \tilde{e}_i^2}{\sum_{i=1}^n (Y_i - \bar{Y})^2}$$ {#eq-r2-tilde}
+
+This is a **cross-validated** $R^2$. It penalizes overfitting more aggressively than adjusted $R^2$ because prediction errors $\tilde{e}_i$ are always larger than in-sample residuals — the model had access to observation $i$ when computing $\hat{e}_i$, but not when computing $\tilde{e}_i$. Unlike regular $R^2$, $\tilde{R}^2$ *can* be negative if the model overfits so badly that it predicts worse than the sample mean.
+
+Here is a reusable R function:
+
+```{r}
+#| label: r2-tilde-function
+r2_tilde <- function(mod) {
+  e_hat <- resid(mod)
+  h <- hatvalues(mod)
+  e_tilde <- e_hat / (1 - h)           # prediction errors
+  y <- mod$model[[1]]                   # response variable
+  SST <- sum((y - mean(y))^2)
+  1 - sum(e_tilde^2) / SST
+}
+```
+
+Let's compare it to $R^2$ and adjusted $R^2$ on the Prestige data:
+
+```{r}
+#| label: r2-tilde-prestige
+mod_p <- lm(prestige ~ education + income + women, data = Prestige)
+
+c(R2         = summary(mod_p)$r.squared,
+  adj_R2     = summary(mod_p)$adj.r.squared,
+  tilde_R2   = r2_tilde(mod_p))
+```
+
+Now watch what happens when we add noise regressors — variables that are pure random noise with no relationship to prestige:
+
+```{r}
+#| label: r2-tilde-overfitting
+set.seed(42)
+Prestige$noise1 <- rnorm(nrow(Prestige))
+Prestige$noise2 <- rnorm(nrow(Prestige))
+Prestige$noise3 <- rnorm(nrow(Prestige))
+
+mod_noise <- lm(prestige ~ education + income + women +
+                  noise1 + noise2 + noise3, data = Prestige)
+
+comparison <- data.frame(
+  baseline = c(summary(mod_p)$r.squared,
+               summary(mod_p)$adj.r.squared,
+               r2_tilde(mod_p)),
+  with_noise = c(summary(mod_noise)$r.squared,
+                 summary(mod_noise)$adj.r.squared,
+                 r2_tilde(mod_noise)),
+  row.names = c("R²", "Adjusted R²", "R² tilde (Hansen)")
+)
+round(comparison, 4)
+```
+
+Regular $R^2$ goes up (it always does). Adjusted $R^2$ goes down slightly. Hansen's $\tilde{R}^2$ drops more sharply — it reflects the fact that out-of-sample prediction has gotten *worse* by fitting noise.
+
+::: {.callout-tip}
+## Reporting Fit
+Following Hansen, report $\tilde{R}^2$ alongside or in place of adjusted $R^2$. It gives a more honest assessment of predictive fit because it is based on leave-one-out prediction errors, not in-sample residuals. Compute it with `r2_tilde(mod)` defined above.
+:::
 
 ## Method of moments perspective
 
