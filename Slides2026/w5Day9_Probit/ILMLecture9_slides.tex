@@ -26,8 +26,9 @@
 \definecolor{trial2}{cmyk}{0.00,0,1, 0}
 \definecolor{darkgreen}{rgb}{0,.4, 0.1}
 \usepackage{array}
+\definecolor{alertpurple}{rgb}{0.4, 0, 0.6}
 \beamertemplatesolidbackgroundcolor{white}  \setbeamercolor{alerted
-text}{fg=red}
+text}{fg=alertpurple}
 \usepackage{tcolorbox}
 \setbeamertemplate{caption}[numbered]\newcounter{mylastframe}
 
@@ -94,7 +95,7 @@ text}{fg=red}
 \setbeamertemplate{navigation symbols}{}
 
 \useoutertheme{miniframes}
-\title[PLSC 30700]{Linear Models Lecture 9: Probit}
+\title[PLSC 30700]{Linear Models Lecture 9: Probit and Poisson QMLE}
 
 \author{Robert Gulotty}
 \institute[Chicago]{University of Chicago}
@@ -212,7 +213,7 @@ where $G: \mathbb{R} \to [0,1]$ is a known link function.
 ]
 \addplot[blue] {1/(1+exp(-1.7*x))};
 \addlegendentry{$\Phi(X'\beta)$}
-\addplot[red, dashed] {0.5 + 0.4*x};
+\addplot[alertpurple, dashed] {0.5 + 0.4*x};
 \addlegendentry{Linear}
 \addplot[black, dotted, thin] coordinates {(-3,0)(3,0)};
 \addplot[black, dotted, thin] coordinates {(-3,1)(3,1)};
@@ -393,7 +394,7 @@ The marginal effect \textbf{depends on $X$} through $\phi(X'\beta)$.
 \addplot[blue] {1/(1+exp(-1.7*x))};
 \addlegendentry{$\Phi(X'\beta)$}
 % PDF (standard normal)
-\addplot[red, dashed] {exp(-x^2/2)/sqrt(2*pi)};
+\addplot[alertpurple, dashed] {exp(-x^2/2)/sqrt(2*pi)};
 \addlegendentry{$\phi(X'\beta)$ (marginal effect weight)}
 \end{axis}
 \end{tikzpicture}
@@ -500,11 +501,11 @@ Compare three estimating equations side by side:
 \renewcommand{\arraystretch}{1.8}
 \begin{tabular}{lll}
 \toprule
-\textbf{Model} & \textbf{Estimating Equation} & \textbf{Weights} \\
+\textbf{Model} & \textbf{Estimating Equation} & \textbf{Mean Function} \\
 \midrule
-OLS & $\displaystyle\sum_i X_i(Y_i - X_i'\beta) = 0$ & Equal \\[6pt]
-Probit MLE & $\displaystyle\sum_i w_i(Y_i - \Phi(X_i'\beta))\, X_i = 0$ & $w_i = \frac{\phi}{\Phi(1-\Phi)}$ \\[6pt]
-General & $\displaystyle\sum_i g_i(\theta) = 0$ & $\to$ GMM \\
+OLS & $\displaystyle\sum_i X_i(Y_i - X_i'\beta) = 0$ & $X'\beta$ \\[6pt]
+Probit MLE & $\displaystyle\sum_i w_i(Y_i - \Phi(X_i'\beta))\, X_i = 0$ & $\Phi(X'\beta)$ \\[6pt]
+Poisson QMLE & $\displaystyle\sum_i X_i(Y_i - \exp(X_i'\beta)) = 0$ & $\exp(X'\beta)$ \\[6pt]
 \bottomrule
 \end{tabular}
 \renewcommand{\arraystretch}{1.0}
@@ -513,7 +514,7 @@ General & $\displaystyle\sum_i g_i(\theta) = 0$ & $\to$ GMM \\
 
 \bigskip
 
-All three are \textbf{sample moment conditions}. GMM (coming later) is the general framework: find $\theta$ such that $\frac{1}{n}\sum_i g(W_i, \theta) = 0$.
+All three are \textbf{sample moment conditions} --- nonlinear GMM estimating equations. Find $\theta$ such that $\frac{1}{n}\sum_i g(W_i, \theta) = 0$.
 
 \end{frame}
 
@@ -717,151 +718,228 @@ where $H = -\mathbb{E}[\partial^2 \ell_i / \partial\beta\partial\beta']$.
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{From Probit to Measurement Models}
+\section{Poisson QMLE for Nonnegative Outcomes}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{frame}{What if the Regressor is Unobserved?}
+\begin{frame}{From Binary to Nonnegative Outcomes}
 
-In Probit:
+Probit handles $Y \in \{0,1\}$ by passing $X'\beta$ through $\Phi$.
 
+\pause
+
+\textbf{What about $Y \geq 0$?} Counts, dollar amounts, rates, corner solutions.
+
+\pause
+
+\bigskip
+
+Same problem as LPM: a linear model $\mathbb{E}[Y \mid X] = X'\beta$ can predict \textbf{negative values} for an outcome that cannot be negative.
+
+\pause
+
+\bigskip
+
+\textbf{Solution: the exponential conditional mean.}
 \[
-P(Y_i=1 \mid X_i) = \Phi(X_i'\beta)
+\mathbb{E}[Y \mid X] = \exp(X'\beta)
+\]
+
+\begin{itemize}
+    \item Always positive
+    \item Natural for counts, corner solutions, and any $Y \geq 0$
+    \item The analog of $\Phi(X'\beta)$ for binary outcomes
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{The Poisson Quasi-Log-Likelihood}
+
+The Poisson log-likelihood for a single observation:
+\[
+\ell_i(\beta) = Y_i \cdot X_i'\beta - \exp(X_i'\beta) - \log(Y_i!)
 \]
 
 \pause
 
-But suppose the key regressor is \textbf{latent}.
+The score (gradient):
+\[
+s_i(\beta) = \left(Y_i - \exp(X_i'\beta)\right) X_i
+\]
 
 \pause
 
-Let:
+Setting the total score to zero:
+\[
+\boxed{\sum_{i=1}^n X_i\left(Y_i - \exp(X_i'\beta)\right) = 0}
+\]
+
+\pause
+
+\bigskip
+
+Compare to OLS: $\sum X_i(Y_i - X_i'\beta) = 0$.
+
+\medskip
+
+Same structure --- a \textbf{nonlinear moment condition}. No observation-specific weights (unlike probit).
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{QMLE: Consistency Without the Distribution}
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=Key Result (Gourieroux et al.~1984; Wooldridge 2010{,} 2023)]
+Poisson QMLE is \textbf{consistent for $\beta$} whenever $\mathbb{E}[Y \mid X] = \exp(X'\beta)$ is correctly specified.
+
+\medskip
+
+$Y$ need \textbf{not} be Poisson. It need not even be integer-valued.
+\end{tcolorbox}
+
+\pause
+
+\bigskip
+
+This is \textbf{quasi-MLE}: use a likelihood as an estimation device, not as a distributional assumption.
+
+\pause
+
+\bigskip
+
+\textbf{What can $Y$ be?}
 \begin{itemize}
-    \item $i$ = individuals
-    \item $j$ = items
-    \item $\theta_i$ = latent trait (ability, ideology)
+    \item Integer counts (patents, murders, votes)
+    \item Continuous nonneg (income, expenditure, trade flows)
+    \item Corner solutions (zero with positive mass, then continuous)
+    \item Fractions in $[0,\infty)$
 \end{itemize}
 
 \pause
 
-Model:
+All that matters is that the conditional mean is exponential.
 
-\[
-Y_{ij} = \mathbf{1}\{a_j \theta_i - b_j + \varepsilon_{ij} > 0\}
-\]
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{frame}{The IRT Model}
+\begin{frame}{Interpreting Poisson QMLE Coefficients}
 
-Assume:
-
+Because $\mathbb{E}[Y \mid X] = \exp(X'\beta)$:
 \[
-\varepsilon_{ij} \sim N(0,1)
+\frac{\mathbb{E}[Y \mid x_j + 1,\, \mathbf{x}_{-j}]}{\mathbb{E}[Y \mid x_j,\, \mathbf{x}_{-j}]} = \exp(\beta_j)
 \]
 
 \pause
 
-Then:
+\bigskip
 
-\[
-P(Y_{ij}=1 \mid \theta_i)
-=
-\Phi(a_j \theta_i - b_j)
-\]
+$\beta_j$ is a \textbf{semi-elasticity}: a one-unit increase in $x_j$ changes $\mathbb{E}[Y \mid X]$ by approximately $100 \times \beta_j$ percent.
 
 \pause
 
-Parameters:
-\begin{itemize}
-    \item $\theta_i$ : latent ability
-    \item $a_j$ : discrimination
-    \item $b_j$ : difficulty
-\end{itemize}
+\bigskip
+
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{$\beta_j$ measures} & \textbf{Interpretation} \\
+\midrule
+OLS & $\Delta \mathbb{E}[Y \mid X]$ & Absolute change \\
+Probit & $\phi(X'\beta) \cdot \beta_j$ & Needs ME transformation \\
+Poisson QMLE & $\approx 100\beta_j\%$ change & Semi-elasticity \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1.0}
 
 \pause
 
-This is a \textbf{latent Probit model}.
+\bigskip
+
+Poisson coefficients are directly interpretable --- no marginal effect computation needed.
+
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{frame}{Likelihood with Latent Traits}
+\begin{frame}{Sandwich SEs Are Mandatory}
 
-We do not observe $\theta_i$.
+The Poisson variance assumption: $\operatorname{Var}(Y \mid X) = \mathbb{E}[Y \mid X]$.
 
 \pause
 
-Assume:
+\bigskip
 
+This is almost \textbf{never correct} in practice. With overdispersion:
 \[
-\theta_i \sim N(0,1)
+\operatorname{Var}(Y \mid X) \gg \mathbb{E}[Y \mid X]
 \]
 
 \pause
 
-Individual likelihood contribution:
-
-\[
-L_i(a,b)
-=
-\int
-\prod_j
-\Phi(a_j\theta - b_j)^{Y_{ij}}
-(1-\Phi(a_j\theta - b_j))^{1-Y_{ij}}
-\phi(\theta) d\theta
-\]
+The information matrix equality \textbf{fails} $\Rightarrow$ model-based SEs are wrong.
 
 \pause
 
-Total likelihood:
+\bigskip
 
-\[
-L = \prod_i L_i
-\]
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=Practical Rule]
+\textbf{Always} use sandwich standard errors with Poisson QMLE. The model-based SEs from \texttt{summary(glm(...))} are not valid.
+
+\medskip
+
+This is the same sandwich from Lectures 5--6, applied to a nonlinear model.
+\end{tcolorbox}
 
 \pause
 
-Now estimation requires numerical integration or EM.
+\bigskip
+
+Contrast with probit: sandwich SEs are \emph{optional} under correct specification, \textbf{mandatory} for Poisson QMLE.
+
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{frame}{Identification in IRT}
+\begin{frame}{Best Practices: The LEF Framework (Wooldridge 2023)}
 
-Just as in Probit:
+\textbf{Linear exponential family} (LEF) distributions provide a unified framework:
 
-\pause
+\bigskip
 
-If we rescale:
-
-\[
-\theta_i^* = c \theta_i
-\]
-
-then:
-
-\[
-a_j^* = \frac{a_j}{c}
-\]
-
-\pause
-
-The likelihood is unchanged.
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{llll}
+\toprule
+\textbf{Cond.\ Mean} & \textbf{LEF Density} & \textbf{Outcome Type} & \textbf{R Code} \\
+\midrule
+Linear & Normal & Any $Y$ & \texttt{lm()} \\
+Logistic & Bernoulli & Binary / fractional & \texttt{glm(, binomial)} \\
+Exponential & Poisson & $Y \geq 0$, no upper bound & \texttt{glm(, poisson)} \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1.0}
 
 \pause
 
-We impose normalizations:
+\bigskip
 
-\[
-\mathbb{E}[\theta_i] = 0,
-\quad
-\operatorname{Var}(\theta_i)=1
-\]
+\textbf{Applied workflow:}
+\begin{enumerate}
+    \item Estimate OLS (linear) as a baseline
+    \item Estimate Poisson QMLE (exponential mean) for $Y \geq 0$
+    \item Compare estimates as a \textbf{robustness check}
+    \item Use sandwich SEs in all cases
+    \item If estimates diverge, investigate functional form
+\end{enumerate}
 
 \pause
 
-Location and scale are not identified without normalization.
+\bigskip
+
+This extends naturally to panel data (DiD with nonneg outcomes).
+
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -954,6 +1032,40 @@ coeftest(probit, vcov = vcovHC(probit, type = "HC1"))
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Poisson QMLE in R: \texttt{glm()}}
+
+\begin{lstlisting}
+# Poisson QMLE for nonnegative Y
+pois <- glm(Y ~ X1 + X2, data = dta,
+            family = poisson)
+
+# MANDATORY: sandwich SEs (model-based are wrong)
+coeftest(pois, vcov = vcovHC(pois, type = "HC1"))
+\end{lstlisting}
+
+\pause
+
+\bigskip
+
+\begin{lstlisting}
+# Coefficient interpretation
+exp(coef(pois))  # multiplicative effects
+\end{lstlisting}
+
+\pause
+
+\bigskip
+
+\begin{itemize}
+    \item Works even if \texttt{Y} is continuous (non-integer) --- R warns, but estimates are valid
+    \item \texttt{exp(coef(pois)["X1"])} = multiplicative effect of one-unit increase in \texttt{X1}
+    \item Compare to OLS: \texttt{lm(Y \~{} X1 + X2)} as a robustness check
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Unifying Perspective and Looking Ahead}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -963,13 +1075,13 @@ coeftest(probit, vcov = vcovHC(probit, type = "HC1"))
 \renewcommand{\arraystretch}{1.4}
 \begin{tabular}{lcccc}
 \toprule
-& \textbf{Linear} & \textbf{LPM} & \textbf{Probit} & \textbf{IRT} \\
+& \textbf{OLS} & \textbf{LPM} & \textbf{Probit} & \textbf{Poisson QMLE} \\
 \midrule
-Outcome & Continuous & Binary & Binary & Binary \\
-CEF & $X'\beta$ & $X'\beta$ & $\Phi(X'\beta)$ & $\Phi(a\theta-b)$ \\
-Moment Cond. & $\mathbb{E}[Xe]=0$ & $\mathbb{E}[Xe]=0$ & $\mathbb{E}[s(\beta)]=0$ & EM \\
-Estimation & OLS & OLS & MLE & MLE+Integ. \\
-Regressor & Observed & Observed & Observed & Latent \\
+Outcome & Any & Binary & Binary & $Y \geq 0$ \\
+CEF & $X'\beta$ & $X'\beta$ & $\Phi(X'\beta)$ & $\exp(X'\beta)$ \\
+$\beta_j$ means & $\Delta Y$ & $\Delta P$ & needs ME & $\approx \%\Delta Y$ \\
+Moment cond. & $\sum Xe = 0$ & $\sum Xe = 0$ & $\sum ws = 0$ & $\sum X(Y-e^{X'\beta})=0$ \\
+Sandwich SEs & Rec. & Mandatory & Optional & \alert{Mandatory} \\
 \bottomrule
 \end{tabular}
 \renewcommand{\arraystretch}{1.0}
@@ -992,12 +1104,13 @@ Find $\hat\theta$ such that $\frac{1}{n}\sum_{i=1}^n g(W_i, \hat\theta) \approx 
 
 \textbf{Today:}
 \begin{itemize}
-    \item Binary outcomes $\Rightarrow$ nonlinear CEF, but LPM (BLP) remains a useful benchmark
-    \item Probit: latent variable model estimated by MLE
-    \item Coefficients $\neq$ marginal effects; compute AME
-    \item Score equations are moment conditions --- same logic as OLS normal equations
-    \item Sandwich SEs handle misspecification, just as in the linear model
-    \item IRT extends Probit to latent regressors
+    \item Binary outcomes $\Rightarrow$ Probit; nonneg outcomes $\Rightarrow$ Poisson QMLE
+    \item LPM and OLS remain useful baselines for comparison
+    \item Probit: $\beta_j$ needs marginal effect transformation; Poisson: $\beta_j \approx$ semi-elasticity
+    \item All score equations are \textbf{moment conditions} --- nonlinear GMM
+    \item Poisson QMLE: consistent if $\mathbb{E}[Y \mid X] = \exp(X'\beta)$, regardless of the distribution of $Y$
+    \item Sandwich SEs: optional for probit (under correct spec), \alert{mandatory} for Poisson QMLE
+    \item Always compare linear and nonlinear estimates as a robustness check
 \end{itemize}
 
 \pause
