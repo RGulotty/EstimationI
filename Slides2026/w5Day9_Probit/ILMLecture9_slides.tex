@@ -111,7 +111,7 @@ text}{fg=alertpurple}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Binary Outcomes and the Linear Probability Model}
+\section{Binary Outcomes and LPM}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{frame}{Binary Outcomes and the BLP}
@@ -252,7 +252,7 @@ Both map $\mathbb{R} \to (0,1)$, are symmetric about $1/2$, and produce nearly i
 \begin{itemize}
     \item Natural latent variable interpretation ($\varepsilon \sim N(0,1)$)
     \item Connects to the normal distribution theory from Lectures 1 and 7
-    \item Extends naturally to measurement models (IRT, later today)
+    \item Extends naturally to other nonlinear models (Poisson QMLE, later today)
 \end{itemize}
 
 \end{frame}
@@ -407,7 +407,7 @@ Marginal effects are largest near $X'\beta = 0$ (where the CDF is steepest) and 
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Maximum Likelihood Estimation}
+\section{MLE}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{frame}{Likelihood for the Probit Model}
@@ -512,9 +512,9 @@ Poisson QMLE & $\displaystyle\sum_i X_i(Y_i - \exp(X_i'\beta)) = 0$ & $\exp(X'\b
 
 \pause
 
-\bigskip
+\smallskip
 
-All three are \textbf{sample moment conditions} --- nonlinear GMM estimating equations. Find $\theta$ such that $\frac{1}{n}\sum_i g(W_i, \theta) = 0$.
+All three are \textbf{moment conditions}: find $\theta$ s.t.\ $\frac{1}{n}\sum_i g(W_i, \theta) = 0$ (GMM).
 
 \end{frame}
 
@@ -581,7 +581,7 @@ Efficiency & Lower & Higher (if correct) \\
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Asymptotic Distribution}
+\section{Asymptotics}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{frame}{Fisher Information for Probit}
@@ -616,31 +616,28 @@ Compare with OLS: $\mathbb{E}[X X'] / \sigma^2$. In Probit, the effective ``vari
 
 \begin{frame}{Hessian and Information Matrix Equality}
 
-The expected Hessian can be computed by differentiating the score:
+The expected Hessian:
 \[
--\mathbb{E}\left[\frac{\partial^2 \ell_i}{\partial \beta \partial \beta'}\right]
+-\mathbb{E}\!\left[\frac{\partial^2 \ell_i}{\partial \beta \partial \beta'}\right]
 =
-\mathbb{E}\left[\frac{\phi(X'\beta)^2}{\Phi(X'\beta)(1-\Phi(X'\beta))} X X'\right]
+\mathbb{E}\!\left[\frac{\phi(X'\beta)^2}{\Phi(X'\beta)(1-\Phi(X'\beta))} X X'\right]
 \]
 
 \pause
 
-Meanwhile, the outer product of scores:
+The outer product of scores:
 \[
-\mathbb{E}[s_i(\beta_0) s_i(\beta_0)']
+\mathbb{E}[s_i s_i']
 =
-\mathbb{E}\left[\frac{\phi(X'\beta)^2}{\Phi(X'\beta)^2(1-\Phi(X'\beta))^2} \underbrace{(Y_i - \Phi)^2}_{\Phi(1-\Phi)} X X'\right]
+\mathbb{E}\!\left[\frac{\phi(X'\beta)^2}{\Phi(X'\beta)^2(1-\Phi(X'\beta))^2} \underbrace{(Y_i - \Phi)^2}_{\Phi(1-\Phi)} X X'\right]
 \]
-
-Using $\mathbb{E}[(Y_i - \Phi(X_i'\beta))^2 \mid X_i] = \Phi(X_i'\beta)(1-\Phi(X_i'\beta))$, one factor cancels.
 
 \pause
 
-\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=Information Matrix Equality]
-Under \textbf{correct specification}:
-$\mathbb{E}[s_i s_i'] = -\mathbb{E}\!\left[\frac{\partial^2 \ell_i}{\partial \beta \partial \beta'}\right]$.
-The outer product of scores equals the negative expected Hessian.
-\end{tcolorbox}
+Since $\mathbb{E}[(Y_i - \Phi)^2 \mid X_i] = \Phi(1-\Phi)$, one factor cancels, giving the \textbf{information matrix equality} (under correct specification):
+\[
+\boxed{\mathbb{E}[s_i s_i'] = -\mathbb{E}\!\left[\frac{\partial^2 \ell_i}{\partial \beta \partial \beta'}\right]}
+\]
 
 \end{frame}
 
@@ -718,7 +715,7 @@ where $H = -\mathbb{E}[\partial^2 \ell_i / \partial\beta\partial\beta']$.
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Poisson QMLE for Nonnegative Outcomes}
+\section{Poisson QMLE}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{frame}{From Binary to Nonnegative Outcomes}
@@ -943,7 +940,7 @@ This extends naturally to panel data (DiD with nonneg outcomes).
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Implementation in R}
+\section{R Implementation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{frame}[fragile]{Probit in R: \texttt{glm()}}
@@ -1066,7 +1063,7 @@ exp(coef(pois))  # multiplicative effects
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Unifying Perspective and Looking Ahead}
+\section{Synthesis}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{frame}{Comparison Table}
