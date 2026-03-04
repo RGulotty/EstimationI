@@ -148,7 +148,7 @@ text}{fg=darkpurple}
 \begin{frame}{Properties of Conditional Expectation}
 \begin{itemize}
   \item $m(X) \equiv \mathbb{E}[Y \mid X]$ \hfill (Definition)
-  \item[-] Note: $\mathbb{E}[Y|X]$ is a random variable (a function of $X$), not a number!
+  \item[*] Note: $\mathbb{E}[Y|X]$ is a random variable (a function of $X$), not a number!
   \bigskip
   \item $\mathbb{E}[\mathbb{E}[Y \mid X] \mid X] = \mathbb{E}[Y \mid X]$ \hfill (Idempotence)
   \bigskip
@@ -252,39 +252,58 @@ e = Y - m(X) = X\varepsilon.
 \end{frame}
 
 
-\begin{frame}{Variance of the CEF Error}
+\begin{frame}{How Much Does the CEF Leave Unexplained?}
 
-\begin{columns}[T]
-\begin{column}{0.48\textwidth}
-\textbf{Unconditional:}
-$$\sigma^2 \equiv Var[e]=\mathbb{E}[e^2]$$
-A measure of variation in $Y$ not explained by $m(X)$.\\
-\bigskip
-\textbf{Conditional:}
-$$\sigma^2(x)=Var[e|X=x]=\mathbb{E}[e^2|X=x]$$
-Averaging: $\sigma^2=\mathbb{E}[\sigma^2(X)]$
-\end{column}
-\begin{column}{0.48\textwidth}
-\textbf{Mean-variance representation:}\\
-Define $u=\frac{e}{\sigma(X)}$, with $\mathbb{E}[u|X]=0$, $Var[u|X]=1$.
+The CEF $m(X)$ captures the systematic part of $Y$.  The error $e = Y - m(X)$ is everything else.
+
+\medskip
+\textbf{Unconditional error variance:}
+$$\sigma^2 \equiv \operatorname{Var}[e]=\mathbb{E}[e^2]$$
+The average prediction error across all values of $X$.
+
+\medskip\pause
+\textbf{Conditional error variance:}
+$$\sigma^2(x)=\operatorname{Var}[e|X=x]=\mathbb{E}[e^2|X=x]$$
+How uncertain is our prediction \emph{for a specific} $X=x$?\quad Averaging: $\sigma^2=\mathbb{E}[\sigma^2(X)]$.
+
+\medskip\pause
+\textbf{Example:} Predict vote share from incumbency.  $\sigma^2(D{=}1)$ may differ from $\sigma^2(D{=}0)$---incumbents might have more predictable outcomes than challengers.
+\end{frame}
+
+
+\begin{frame}{Mean-Variance Representation}
+Define $u=\frac{e}{\sigma(X)}$, so $\mathbb{E}[u|X]=0$ and $\operatorname{Var}[u|X]=1$.  Then:
 \begin{align*}
-Y&=m(X)+\sigma(X)u
+Y&=m(X)+\sigma(X)\, u
 \end{align*}
-If $\sigma(X)$ is constant: homoskedastic.\\
-\bigskip
-$X$ matters in two ways: through the mean and through the variance.
-\end{column}
-\end{columns}
+\pause
+$X$ matters in \textbf{two ways}:
+\begin{itemize}
+\item Through the \textbf{mean}: $m(X)$ shifts the expected outcome.
+\item Through the \textbf{variance}: $\sigma(X)$ scales the noise.
+\end{itemize}
+
+\bigskip\pause
+If $\sigma(X)$ is constant across all $X$: \textbf{homoskedastic} errors.\\
+If $\sigma(X)$ varies with $X$: \textbf{heteroskedastic} errors.
+
+\bigskip\pause
+\textbf{Example:} In a model of household income, $\sigma(\text{Education})$ tends to increase with education---PhDs can be professors or hedge fund managers, while high-school graduates have a narrower income range.
 \end{frame}
 
 
 \begin{frame}{Hansen Theorem 2.6}
-Call $e_1=Y-m(X_1)$, $e_{12}=Y-m(X_1, X_2)$,
+Call $e_1=Y-m(X_1)$, $e_{12}=Y-m(X_1, X_2)$.
 \bigskip
-$$var[Y]\geq var[e_1]\geq var[e_{12}]$$
+$$\operatorname{Var}[Y]\geq \operatorname{Var}[e_1]\geq \operatorname{Var}[e_{12}]$$
 \bigskip
 You will always explain (weakly) more of the variance with more variables.\\
 This is why $R^2$ is a poor measure of model fit.
+
+\bigskip\pause
+\textbf{Proof strategy:} We will not work with the errors directly.  Instead, we show that $\operatorname{Var}[m(X_1)] \leq \operatorname{Var}[m(X_1,X_2)]$---the finer CEF has (weakly) larger variance.  Then the \textbf{CEF decomposition}
+$$\operatorname{Var}[Y] = \operatorname{Var}[m(X)] + \mathbb{E}[\operatorname{Var}[Y|X]]$$
+converts this into the result about error variances.
 \end{frame}
 
 \begin{frame}{Proof of Theorem 2.6: Setup}
@@ -537,48 +556,55 @@ coef(lm(y ~ x1 + x2))  # same answer
 \begin{frame}{Indicator (Dummy) Variables}
 \begin{itemize}
 \item Our event space $\Omega$ is often binary or categorical (or coded to be so).
-\item[-] Examples: Age bins (18-34), Party (R, D), Country (USA, Japan).
+\item[-] Examples: Age bins (18--34), Party (R, D), Country (USA, Japan).
 \end{itemize}
 \bigskip
 \begin{defn}
-Suppose $A$ is an event.  Define $\mathbb{I}= 1$ if outcome in $A$, $\mathbb{I} =0$ otherwise.  Then $E[\mathbb{I}(\omega \in A)] = P(A)$.
+Suppose $A$ is an event.  The \emph{indicator variable} $D = \mathbb{I}(\omega \in A)$ equals 1 if the outcome is in $A$, and 0 otherwise.  Then $\mathbb{E}[D] = P(A)$.
 \end{defn}
 \medskip
-CEF with a dummy variable:
-$$\mathbb{E}[Y|A]=\alpha+\delta D_i+e$$
+The CEF with a binary regressor is:
+$$\mathbb{E}[Y \mid D] = \alpha + \delta D$$
+This is the BLP \emph{and} the CEF---the CEF of $Y$ given a binary variable is always linear.
 \end{frame}
 
 \begin{frame}{Indicator Variables: Interpretation}
 
 \begin{align*}
-\mathbb{E}[y_i|\omega_i \in A] & =\beta_0+\beta_1 \\
-\mathbb{E}[y_i|\omega_i \notin A] & =\beta_0 \\
-\mathbb{E}[y_i|\omega_i \in A]-E[y_i|\omega_i \notin A]&=\beta_1
+\mathbb{E}[Y \mid D = 1] & =\alpha+\delta \\
+\mathbb{E}[Y \mid D = 0] & =\alpha \\
+\mathbb{E}[Y \mid D = 1]-\mathbb{E}[Y \mid D = 0]&=\delta
 \end{align*}
+\pause
+\begin{itemize}
+\item $\alpha$ is the population mean of $Y$ in the reference group ($D=0$).
+\item $\delta$ is the population difference in means between the two groups.
+\item The BLP slope equals the difference in conditional means---no approximation needed.
+\end{itemize}
 
 \end{frame}
 
 \begin{frame}{Parallel Slopes}
 \begin{itemize}
-\item With a continuous independent variable, adding an indicator control variable is called the "parallel slopes" model.
-\begin{align*}
-y_i&=\beta_0+\delta d_i+\beta_1x_i+e_i
-\end{align*}
-\item The effect of $x_i$ is the same for each group.
+\item With a continuous variable $X$ and a group indicator $D$, the \emph{parallel slopes} model is:
+$$\mathbb{E}[Y \mid D, X] = \beta_0 + \delta D + \beta_1 X$$
+\pause
+\item The effect of $X$ is the same for each group: $\partial\, \mathbb{E}[Y|D,X]/\partial X = \beta_1$.
+\item The group indicator shifts the intercept by $\delta$ but does not change the slope.
 \end{itemize}
 \end{frame}
 
 
 \begin{frame}{Unordered Categorical Variables}
 \begin{itemize}
-\item Suppose we have a model of multi-category data.
-\item For example, ethnic identification $x_i\in \{ \text{Kazakh, Russian, Other}\}$
-$$d_{2i}=\begin{cases} 1 \text{ if } x_i=\text{Kazakh} \\ 0 \text{ otherwise}\end{cases} \quad d_3=\begin{cases} 1 \text{ if } x_i=\text{Russian}\\ 0 \text{ otherwise} \end{cases}$$
-\item Our estimation becomes
+\item Suppose we have multi-category data.
+\item For example, ethnic identification $X\in \{ \text{Kazakh, Russian, Other}\}$.  Define:
+$$D_{2}=\begin{cases} 1 \text{ if } X=\text{Kazakh} \\ 0 \text{ otherwise}\end{cases} \quad D_{3}=\begin{cases} 1 \text{ if } X=\text{Russian}\\ 0 \text{ otherwise} \end{cases}$$
+\item The linear projection becomes:
 \begin{align*}
-y_i&=b_1+b_2 d_{2i}+b_3 d_{3i}+e_i
+\mathbb{E}[Y \mid D_2, D_3] &= \beta_1 + \beta_2 D_{2} + \beta_3 D_{3}
 \end{align*}
-\item We can interpret $b_1,\ b_2,\ b_3$ as the difference in means relative to baseline.
+\item $\beta_1 = \mathbb{E}[Y \mid \text{Other}]$ (baseline group mean); $\beta_2, \beta_3$ are differences from baseline.
 
 \end{itemize}
 \end{frame}
@@ -635,16 +661,34 @@ y_i&=\mu+ \delta z_i +\beta_1 x_i+  \gamma z_i*x_i+e_i
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Data Transformations to Ease Interpretation}
+\begin{frame}{The Interpretation Problem with Interactions}
+Recall: with an interaction, the marginal effect of $X$ depends on $Z$:
+$$\frac{\partial\, \mathbb{E}[Y|X,Z]}{\partial X}=\beta_1 +  \gamma Z$$
+\pause
 \begin{itemize}
-\item You can demean continuous variables.
-\begin{align*}
-\frac{\partial E[y_i|X]}{\partial x_i}&=\frac{\partial}{\partial x_i}[\mu+ \delta (z_i-\bar{z})+\beta_1(x_i-\bar{x})+  \gamma (z_i-\bar{z})*(x_i-\bar{x})]\\
-&=\beta_1 +  \gamma (z_i-\bar{z})
-\end{align*}
-\item A one unit increase in $x_i$ produces a $\beta_1 +  \gamma (z_i-\bar{z})$ unit increase in $y_i$.
-\item But now $\beta_1$ is the average marginal effect (when $z_i=\bar{z}_i)$
+\item $\beta_1$ is the effect of $X$ \emph{when $Z=0$}.
+\item But $Z=0$ may not be meaningful!
+\item[-] If $Z$ is income, $Z=0$ means zero income---few observations live there.
+\item[-] If $Z$ is years of education, $Z=0$ is nonsensical for adults.
 \end{itemize}
+\bigskip\pause
+\textbf{Solution:} Demean $Z$ (and optionally $X$) before interacting.
+\end{frame}
+
+\begin{frame}{Demeaning to Get the Average Marginal Effect}
+Replace $Z$ with $Z - \mathbb{E}[Z]$ (or $Z - \bar{Z}$ in the sample):
+$$\mathbb{E}[Y|X,Z] = \mu + \delta(Z-\mathbb{E}[Z]) + \beta_1 X + \gamma\, (Z-\mathbb{E}[Z])\cdot X$$
+\pause
+The marginal effect of $X$ is now:
+$$\frac{\partial\, \mathbb{E}[Y|X,Z]}{\partial X}=\beta_1 + \gamma(Z - \mathbb{E}[Z])$$
+\pause
+\begin{itemize}
+\item $\beta_1$ is the effect of $X$ \textbf{at the mean of $Z$}---a substantively interpretable quantity.
+\item $\gamma$ still measures how the effect of $X$ changes per unit of $Z$.
+\item The model is numerically identical---only the interpretation of $\beta_1$ changes.
+\end{itemize}
+\bigskip\pause
+\textbf{Example:} Effect of campaign spending ($X$) moderated by district competitiveness ($Z$).  After demeaning $Z$, $\beta_1$ is the spending effect in a district of average competitiveness.
 \end{frame}
 
 
@@ -653,17 +697,31 @@ y_i&=\mu+ \delta z_i +\beta_1 x_i+  \gamma z_i*x_i+e_i
 \section{Best Linear Predictor}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{frame}{Regularity Conditions and MSPE}
+\begin{frame}{From Bivariate to Multivariate Linear Prediction}
 \begin{itemize}
-\item Given Y and $X=\begin{pmatrix} X_1\\ X_2\\X_3\\1 \end{pmatrix}$, we need:
+\item So far we derived the BLP for a single regressor: $\beta = \text{Cov}(X,Y)/\text{Var}(X)$.
+\item In practice, we want to predict $Y$ using \emph{many} variables: $X = (X_1, X_2, \ldots, X_k, 1)'$.
+\item The algebra generalizes: scalar variances and covariances become \textbf{matrices}.
+\end{itemize}
+\bigskip\pause
+\begin{defn}[Mean Square Prediction Error]
+The \textbf{MSPE} of a linear predictor $X'\beta$ is:
+$$S(\beta) = \mathbb{E}\!\left[(Y - X'\beta)^2\right]$$
+This is the expected squared distance between $Y$ and our prediction.  The \textbf{best linear predictor} minimizes $S(\beta)$ over all $\beta \in \mathbb{R}^k$.
+\end{defn}
+\end{frame}
+
+\begin{frame}{Regularity Conditions}
+\begin{itemize}
+\item Given $Y$ and $X=\begin{pmatrix} X_1\\ X_2\\X_3\\1 \end{pmatrix}$, we need three conditions for the BLP to exist:
 \begin{enumerate}
-\item $\mathbb{E}[Y^2]<\infty$
-\item $\mathbb{E}||X||^2<\infty$
-\item $\mathbf{Q}_{XX}=\mathbb{E}[XX']$ is positive definite.
+\item $\mathbb{E}[Y^2]<\infty$ \hfill (finite second moment of $Y$)
+\item $\mathbb{E}\|X\|^2<\infty$ \hfill (finite second moments of regressors)
+\item $\mathbf{Q}_{XX}=\mathbb{E}[XX']$ is positive definite \hfill (no perfect collinearity)
 \end{enumerate}\pause
-\item A linear predictor: $X'\beta=X_1 \beta_1+X_2 \beta_2+X_3 \beta_3+\beta_4$
-\item The mean square prediction error is $S(\beta)=\mathbb{E}[(Y-X'\beta)^2]$.
-\item The \textbf{best linear predictor} $\mathcal{P}[Y|X]$ minimizes $S(\beta)$.
+\bigskip
+\item Conditions 1--2 ensure $S(\beta)$ is finite.  Condition 3 ensures a \emph{unique} minimizer.
+\item If $\mathbf{Q}_{XX}$ is not positive definite, some linear combination of regressors is constant---and the coefficients cannot be separately identified.
 \end{itemize}
 \end{frame}
 
@@ -801,10 +859,13 @@ $$\bm{Q}_{XX}^{-1}=\begin{bmatrix} \mathbf{Q}_{11\cdot 2}^{-1} &-\mathbf{Q}_{11\
 
 \begin{frame}{Interpreting Multivariate Regression}
 \begin{itemize}
-\item The multivariate projection equation is $Y=X_1'\beta_1+X_2'\beta_2+e$
-\item $X_1$ consists of a part explainable by a linear projection of $X_2$ and a part that is not.  Call the latter $u_1$.
-\item $\beta_1$ is the projection of $Y$ on $u_1$
-\item This is the idea behind the Ballantine diagram.
+\item The multivariate projection equation is $Y=X_1'\beta_1+X_2'\beta_2+e$.
+\item Decompose $X_1$ into the part predicted by $X_2$ and the part that is not:
+$$X_1 = \underbrace{X_2'\gamma_2}_{\text{explained by }X_2} + \underbrace{u_1}_{\text{residual}}$$
+\pause
+\item $\beta_1$ is the projection of $Y$ onto $u_1$---the variation in $X_1$ that is \emph{unique} to $X_1$, not shared with $X_2$.
+\pause
+\item \textbf{Example:} Regress growth on democracy ($X_1$) and institutions ($X_2$).  $\beta_1$ captures the effect of democracy \emph{after removing} what institutions already explain about democracy.
 \end{itemize}
 \end{frame}
 
@@ -824,15 +885,17 @@ X_1&=X_2'\gamma_2+u_1\\
 
 \begin{frame}{Omitted Variable Bias}
 \begin{itemize}
-\item Begin with $Y=X'\beta+e=X_1'\beta_1+X_2'\beta_2+e$
-\item Suppose that we failed to include $X_2$ in our model, so we actually estimate a \textbf{short regression}:
-$$Y=X_1'\gamma_1+u, \quad E[X_1u]=0$$
-\item We can study the components of $\gamma_1$.
+\item \textbf{Long regression}: $Y=X_1'\beta_1+X_2'\beta_2+e$. \quad \textbf{Short regression}: $Y=X_1'\gamma_1+u$.
+\pause
+\item Substitute the long into the short:
 \begin{align*}
 \gamma_1&=(\mathbb{E}[X_1X_1'])^{-1}\mathbb{E}[X_1Y]\\
-&=(\mathbb{E}[X_1X_1'])^{-1}\mathbb{E}[X_1(X_1'\beta_1+X_2'\beta_2+e)]\\
-&=\beta_1+\Gamma_{12}\beta_2\\
+&=(\mathbb{E}[X_1X_1'])^{-1}\mathbb{E}[X_1(X_1'\beta_1+X_2'\beta_2+e)]
+=\beta_1+\underbrace{(\mathbb{E}[X_1X_1'])^{-1}\mathbb{E}[X_1X_2']}_{\Gamma_{12}}\beta_2
 \end{align*}
+\pause
+\item $\Gamma_{12}$: coefficient from regressing $X_2$ on $X_1$ (the \textbf{association} between included and omitted).
+\item \alert{Bias} $= \Gamma_{12}\beta_2$: product of \emph{how correlated} $X_1$ and $X_2$ are and \emph{how much $X_2$ matters} for $Y$.
 \end{itemize}
 \end{frame}
 
