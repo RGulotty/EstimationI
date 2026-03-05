@@ -102,6 +102,40 @@ text}{fg=darkpurple}
 \maketitle
 \end{frame}
 
+\begin{frame}{Mean Independence Does Not Rule Out Heteroskedasticity}
+
+Let
+\[
+X \sim \text{Uniform}(-1,1),
+\qquad
+Y = X^2 + X\varepsilon,
+\]
+where $\varepsilon \sim \mathcal{N}(0,1)$ and $\varepsilon \perp X$.
+
+\medskip
+
+The CEF is $m(X)=X^2$, and the CEF error is $e = X\varepsilon$.
+
+\medskip
+\textbf{Mean independence holds:}\quad
+$\mathbb{E}[e|X]
+= X\mathbb{E}[\varepsilon|X]
+= 0.$
+
+\medskip\pause
+\textbf{But the conditional variance depends on $X$:}
+\[
+\operatorname{Var}(e|X)
+= X^2.
+\]
+
+\pause
+\medskip
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+$\mathbb{E}[e|X]=0$ guarantees that $e$ has no \emph{systematic} pattern with $X$.  It says nothing about the \emph{spread} of $e$.  Heteroskedasticity is the norm, not the exception.
+\end{tcolorbox}
+\end{frame}
+
 \begin{frame}{Theory based vs "Agnostic" strategies}
 \begin{itemize}
 \item Two approaches to handling heteroskedasticity:

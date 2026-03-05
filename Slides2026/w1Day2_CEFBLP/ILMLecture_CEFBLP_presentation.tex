@@ -186,69 +186,128 @@ text}{fg=darkpurple}
 \bigskip
 
 \begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=Key Point]
-These are properties, not assumptions; they follow from LIE and the definition of the CEF.
+These are properties, not assumptions; they follow from LIE and the definition of the CEF: \alert{these properties are why we use the CEF as a mathematical tool.}
 \end{tcolorbox}
 \end{frame}
 
 
 
-\begin{frame}{Covariance of  Estimator and Disturbance}
-$e$ is a random variable, so we can calculate its covariance with $m(X)$:
+\begin{frame}{Why Covariance Matters for Decomposition}
+Suppose we decompose a random variable into two parts: $Y = S + N$ (``signal'' + ``noise'').
+\pause
+\medskip
+
+The variance of the sum is:
+$$\operatorname{Var}(Y)=\operatorname{Var}(S)+\operatorname{Var}(N)+2\operatorname{Cov}(S,N)$$
+\pause
+\begin{itemize}
+\item If $\operatorname{Cov}(S,N)\neq 0$, there is no clean separation: signal and noise share variation, and we cannot attribute variance to one or the other.
+\pause
+\item If $\operatorname{Cov}(S,N)= 0$, we get a \textbf{clean ANOVA-style decomposition}:
+$$\operatorname{Var}(Y)=\operatorname{Var}(S)+\operatorname{Var}(N)$$
+\end{itemize}
+\pause
+\medskip
+\textbf{Question:} Is there a function of $X$ that decomposes $Y$ into uncorrelated signal and noise?
+\end{frame}
+
+\begin{frame}{Covariance of CEF and Its Error}
+Yes---the CEF does exactly this.  Since $e$ is a random variable, compute its covariance with $m(X)$:
 \begin{align*}
-\mathbb{E}[e m(X)] & =  \mathbb{E}[\mathbb{E}[e m(X)|X]]=\mathbb{E}[m(X)\mathbb{E}[e|X]]=\mathbb{E}[m(X)*0]=0
+\mathbb{E}[e\, m(X)] & =  \mathbb{E}[\mathbb{E}[e\, m(X)|X]]=\mathbb{E}[m(X)\,\mathbb{E}[e|X]]=\mathbb{E}[m(X)\cdot 0]=0
 \end{align*}\pause
-because $\mathbb{E}(Y|X)=m(X)$ is a measurable function of $X$, 2.4.4 applies.\pause
+Because $m(X)$ is a measurable function of $X$, Theorem 2.4.4 applies.\pause
 \begin{align*}
-Cov(e , m(X)) & =  \mathbb{E}[ e m(X)]- \mathbb{E}[e ] \mathbb{E}[m(X)]=0- 0*m(X)=0
+\operatorname{Cov}(e , m(X)) & =  \mathbb{E}[e\, m(X)]- \mathbb{E}[e]\,\mathbb{E}[m(X)]=0- 0\cdot\mathbb{E}[m(X)]=0
 \end{align*}\pause
-The disturbance is uncorrelated with the conditional expectation.  This is what allows us to separate the signal from the noise.
+So the \textbf{CEF decomposition} gives us exactly the clean split we wanted:
+$$\operatorname{Var}(Y)=\operatorname{Var}(m(X))+\operatorname{Var}(e)$$
+\end{frame}
+
+\begin{frame}{Why Orthogonality? The Projection Interpretation}
+This is not a mathematical coincidence.  It follows from what the CEF \emph{is}:
+
+\begin{itemize}
+\item The CEF minimizes $\mathbb{E}[(Y - g(X))^2]$ over \textbf{all} functions of $X$ (Thm 2.7).
+\item In the language of Hilbert spaces, $m(X)$ is the \textbf{orthogonal projection} of $Y$ onto the space of all square-integrable functions of $X$.
+\pause
+\item A defining property of orthogonal projection: \alert{the residual is perpendicular to the space you project onto}.
+\pause
+\item Since $m(X)$, $X$, $X^2$, $\sin(X)$, \ldots\ are all in that space, the error $e$ must be uncorrelated with \emph{every} function of $X$.
+\end{itemize}
+\pause
+\medskip
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+The CEF decomposition $\operatorname{Var}(Y)=\operatorname{Var}(m(X))+\operatorname{Var}(e)$ is a Pythagorean theorem: it holds because signal and noise are orthogonal.
+\end{tcolorbox}
 \end{frame}
 
 
-\begin{frame}{Mean Independence $\neq$ Independence}
+\begin{frame}{Visualizing Projection in $L^2$ Space}
+\begin{center}
+\begin{tikzpicture}[scale=1.45, >=stealth]
+  % The subspace of functions of X (a plane through the origin)
+  \fill[blue!8] (-0.5,-0.3) -- (4.2,-0.3) -- (4.8,2.0) -- (0.1,2.0) -- cycle;
+  \node[blue!60, anchor=north east] at (4.6,0.0) {$L^2(X)$: functions of $X$};
 
-Let
-\[
-X \sim \text{Uniform}(-1,1), 
-\qquad
-Y = X^2 + X\varepsilon,
-\]
-where $\varepsilon \sim \mathcal{N}(0,1)$ and $\varepsilon \perp X$.
+  % Origin
+  \coordinate (O) at (0.3,0.5);
 
-\bigskip
+  % The CEF m(X) -- a vector in the subspace
+  \coordinate (mX) at (3.3,1.2);
+  \draw[->, thick, blue!70!black, line width=1.2pt] (O) -- (mX)
+    node[midway, below=3pt, blue!70!black] {$m(X) = \mathbb{E}[Y|X]$};
 
-\textbf{Step 1: Compute the CEF}
-\[
-m(X)=\mathbb{E}[Y|X]
-= X^2 + X\mathbb{E}[\varepsilon|X]
-= X^2.
-\]
+  % Y -- a vector outside the subspace
+  \coordinate (Y) at (3.3,3.5);
+  \draw[->, thick, black, line width=1.2pt] (O) -- (Y)
+    node[midway, above left] {$Y$};
 
-\textbf{Step 2: CEF error}
-\[
-e = Y - m(X) = X\varepsilon.
-\]
+  % The error e = Y - m(X): vertical arrow from m(X) to Y
+  \draw[->, thick, darkpurple, line width=1.2pt] (mX) -- (Y)
+    node[pos=0.75, right, darkpurple] {$e = Y - m(X)$};
 
-\pause
+  % Right angle mark
+  \draw[darkpurple, line width=0.8pt] (3.3,1.2) -- (3.05,1.2) -- (3.05,1.45);
 
-\textbf{Step 3: Mean independence holds}
-\[
-\mathbb{E}[e|X]
-= \mathbb{E}[X\varepsilon|X]
-= X\mathbb{E}[\varepsilon|X]
-= 0.
-\]
+  % Some other function g(X) in the subspace
+  \coordinate (gX) at (1.8,1.65);
+  \draw[->, thick, blue!40, line width=0.8pt, dashed] (O) -- (gX)
+    node[above left, blue!50!black, font=\small] {$g(X)$};
 
-\pause
+  % Dotted line from g(X) to Y to show longer distance
+  \draw[dotted, gray, line width=0.7pt] (gX) -- (Y);
 
-\textbf{But independence fails:}
-\[
-\operatorname{Var}(e|X)
-= \operatorname{Var}(X\varepsilon|X)
-= X^2.
-\]
+  % Label the right angle as orthogonality
+  \node[darkpurple, font=\small, anchor=west] at (4.0,2.4) {$\operatorname{Cov}(e,\, h(X))=0$};
+  \node[darkpurple, font=\small, anchor=west] at (4.0,2.0) {for all $h(X) \in L^2(X)$};
+\end{tikzpicture}
+\end{center}
+\vspace{-0.3cm}
+The CEF is the closest point in $L^2(X)$ to $Y$.  The residual $e$ is orthogonal to the subspace.
+\end{frame}
 
 
+\begin{frame}{A Note on the Geometry}
+The diagram on the previous slide is an \emph{analogy}, not a literal picture.  Random variables do not live in $\mathbb{R}^2$---they live in an abstract \textbf{Hilbert space} $L^2$.
+
+\medskip
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Euclidean $\mathbb{R}^n$} & & \textbf{Hilbert space $L^2$}\\
+\midrule
+Vector $\mathbf{v}$ & $\longleftrightarrow$ & Random variable $Y$\\
+Dot product $\mathbf{u}\cdot\mathbf{v}$ & $\longleftrightarrow$ & $\mathbb{E}[UV]$ (inner product)\\
+Length $\|\mathbf{v}\|^2$ & $\longleftrightarrow$ & $\mathbb{E}[Y^2]$ (second moment)\\
+Perpendicularity $\mathbf{u}\cdot\mathbf{v}=0$ & $\longleftrightarrow$ & Uncorrelatedness $\operatorname{Cov}(U,V)=0$\\
+Projection onto subspace & $\longleftrightarrow$ & Conditional expectation\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip\pause
+You do \emph{not} need to know Hilbert space theory for this course.  The takeaway is just the intuition: \alert{projection $\Rightarrow$ orthogonal residual $\Rightarrow$ clean variance decomposition}.
 \end{frame}
 
 
@@ -293,14 +352,15 @@ If $\sigma(X)$ varies with $X$: \textbf{heteroskedastic} errors.
 
 
 \begin{frame}{Hansen Theorem 2.6}
-Call $e_1=Y-m(X_1)$, $e_{12}=Y-m(X_1, X_2)$.
-\bigskip
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=Theorem 2.6 (More Variables Reduce Error Variance)]
+Let $e_1=Y-m(X_1)$ and $e_{12}=Y-m(X_1, X_2)$.  Then:
 $$\operatorname{Var}[Y]\geq \operatorname{Var}[e_1]\geq \operatorname{Var}[e_{12}]$$
-\bigskip
+\end{tcolorbox}
+\medskip
 You will always explain (weakly) more of the variance with more variables.\\
 This is why $R^2$ is a poor measure of model fit.
 
-\bigskip\pause
+\medskip\pause
 \textbf{Proof strategy:} We will not work with the errors directly.  Instead, we show that $\operatorname{Var}[m(X_1)] \leq \operatorname{Var}[m(X_1,X_2)]$---the finer CEF has (weakly) larger variance.  Then the \textbf{CEF decomposition}
 $$\operatorname{Var}[Y] = \operatorname{Var}[m(X)] + \mathbb{E}[\operatorname{Var}[Y|X]]$$
 converts this into the result about error variances.
@@ -336,16 +396,20 @@ $$\operatorname{Var}[e_1] \;\geq\; \operatorname{Var}[e_{12}] \qquad \square$$
 
 
 \begin{frame}{Hansen Theorem 2.7: CEF as Best Predictor}
-\begin{itemize}
-\item Goal: Minimize mean squared prediction error: $(Y-g(X))^2$. Assumption: $\mathbb{E}[Y^2]<\infty$.\pause
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=Theorem 2.7 (CEF Is the Best Predictor)]
+If $\mathbb{E}[Y^2]<\infty$, then for any measurable function $g(X)$:
+$$\mathbb{E}\!\left[(Y-m(X))^2\right] \;\leq\; \mathbb{E}\!\left[(Y-g(X))^2\right]$$
+The CEF $m(X)=\mathbb{E}[Y|X]$ minimizes mean squared prediction error.
+\end{tcolorbox}
+\vspace{-2pt}
+{\small\textbf{Proof:}}\pause
+{\footnotesize
 \begin{align*}
-\mathbb{E}\left[(Y-g(X))^2\right]&=\mathbb{E}\left[(e+m(X)-g(X))^2\right] \tag{b/c $Y= e+m(X)$}\\ \pause
+\mathbb{E}\!\left[(Y-g(X))^2\right]&=\mathbb{E}\!\left[(e+m(X)-g(X))^2\right] \tag{$Y= e+m(X)$}\\ \pause
 &=\mathbb{E}[e^2]+2\mathbb{E}[e(m(X)-g(X))]+\mathbb{E}[(m(X)-g(X))^2]\\\pause
- &=\mathbb{E}[e^2]+2\times0+\mathbb{E}[(m(X)-g(X))^2] \tag{by thm 2.4.4.}\\\pause
-  &\geq \mathbb{E}[e^2] \tag{b/c squares are positive.}\\\pause
-  &=\mathbb{E}[(Y-m(X))^2]\neq \infty \tag{by thm 2.4.3.}
- \end{align*}
-\end{itemize}
+ &=\mathbb{E}[e^2]+0+\mathbb{E}[(m(X)-g(X))^2] \tag{by thm 2.4.4}\\\pause
+  &\geq \mathbb{E}[e^2] = \mathbb{E}[(Y-m(X))^2] \tag{squares $\geq 0$}
+ \end{align*}}
 \end{frame}
 
 
@@ -363,7 +427,7 @@ $$\operatorname{Var}[e_1] \;\geq\; \operatorname{Var}[e_{12}] \qquad \square$$
 
 \begin{frame}{Linear CEF and Best Prediction}
 
-If m(x) is \emph{linear} in X, we can write $m(X)=X'\beta$.  The \textbf{linear regression model} is:
+If $m(X)$ is \emph{linear} in $X=(X_1,\ldots,X_k,1)'$, we can write $m(X)=X'\beta$.  The \textbf{linear regression model} is:
 \begin{align*}
 Y&=X'\beta+e, \quad \mathbb{E}[e|X]=0
 \end{align*}
@@ -492,7 +556,11 @@ True CEF: $m(X)=X+X^2$\\
 e&=m(X)-\mathcal{P}(Y|X)=X^2-1\\
 \mathbb{E}[eX]&=\mathbb{E}[(X^2-1)X]=\mathbb{E}[X^3-X]=0
 \end{align*}
-The projection error $e$ is a function of X, and $\mathbb{E}[e|X]\neq 0$.
+\pause
+The BLP error $e=X^2-1$ is a function of $X$, so $\mathbb{E}[e|X]=X^2-1\neq 0$.
+
+\smallskip
+$\mathbb{E}[Xe]=0$ holds, but $\mathbb{E}[e|X]=0$ fails---the error has a systematic nonlinear pattern in $X$.  This is what ``weaker'' means: $\mathbb{E}[e|X]=0 \implies \mathbb{E}[Xe]=0$, but not vice versa.
 \end{frame}
 
 
@@ -530,6 +598,41 @@ The projection error $e$ is a function of X, and $\mathbb{E}[e|X]\neq 0$.
 \textbf{Key insight:}  $\mathbb{E}[Xe]=0$ (BLP errors uncorrelated with $X$) is \emph{weaker} than $\mathbb{E}[e|X]=0$ (CEF errors mean-independent of $X$).  The BLP projection ``uses up'' the linear information in $X$, but may leave nonlinear patterns in the residual.
 \end{frame}
 
+
+\begin{frame}{Why Write $\mathbb{E}[X_i e_i]=0$?}
+\begin{itemize}
+\item Saying ``$X$ is exogenous'' is intuitive but vague.  Writing $\mathbb{E}[X_i e_i]=0$ buys you three things:\pause
+\begin{enumerate}
+\item \textbf{It makes assumptions precise and testable.}  ``Exogenous'' could mean many things.  $\mathbb{E}[X_i e_i]=0$ says \emph{exactly} what must hold---and you can check whether the data are consistent with it.\pause
+\item \textbf{It generalizes.}  Swap $X_i$ for an instrument $Z_i$ and you get IV: $\mathbb{E}[Z_i e_i]=0$.  Add more conditions and you get GMM.  Every estimator in this course is defined by \emph{which} moment conditions it solves.\pause
+\item \textbf{It tells you what your estimator is doing.}  OLS finds the $\hat{\beta}$ that makes $\frac{1}{n}\sum X_i(Y_i - X_i'\hat{\beta})=0$.  The formula $(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{Y}$ \emph{is} the solution to this system of equations.
+\end{enumerate}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{From Theory to Moment Conditions: A Preview}
+Every empirical model in this course follows the same logic:
+\vspace{-2pt}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\begin{enumerate}
+\item \textbf{Substantive claim:}  A mechanism, institution, or design feature creates a restriction on the data.
+\item \textbf{Moment condition:}  Translate that claim into $\mathbb{E}[g(W_i, \theta)]=0$.
+\item \textbf{Estimator:}  Find $\hat{\theta}$ that solves the sample analog.
+\end{enumerate}
+\end{tcolorbox}
+
+\smallskip\pause
+\textbf{Example:} In a randomized experiment, random assignment means potential outcomes are independent of treatment.  This implies $\mathbb{E}[D_i e_i]=0$, and OLS consistently estimates the ATE.
+
+\smallskip\pause
+\textbf{Counterexample:} If subjects self-select into treatment based on expected benefits, $\mathbb{E}[D_i e_i]\neq 0$.  OLS is inconsistent---you need a \emph{different} moment condition (e.g., from an instrument).
+
+\smallskip
+\textbf{The question is always:} \alert{Why should this moment condition hold?}
+\end{frame}
+
+
 \begin{frame}[fragile]{BLP in R: From Formula to Code}
 \begin{lstlisting}[language=R]
 # Population formula: beta = Cov(X,Y) / Var(X)
@@ -546,151 +649,6 @@ beta_matrix <- solve(t(X) %*% X) %*% t(X) %*% y
 coef(lm(y ~ x1 + x2))  # same answer
 \end{lstlisting}
 \end{frame}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Dummy Variables}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\setcounter{subsection}{1}
-\begin{frame}{Indicator (Dummy) Variables}
-\begin{itemize}
-\item Our event space $\Omega$ is often binary or categorical (or coded to be so).
-\item[-] Examples: Age bins (18--34), Party (R, D), Country (USA, Japan).
-\end{itemize}
-\bigskip
-\begin{defn}
-Suppose $A$ is an event.  The \emph{indicator variable} $D = \mathbb{I}(\omega \in A)$ equals 1 if the outcome is in $A$, and 0 otherwise.  Then $\mathbb{E}[D] = P(A)$.
-\end{defn}
-\medskip
-The CEF with a binary regressor is:
-$$\mathbb{E}[Y \mid D] = \alpha + \delta D$$
-This is the BLP \emph{and} the CEF---the CEF of $Y$ given a binary variable is always linear.
-\end{frame}
-
-\begin{frame}{Indicator Variables: Interpretation}
-
-\begin{align*}
-\mathbb{E}[Y \mid D = 1] & =\alpha+\delta \\
-\mathbb{E}[Y \mid D = 0] & =\alpha \\
-\mathbb{E}[Y \mid D = 1]-\mathbb{E}[Y \mid D = 0]&=\delta
-\end{align*}
-\pause
-\begin{itemize}
-\item $\alpha$ is the population mean of $Y$ in the reference group ($D=0$).
-\item $\delta$ is the population difference in means between the two groups.
-\item The BLP slope equals the difference in conditional means---no approximation needed.
-\end{itemize}
-
-\end{frame}
-
-\begin{frame}{Parallel Slopes}
-\begin{itemize}
-\item With a continuous variable $X$ and a group indicator $D$, the \emph{parallel slopes} model is:
-$$\mathbb{E}[Y \mid D, X] = \beta_0 + \delta D + \beta_1 X$$
-\pause
-\item The effect of $X$ is the same for each group: $\partial\, \mathbb{E}[Y|D,X]/\partial X = \beta_1$.
-\item The group indicator shifts the intercept by $\delta$ but does not change the slope.
-\end{itemize}
-\end{frame}
-
-
-\begin{frame}{Unordered Categorical Variables}
-\begin{itemize}
-\item Suppose we have multi-category data.
-\item For example, ethnic identification $X\in \{ \text{Kazakh, Russian, Other}\}$.  Define:
-$$D_{2}=\begin{cases} 1 \text{ if } X=\text{Kazakh} \\ 0 \text{ otherwise}\end{cases} \quad D_{3}=\begin{cases} 1 \text{ if } X=\text{Russian}\\ 0 \text{ otherwise} \end{cases}$$
-\item The linear projection becomes:
-\begin{align*}
-\mathbb{E}[Y \mid D_2, D_3] &= \beta_1 + \beta_2 D_{2} + \beta_3 D_{3}
-\end{align*}
-\item $\beta_1 = \mathbb{E}[Y \mid \text{Other}]$ (baseline group mean); $\beta_2, \beta_3$ are differences from baseline.
-
-\end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{Dummies and Interactions in R}
-\begin{lstlisting}[language=R]
-# R handles dummies automatically with factor()
-df$party <- factor(df$party)  # R, D, I
-mod <- lm(approval ~ party, data = df)
-# Intercept = mean for baseline (alphabetically first)
-# Coefficients = differences from baseline
-
-# Interaction: does party moderate the economy effect?
-mod2 <- lm(approval ~ party * economy, data = df)
-# party * economy expands to: party + economy + party:economy
-
-# Marginal effect of economy for Democrats:
-coef(mod2)["economy"] + coef(mod2)["partyD:economy"]
-\end{lstlisting}
-\end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Interaction Terms}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\setcounter{subsection}{1}
-\begin{frame}{Interactions with Dummy Variables}
-\begin{itemize}
-\item Suppose now we have a model with different averages and different responses to $x$
-\begin{align*}
-\text{Group 1: }y_i&=\mu+\beta_1x_i+e_i,\\
-\text{Group 2: }y_i&=\mu+\delta+(\beta_1+\gamma)x_i+e_i,\\
-\end{align*}
-\item Again, we can use a dummy variable $d_i=0$ if $i$ is in group 1, $d_i=1$ if $i$ is in group 2.
-\begin{align*}
-y_i&=\mu+\delta d_i+ \beta_1x_i+  \gamma d_i x_i+e_i
-\end{align*}
-\item $d_ix_i$ is called an interaction term.
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Interactions Generally and Interpretation}
-\begin{itemize}
-\item With continuous moderator $z$:
-\begin{align*}
-y_i&=\mu+ \delta z_i +\beta_1 x_i+  \gamma z_i*x_i+e_i
-\end{align*} \pause
-\item An interaction conditions the effect of $x$ with $z$:
-\begin{align*}
-\frac{\partial E[y_i|X]}{\partial x_i}&=\beta_1 +  \gamma z_i
-\end{align*}
-\item A one unit increase in $x_i$ produces a $\beta_1 +  \gamma z_i$ unit increase in $y_i$.
-\item $\beta_1$ is the effect when $z_i=0$.
-\end{itemize}
-\end{frame}
-
-\begin{frame}{The Interpretation Problem with Interactions}
-Recall: with an interaction, the marginal effect of $X$ depends on $Z$:
-$$\frac{\partial\, \mathbb{E}[Y|X,Z]}{\partial X}=\beta_1 +  \gamma Z$$
-\pause
-\begin{itemize}
-\item $\beta_1$ is the effect of $X$ \emph{when $Z=0$}.
-\item But $Z=0$ may not be meaningful!
-\item[-] If $Z$ is income, $Z=0$ means zero income---few observations live there.
-\item[-] If $Z$ is years of education, $Z=0$ is nonsensical for adults.
-\end{itemize}
-\bigskip\pause
-\textbf{Solution:} Demean $Z$ (and optionally $X$) before interacting.
-\end{frame}
-
-\begin{frame}{Demeaning to Get the Average Marginal Effect}
-Replace $Z$ with $Z - \mathbb{E}[Z]$ (or $Z - \bar{Z}$ in the sample):
-$$\mathbb{E}[Y|X,Z] = \mu + \delta(Z-\mathbb{E}[Z]) + \beta_1 X + \gamma\, (Z-\mathbb{E}[Z])\cdot X$$
-\pause
-The marginal effect of $X$ is now:
-$$\frac{\partial\, \mathbb{E}[Y|X,Z]}{\partial X}=\beta_1 + \gamma(Z - \mathbb{E}[Z])$$
-\pause
-\begin{itemize}
-\item $\beta_1$ is the effect of $X$ \textbf{at the mean of $Z$}---a substantively interpretable quantity.
-\item $\gamma$ still measures how the effect of $X$ changes per unit of $Z$.
-\item The model is numerically identical---only the interpretation of $\beta_1$ changes.
-\end{itemize}
-\bigskip\pause
-\textbf{Example:} Effect of campaign spending ($X$) moderated by district competitiveness ($Z$).  After demeaning $Z$, $\beta_1$ is the spending effect in a district of average competitiveness.
-\end{frame}
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -750,6 +708,23 @@ The error is uncorrelated with $X$:
 \begin{pmatrix}\mathbb{E}[X_1e]\\\mathbb{E}[X_2e] \\ \vdots \\\mathbb{E}[1*e] \end{pmatrix}&=\begin{pmatrix}0\\0\\ \vdots \\ 0\end{pmatrix}
 \end{align*}
 This is $k$ equations, the last of which is $\mathbb{E}[e]=0$ when there is a constant.
+\end{frame}
+
+\begin{frame}{What If There Is No Intercept?}
+If $X$ does not include a constant, the moment conditions are only $\mathbb{E}[X_j e]=0$ for each regressor---there is no equation forcing $\mathbb{E}[e]=0$.
+\pause
+
+\medskip
+\textbf{Consequences:}
+\begin{itemize}
+\item The projection line is forced through the origin: $\mathcal{P}[Y|X]=X'\beta$ with no intercept.
+\item The error $e$ can have a nonzero mean: $\mathbb{E}[e]\neq 0$ in general.
+\pause
+\item The usual decomposition $\operatorname{Var}(Y)=\operatorname{Var}(X'\beta)+\operatorname{Var}(e)$ still holds (since $\mathbb{E}[Xe]=0$), but $\mathbb{E}[Y]\neq \mathbb{E}[X'\beta]$.
+\end{itemize}
+\pause
+\medskip
+\textbf{Takeaway:} Always include a constant unless you have a substantive reason not to.  Omitting it forces the regression through the origin and allows systematic over- or under-prediction on average.
 \end{frame}
 
 \begin{frame}{The Design Matrix}
@@ -938,49 +913,6 @@ $$\gamma_1 = \beta_1 + \underbrace{\Gamma_{12}}_{\substack{\text{correlation of}
 \end{tcolorbox}
 \medskip
 \textbf{Next:} All of this is in the \emph{population}. Starting next lecture, we move to \emph{samples}---using OLS to estimate $\beta$ and studying when OLS does a good job.
-\end{frame}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Causal Interpretation of Regression}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\begin{frame}{What Causal Effect Does Regression Recover?}
-\begin{itemize}
-\item Causal inference is interested in:\\
-$$\delta_{X}\equiv E[Y|X, D=1]-E[Y|X, D=0]$$
-That is, given some value of X, what is the expected difference in outcomes between treatment and control?
-\item Suppose we have the following regression:
-$$Y=\delta_R D+X'\beta+e$$
-\item It turns out $\delta_R$ is a weighted average of $\delta_X$, where the weights depend on the variance of X.
-\item We can use partitions to explain those weights.
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Applying Partitions to Treatment Dummy}
-\begin{align*}
-\delta_R&=\frac{Cov(Y, \tilde{D})}{Var (\tilde{D})} \\ \pause
-&=\frac{E[(D-E[D|X])Y]}{E[(D-E[D|X])^2]}\\\pause
-&=\frac{E\{(D-E[D|X])E[Y|D,X]\}}{E[(D-E[D|X])^2]} \tag{By LIE}\\
-\end{align*}
-\end{frame}
-
-\begin{frame}{Notational Trick}
-\begin{align*}
-E[Y|X, D]&=E[Y|X, D=0](1-D)+E[Y|X, D=1]D\\\pause
-&=E[Y|X, D=0]+(E[Y|X, D=1]-E[Y|X, D=0])D\\\pause
-&=E[Y|X, D=0]+\delta_XD
-\end{align*}
-\end{frame}
-
-\begin{frame}{Regression as Weighted Average of Causal Effects}
-\begin{align*}
-&=\frac{E\{(D-E[D|X])E[Y|D,X]\}}{E[(D-E[D|X])^2]}\\\pause
-&=\frac{E\{(D-E[D|X])E[Y|X, D=0]\}+E\{(D-E[D|X])D\delta_X\}}{E[(D-E[D|X])^2]} \\\pause
-&=\frac{0+E\{(D-E[D|X])D\delta_X\}}{E[(D-E[D|X])^2]} \tag{X and $\tilde{D}$ are uncorrelated.}\\\pause
-&=\frac{E[\sigma^2_{D|X}\delta_X]}{E[\sigma^2_{D|X}]} \tag{Where $\sigma^2_{D|X}$ is the conditional variance of D given X.}
-\end{align*}
-Regression puts the most weight on values of X with the highest variance in D.  Those have the closest to an even split between treatment and control and are most precisely estimated.
 \end{frame}
 
 
