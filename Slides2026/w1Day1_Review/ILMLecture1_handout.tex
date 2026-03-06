@@ -1084,7 +1084,7 @@ is symmetric and idempotent.\pause
 
 \end{frame}
 
-\begin{frame}{Orthogonal Complements and Dimension}
+\begin{frame}{Orthogonal Complements}
 
 \begin{defn}
 The \textbf{orthogonal complement} of a subspace $\mathcal{W}\subset \mathbb{R}^n$ is
@@ -1094,7 +1094,27 @@ The \textbf{orthogonal complement} of a subspace $\mathcal{W}\subset \mathbb{R}^
 \]
 \end{defn}\pause
 
-\begin{thm}[Fundamental Theorem of Linear Algebra (dimension version)]
+\vspace{0.3cm}
+
+\textbf{In words:} $\mathcal{W}^{\perp}$ is the set of all vectors orthogonal to every vector in $\mathcal{W}$.
+
+\vspace{0.3cm}\pause
+
+\textbf{Examples:}
+\begin{itemize}
+    \item If $\mathcal{W}$ is a line through the origin in $\mathbb{R}^2$, then $\mathcal{W}^{\perp}$ is the perpendicular line.
+    \item If $\mathcal{W}$ is a plane through the origin in $\mathbb{R}^3$, then $\mathcal{W}^{\perp}$ is the normal line.
+    \item In regression: $\col(\bm{X})^{\perp}$ is the space where the residuals live.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Fundamental Theorem: Dimension}
+
+\begin{columns}
+\begin{column}{.55\textwidth}
+
+\begin{thm}[Fundamental Thm of Linear Algebra]
 If $\mathcal{W}$ is a subspace of $\mathbb{R}^n$, then
 \[
 \dim(\mathcal{W})+\dim(\mathcal{W}^{\perp})=n.
@@ -1103,7 +1123,71 @@ If $\mathcal{W}$ is a subspace of $\mathbb{R}^n$, then
 
 \textbf{Proof setup:} Let $\dim(\mathcal{W})=k$.
 Choose an orthonormal basis $\bm{u}_1,\ldots,\bm{u}_k$ for $\mathcal{W}$.
-Extend it to an orthonormal basis $\bm{u}_1,\ldots,\bm{u}_n$ for $\mathbb{R}^n$.
+Extend to an orthonormal basis $\bm{u}_1,\ldots,\bm{u}_n$ for $\mathbb{R}^n$.
+
+\end{column}
+\begin{column}{.42\textwidth}
+\begin{center}
+\begin{tikzpicture}[scale=1.1, >=stealth]
+  % Subspace W (line along u1 direction)
+  \pgfmathsetmacro{\ux}{0.96}  % u1 direction (cos15)
+  \pgfmathsetmacro{\uy}{0.26}  % u1 direction (sin15)
+  % W-perp direction (perpendicular to u1)
+  \pgfmathsetmacro{\px}{-0.26}
+  \pgfmathsetmacro{\py}{0.96}
+  % The vector v and its decomposition
+  \pgfmathsetmacro{\cv}{2.2}   % component along u1
+  \pgfmathsetmacro{\cp}{1.8}   % component along u2
+  \pgfmathsetmacro{\vx}{\cv*\ux + \cp*\px}
+  \pgfmathsetmacro{\vy}{\cv*\uy + \cp*\py}
+  \pgfmathsetmacro{\projx}{\cv*\ux}
+  \pgfmathsetmacro{\projy}{\cv*\uy}
+
+  % Draw subspace lines (extended)
+  \draw[blue!40, thick] (-2.8*\ux, -2.8*\uy) -- (2.8*\ux, 2.8*\uy);
+  \draw[darkpurple!40, thick] (-2.2*\px, -2.2*\py) -- (2.2*\px, 2.2*\py);
+
+  % Labels for subspaces
+  \node[blue, anchor=south west] at (2.5*\ux, 2.5*\uy) {$\mathcal{W}$};
+  \node[darkpurple, anchor=south east] at (1.8*\px, 1.8*\py) {$\mathcal{W}^{\perp}$};
+
+  % Basis vectors
+  \draw[->, blue, very thick] (0,0) -- (\ux, \uy)
+    node[above left, font=\small] {$\bm{u}_1$};
+  \draw[->, darkpurple, very thick] (0,0) -- (\px, \py)
+    node[above left, font=\small] {$\bm{u}_2$};
+
+  % Right angle mark at origin
+  \pgfmathsetmacro{\rs}{0.2}
+  \draw[thin] (\rs*\ux, \rs*\uy)
+    -- (\rs*\ux + \rs*\px, \rs*\uy + \rs*\py)
+    -- (\rs*\px, \rs*\py);
+
+  % The vector v
+  \draw[->, black, very thick] (0,0) -- (\vx, \vy)
+    node[above right, font=\small] {$\bm{v}$};
+
+  % Projection onto W
+  \draw[->, blue, thick, dashed] (0,0) -- (\projx, \projy)
+    node[below right, font=\scriptsize, pos=0.8] {$c_1\bm{u}_1$};
+
+  % Residual (W-perp component)
+  \draw[->, darkpurple, thick, dashed] (\projx, \projy) -- (\vx, \vy)
+    node[right, font=\scriptsize, pos=0.5] {$c_2\bm{u}_2$};
+
+  % Right angle at projection
+  \pgfmathsetmacro{\rr}{0.15}
+  \draw[thin] (\projx + \rr*\px, \projy + \rr*\py)
+    -- (\projx + \rr*\px - \rr*\ux, \projy + \rr*\py - \rr*\uy)
+    -- (\projx - \rr*\ux, \projy - \rr*\uy);
+
+  % Dimension annotation
+  \node[anchor=north, font=\scriptsize] at (0, -0.6)
+    {$\dim(\mathcal{W})=1,\quad \dim(\mathcal{W}^{\perp})=1,\quad n=2$};
+\end{tikzpicture}
+\end{center}
+\end{column}
+\end{columns}
 
 \end{frame}
 
