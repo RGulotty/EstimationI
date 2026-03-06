@@ -371,6 +371,63 @@ $$\hat{\sigma}^2_{MM}=\frac{1}{n}\sum_{i=1}^n\hat{e}_i^2$$\pause
 \end{itemize}
 \end{frame}
 
+
+\begin{frame}{Where Do Moment Conditions Come From?}
+Moment conditions are not statistical conveniences---they encode \textbf{substantive claims about the world}.  Three major sources:\pause
+
+\medskip
+\begin{enumerate}
+\item \textbf{Behavioral / equilibrium conditions.}  An optimization or equilibrium model implies a first-order condition:
+$$\mathbb{E}[Z_i\cdot(\text{marginal benefit} - \text{marginal cost})]=0$$
+Variables in the agent's information set must be orthogonal to the residual.\pause
+
+\item \textbf{Institutional or exogenous variation.}  A design feature or natural experiment makes some variable plausibly independent of the error:
+$$\mathbb{E}[Z_i\, e_i]=0 \quad\text{(e.g., random assignment, world prices for a small country)}$$\pause
+
+\item \textbf{Accounting or definitional identities.}  Budget constraints, vote shares summing to one, or flows $=$ stocks $+$ changes impose restrictions without behavioral assumptions.
+\end{enumerate}
+\end{frame}
+
+
+\begin{frame}{The Theory-to-Estimator Workflow}
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=From Mechanism to Estimator]
+\begin{enumerate}
+\item \textbf{Mechanism:} What process links the variables?
+\item \textbf{Exogenous feature:} What institutional rule, randomization, or equilibrium condition creates a restriction?
+\item \textbf{Observable implication:} What pattern must hold in the data if the mechanism and assumptions are correct?
+\item \textbf{Moment condition:} $\mathbb{E}[g(W_i, \theta)]=0$
+\item \textbf{Estimator:} Solve the sample analog.
+\end{enumerate}
+\end{tcolorbox}
+
+\medskip\pause
+\textbf{OLS through this lens:}
+\begin{itemize}
+\item \textbf{Mechanism:} $Y$ is a linear function of $X$ plus noise.
+\item \textbf{Exogenous feature:} No omitted variable correlated with $X$ affects $Y$.
+\item \textbf{Moment condition:} $\mathbb{E}[X_i(Y_i - X_i'\beta)]=0$.
+\item \textbf{Estimator:} $\hat{\beta}=(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{Y}$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{GLS Through the Same Lens}
+\begin{itemize}
+\item Switching from OLS to GLS is not just an algebraic trick---it reflects a \textbf{substantive claim about the error structure}.\pause
+
+\item \textbf{Mechanism:} The same linear model $Y = X'\beta + e$, but now we claim to know \emph{which observations are noisier than others}.\pause
+
+\item \textbf{Exogenous feature:} We observe (or can estimate) the error covariance $\Sigma$---e.g., cross-country data where richer countries have more variable outcomes.\pause
+
+\item \textbf{Moment condition:}
+$$\mathbb{E}[\Sigma^{-1/2}X_i(\Sigma^{-1/2}Y_i - \Sigma^{-1/2}X_i'\beta)]=0$$
+Weight observations inversely to their noise.\pause
+
+\item \textbf{Estimator:} $\hat{\beta}_{GLS}=(\bm{X}'\Sigma^{-1}\bm{X})^{-1}\bm{X}'\Sigma^{-1}\bm{Y}$.
+
+\item The claim ``I know $\Sigma$'' is itself a substantive assumption---if wrong, GLS can be worse than OLS.
+\end{itemize}
+\end{frame}
+
 \section{GLS}
 \begin{frame}{Spherical Errors}
 \begin{itemize}
