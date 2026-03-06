@@ -22,6 +22,10 @@ CLAUDE.md
 # macOS
 .DS_Store
 
+# Generated presentation builds (compiled from handout sources)
+*_presentation.*
+*_slides_presentation.*
+
 # LaTeX build artifacts
 *.aux
 *.log
