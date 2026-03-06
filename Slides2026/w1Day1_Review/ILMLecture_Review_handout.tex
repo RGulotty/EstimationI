@@ -1,5 +1,5 @@
 
-\documentclass[aspectratio=169, handout]{beamer}
+\documentclass[aspectratio=169, handout, t]{beamer}
 
 %\usepackage[table]{xcolor}
 \mode<presentation> {
@@ -150,14 +150,14 @@ text}{fg=darkpurple}
  \item Outcomes are observed at the county level.
 \end{itemize}
 
-\vspace{0.3cm}
+\vspace{0.2cm}
 
 \textbf{Identification:}
 \begin{itemize}
     \item Difference in means across counties identifies the ATE.
 \end{itemize}
 
-\vspace{0.3cm}
+\vspace{0.2cm}
 
 \textbf{Estimation Problem:}
 \begin{itemize}
@@ -165,7 +165,7 @@ text}{fg=darkpurple}
     \item Naive OLS treats counties as independent.
 \end{itemize}
 
-\vspace{0.3cm}
+\vspace{0.2cm}
 
 \textbf{Consequence:}
 \begin{itemize}
@@ -173,7 +173,7 @@ text}{fg=darkpurple}
     \item Standard errors can be severely understated (10x or more!).
 \end{itemize}
 
-\vspace{0.2cm}
+\vspace{0.1cm}
 
 \begin{center}
 \emph{The research question is answerable — but the reported certainty may be false.}
@@ -221,10 +221,10 @@ Unified notation (Riemann-Stieltjes): $\mathbb{E}[X]=\int_{-\infty}^{\infty} x \
 \frametitle{Key Properties of Expectation}
 The fact that expected values are sums/integrals gives us the following properties, for random variable X and Y, constant a.
 \begin{align*}
-\mathbb{E}[X+Y]&=\mathbb{E}[X]+\mathbb{E}[Y]\\
-\mathbb{E}[a]&=a\\
-\mathbb{E}[aX+b]&=a\mathbb{E}[X]+b\\
-\mathbb{E}[\mathbb{E}[X]]&=\mathbb{E}[X]\\
+\mathbb{E}[X+Y]&=\mathbb{E}[X]+\mathbb{E}[Y]\\[6pt]
+\mathbb{E}[a]&=a\\[6pt]
+\mathbb{E}[aX+b]&=a\mathbb{E}[X]+b\\[6pt]
+\mathbb{E}[\mathbb{E}[X]]&=\mathbb{E}[X]\\[6pt]
 \mathbb{E}[XY]&\neq \mathbb{E}[X]\times \mathbb{E}[Y] \quad \text{(in general)}
 \end{align*}
 \end{frame}
@@ -268,7 +268,7 @@ Var($aX  + b$)  = $a^2$Var($X$)
 
 
 \begin{frame}{Sample Variance: Two Equivalent Forms}
-\small
+\footnotesize
 \begin{align*}
 \widehat{\text{Var}}(X)&=\frac{1}{N}\sum_i(x_i-\bar{x})^2\\\pause
 &=\frac{1}{N}\sum_i(x_i-\bar{x})(x_i-\bar{x})\\\pause
@@ -276,6 +276,7 @@ Var($aX  + b$)  = $a^2$Var($X$)
 &=\frac{1}{N}\sum_i(x_i-\bar{x})x_i\ -\ \bar{x}\cdot\underbrace{\frac{1}{N}\sum_i(x_i-\bar{x})}_{=0}\\\pause
 &=\frac{1}{N}\sum_i(x_i-\bar{x})x_i
 \end{align*}\pause
+\small
 The key step: $\frac{1}{N}\sum_i(x_i-\bar{x})=\bar{x}-\bar{x}=0$.\\
 This identity---that deviations from the mean sum to zero---will reappear when we derive OLS.
 \end{frame}
@@ -304,7 +305,7 @@ Key properties:
 $$\text{Var}(\bm{X})=\mathbb{E}[(\bm{X}-\mathbb{E}[\bm{X}])(\bm{X}-\mathbb{E}[\bm{X}])']=\bm{\Sigma}$$
 This is a $k\times k$ symmetric, positive semi-definite matrix.\pause
 \item For any fixed matrix $\bm{A}$ ($m\times k$) and vector $\bm{b}$ ($m \times 1$):
-$$\text{Var}(\bm{A}\bm{X}+\bm{b})=\bm{A}\,\text{Var}(\bm{X})\,\bm{A}'=\bm{A}\bm{\Sigma}\bm{A}'$$\pause
+\[\text{Var}(\bm{A}\bm{X}+\bm{b})=\bm{A}\,\text{Var}(\bm{X})\,\bm{A}'=\bm{A}\bm{\Sigma}\bm{A}'\]\pause
 \item This formula appears throughout the course:
 \begin{itemize}
 \item Variance of $\hat{\bm{\beta}}$: $\text{Var}((\bm{X}'\bm{X})^{-1}\bm{X}'\bm{y}|\bm{X})=(\bm{X}'\bm{X})^{-1}\bm{X}'\sigma^2\bm{I}\,\bm{X}(\bm{X}'\bm{X})^{-1}$
@@ -346,11 +347,12 @@ Key properties:
 
 
 \begin{frame}{Moments of the Normal Distribution}
+\small
 \begin{columns}
 \begin{column}{.45\textwidth}
 Let $X \sim N(\mu, \sigma^2)$.
 
-\vspace{0.3cm}
+\vspace{0.2cm}
 
 \textbf{Raw Moments}
 \begin{itemize}
@@ -358,25 +360,20 @@ Let $X \sim N(\mu, \sigma^2)$.
     \item Second moment:   $\mathbb{E}[X^2] = \sigma^2 + \mu^2$
 \end{itemize}
 
-\vspace{0.4cm}
+\vspace{0.2cm}
 
 \textbf{Central Moments}
 \begin{itemize}
     \item Variance: $  \mathbb{E}[(X-\mu)^2] = \sigma^2$
-    \item Third central moment: $\mathbb{E}[(X-\mu)^3] = 0 \quad (\text{symmetric})$
-    \item Fourth central moment: $\mathbb{E}[(X-\mu)^4] = 3\sigma^4$
+    \item Third: $\mathbb{E}[(X-\mu)^3] = 0 \quad (\text{symmetric})$
+    \item Fourth: $\mathbb{E}[(X-\mu)^4] = 3\sigma^4$
 \end{itemize}
-
-\vspace{0.3cm}
-
-\begin{center}
-\end{center}
 \end{column}
 \begin{column}{.55\textwidth}
 \begin{center}
 \begin{tikzpicture}
 \begin{axis}[
-  width=7.5cm, height=6cm,
+  width=7.5cm, height=5.5cm,
   domain=-4:4, samples=100,
   xlabel={$x$}, ylabel={$f(x)$},
   legend style={at={(0.98,0.98)}, anchor=north east, font=\scriptsize},
@@ -471,23 +468,19 @@ If our data is continuous, densities and distributions live in 3 (or higher) dim
 
 
 \begin{frame}{Example: A Joint Density}
-\begin{columns}
-\column{0.5\textwidth}
+\small
 Consider two parties (A, B) mobilizing voters, with $X+Y\leq 1$:
-$$f(x,y)=6(1 - x - y),\quad x,y\geq 0$$
-\begin{itemize}
-\item Density is highest at $(0,0)$ and decreases as either party mobilizes more.
-\item The 6 ensures $\int\int f(x,y)\,dx\,dy=1$:
-$$\int_{0}^{1} \int_{0}^{1-x} 6(1 - x - y)\, dy\,dx=1$$
-\end{itemize}
-\column{0.5\textwidth}
+$f(x,y)=6(1 - x - y),\ x,y\geq 0.$
+Density is highest at $(0,0)$ and decreases as either party mobilizes more.
+The 6 ensures $\int\!\int f\,dx\,dy=1$.
+\begin{center}
 \begin{tikzpicture}
-\begin{axis}[view={45}{35}, xlabel={$x$}, ylabel={$y$}, zlabel={$f(x,y)$}, domain=0:1, y domain=0:1, samples=30, samples y=30, zmin=0, colormap/cool, width=7cm, height=6cm]
+\begin{axis}[view={45}{35}, xlabel={$x$}, ylabel={$y$}, zlabel={$f(x,y)$}, domain=0:1, y domain=0:1, samples=30, samples y=30, zmin=0, colormap/cool, width=9cm, height=5.5cm]
 \addplot3[surf, shader=interp]
 {(x+y<=1)*(6*(1 - x - y))};
 \end{axis}
 \end{tikzpicture}
-\end{columns}
+\end{center}
 \end{frame}
 
 
@@ -527,7 +520,10 @@ Note: for each fixed $x$, this is a valid density in $y$ on $[0,\,1-x]$.
 
 \begin{frame}
 \frametitle{Conditional Expectation}
-$$\mathbb{E}[Y|X=x]=\int_{-\infty}^{\infty} y\, f_{Y|X}(y|x)\,dy=\frac{\int_{-\infty}^{\infty} y\, f(y,x)\,dy}{\int_{-\infty}^{\infty} f(y,x)\,dy}$$
+\begin{align*}
+\mathbb{E}[Y|X=x]&=\int_{-\infty}^{\infty} y\, f_{Y|X}(y|x)\,dy\\
+&=\frac{\int_{-\infty}^{\infty} y\, f(y,x)\,dy}{\int_{-\infty}^{\infty} f(y,x)\,dy}
+\end{align*}
 \smallskip
 \emph{The average value of $Y$ given that $X$ equals the specific value $x$.}
 \end{frame}
@@ -566,6 +562,7 @@ Apply the definition using our conditional density:
 $\mathbb{E}[\mathbb{E}[Y|X]]=\mathbb{E}[Y]$,
 \end{thm}
 \small
+\vspace{-0.2cm}
 \begin{align*}
 \mathbb{E}[\mathbb{E}[Y|X]]&=\int_{-\infty}^\infty \mathbb{E}[Y|X=x]\,f_X(x)\,dx\\ \pause
 &=\int_{-\infty}^\infty \int_{-\infty}^\infty y\,f_{Y|X}(y|x)\,dy\,f_X(x)\,dx\\\pause
@@ -590,26 +587,18 @@ $\text{Var}[Y]=\mathbb{E}[\text{Var}[Y|X]]+\text{Var}[\mathbb{E}[Y|X]]$
 
 
 \begin{frame}{Example: CEF from a Joint Density}
-\begin{columns}
-\column{0.45\textwidth}
-Joint density:
-$$f(x,y)=6(1 - x - y)$$
-for $x\geq 0,\;y\geq 0,\;x+y\leq 1.$\\
-\bigskip
-Marginal:
-$f_X(x)=3(1 - x)^2$\\
-\bigskip
-CEF:
-$$\mathbb{E}(Y|X=x)=\frac{1-x}{3}$$
-\column{0.55\textwidth}
+\small
+Joint density: $f(x,y)=6(1 - x - y)$ for $x\geq 0,\;y\geq 0,\;x+y\leq 1.$
+Marginal: $f_X(x)=3(1 - x)^2$.
+CEF: $\mathbb{E}(Y|X=x)=\frac{1-x}{3}$.
+\begin{center}
 \begin{tikzpicture}
-\begin{axis}[xlabel={$x$},ylabel={$\mathbb{E}(Y|X=x)$},domain=0:1,samples=100, width=7cm, height=5cm]
+\begin{axis}[xlabel={$x$},ylabel={$\mathbb{E}(Y|X=x)$},domain=0:1,samples=100, width=10cm, height=5cm]
 \addplot[color=red,thick]{(1 - x)/3};
 \end{axis}
-\end{tikzpicture}\\
-\smallskip
+\end{tikzpicture}
+\end{center}
 As $X$ increases, $\mathbb{E}[Y|X]$ decreases linearly---this CEF \emph{is} linear.
-\end{columns}
 \end{frame}
 
 
@@ -650,7 +639,7 @@ Key rules:
 \begin{itemize}
 \item The inner product of two $k\times 1$ vectors:
 $$\bm{a}\cdot\bm{b}=\bm{a}'\bm{b}=\sum_{j=1}^k a_jb_j$$
-\item Compare to covariance for demeaned variables:
+\item Compare to the sample covariance for demeaned variables:
 $$\text{Cov}(\bm{x},\ \bm{y})=\frac{1}{n-1}\sum_{i=1}^n x_iy_i$$
 \item Two vectors are \textbf{orthogonal} if $\bm{a}'\bm{b}=0$.
 \item $||\bm{a}||=\sqrt{\bm{a}'\bm{a}}$ is the Euclidean norm (length) of $\bm{a}$.
@@ -739,12 +728,17 @@ x_3
 \end{frame}
 
 \begin{frame}{Positive Definiteness}
-\begin{itemize}
-\item A \textbf{quadratic form} is a scalar $\bm{x}'\bm{A}\bm{x}$, where $\bm{A}$ is a symmetric matrix:
-$$\bm{x}'\bm{A}\bm{x}=\sum_i a_{ii}x_i^2+2\sum_{i<j} a_{ij}x_ix_j$$\pause
-\item A symmetric matrix $\bm{A}$ is \textbf{positive definite} if $\bm{c}'\bm{A}\bm{c}>0$ for all $\bm{c}\neq \bm{0}$.
-\item A symmetric matrix $\bm{A}$ is \textbf{positive semi-definite} if $\bm{c}'\bm{A}\bm{c}\geq 0$ for all $\bm{c}\neq \bm{0}$.
-\end{itemize}
+A \textbf{quadratic form} is a scalar $\bm{x}'\bm{A}\bm{x}$, where $\bm{A}$ is symmetric:
+$\bm{x}'\bm{A}\bm{x}=\sum_i a_{ii}x_i^2+2\sum_{i<j} a_{ij}x_ix_j.$\pause
+
+The sign of this scalar classifies the matrix:
+\begin{defn}
+A symmetric matrix $\bm{A}$ is \textbf{positive definite} (PD) if
+$\bm{c}'\bm{A}\bm{c}>0$ for every $\bm{c}\neq \bm{0}$.
+It is \textbf{positive semi-definite} (PSD) if
+$\bm{c}'\bm{A}\bm{c}\geq 0$ for every $\bm{c}\neq \bm{0}$.
+\end{defn}\pause
+Intuition: PD means the quadratic form is always positive---no matter which direction $\bm{c}$ you choose, the ``bowl'' curves upward.
 \end{frame}
 
 \begin{frame}{Why Positive Definiteness Matters}
@@ -771,14 +765,18 @@ $$\bm{A}-\bm{B} \text{ is PD} \implies \bm{A} \text{ is ``larger'' than } \bm{B}
 \end{frame}
 
 
-\begin{frame}{Reference: Properties of Positive Definite Matrices}
+\begin{frame}{How to Check Positive Definiteness}
+\textbf{Practical tests:}
+\begin{enumerate}
+\item \textbf{Eigenvalues:} $\bm{A}$ is PD $\iff$ all eigenvalues are positive.
+\item \textbf{Cholesky decomposition:} $\bm{A}$ is PD $\iff$ it can be factored as $\bm{A}=\bm{L}\bm{L}'$ for a lower-triangular $\bm{L}$ with positive diagonal. This is how software checks PD in practice.
+\item \textbf{In regression:} if $\bm{X}$ is $n\times k$ with full column rank, then $\bm{X}'\bm{X}$ is PD. So the practical question is: are your regressors linearly independent?
+\end{enumerate}\pause
+\textbf{Properties (reference):}
 \begin{itemize}
-\item $\bm{A}$ is PD $\iff$ it is symmetric with all eigenvalues positive.
 \item If $\bm{A}$ is PD, it is nonsingular and $\bm{A}^{-1}$ is also PD.
-\item If $\bm{A}$ is PD, $\text{tr}(\bm{A})>0$.
 \item If $\bm{A}$ and $\bm{B}$ are PD, so is $\bm{A}+\bm{B}$.
 \item If $\bm{A}$ is PD and $c>0$, then $c\bm{A}$ is PD.
-\item If $\bm{A}$ is $n\times k$ with full column rank, then $\bm{A}'\bm{A}$ is PD.
 \end{itemize}
 \end{frame}
 
@@ -878,6 +876,53 @@ Intuition:
 
 If independent vectors span a space $\mathcal{V}$,
 they form a \textbf{basis}.
+
+\end{frame}
+
+\begin{frame}{Basis Examples in $\mathbb{R}^2$}
+
+\textbf{Standard basis:} $\{(1,0),\,(0,1)\}$ is a basis for $\mathbb{R}^2$.
+
+\vspace{0.3cm}
+
+\textbf{Another basis:} $\{(1,1),\,(-1,1)\}$ is also a basis for $\mathbb{R}^2$.
+
+\vspace{0.2cm}
+
+\emph{Proof:} Any $(x,y)\in\mathbb{R}^2$ can be written as $\alpha(1,1)+\beta(-1,1)$:
+\begin{align*}
+x &= \alpha - \beta \\
+y &= \alpha + \beta
+\end{align*}
+Adding and subtracting: $\alpha=\frac{x+y}{2},\quad \beta=\frac{y-x}{2}.$
+
+\vspace{0.2cm}
+
+So every vector has a representation (\emph{spanning}). If $(x,y)=(0,0)$, then $\alpha=\beta=0$, so the set is \emph{linearly independent}. Hence it is a basis.
+
+\end{frame}
+
+\begin{frame}{Non-Basis Examples}
+
+\textbf{Example 1:} $\{(1,0,0),\,(0,1,0)\}$ is \alert{not} a basis of $\mathbb{R}^3$.
+\begin{itemize}
+    \item These vectors are linearly independent, but they do not span $\mathbb{R}^3$---e.g.\ $(0,0,1)$ cannot be written as a linear combination.
+\end{itemize}
+
+\vspace{0.4cm}
+
+\textbf{Example 2:} $\{(1,0),\,(0,1),\,(1,1)\}$ is \alert{not} a basis of $\mathbb{R}^2$.
+\begin{itemize}
+    \item These vectors span $\mathbb{R}^2$, but they are linearly dependent:
+    \[
+    1\cdot(1,0) + 1\cdot(0,1) + (-1)\cdot(1,1) = (0,0).
+    \]
+    \item A basis requires \emph{both} spanning and linear independence.
+\end{itemize}
+
+\vspace{0.4cm}
+
+\textbf{Takeaway:} A basis is the minimal spanning set (or equivalently, a maximal independent set).
 
 \end{frame}
 
@@ -1227,7 +1272,7 @@ Least squares solves:
 (\bm{y} - \bm{X}\bm{\beta}).
 \]
 
-\vspace{0.4cm}
+\vspace{0.3cm}
 
 Expand:
 
@@ -1238,7 +1283,7 @@ Expand:
 + \bm{\beta}'\bm{X}'\bm{X}\bm{\beta}.
 \]
 
-\vspace{0.4cm}
+\vspace{0.3cm}
 
 Take gradient and set equal to zero:
 
@@ -1248,7 +1293,7 @@ Take gradient and set equal to zero:
 = \bm{0}.
 \]
 
-\vspace{0.3cm}
+\vspace{0.2cm}
 
 \[
 \Rightarrow
