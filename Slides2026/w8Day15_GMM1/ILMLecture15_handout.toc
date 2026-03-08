@@ -1,5 +1,0 @@
-\beamer@sectionintoc {1}{Motivation}{1}{0}{1}
-\beamer@sectionintoc {2}{The GMM Estimator}{8}{0}{2}
-\beamer@sectionintoc {3}{2SLS vs.\ Efficient GMM}{15}{0}{3}
-\beamer@sectionintoc {4}{Application: Missing Data}{19}{0}{4}
-\beamer@sectionintoc {5}{Nonlinear GMM and Summary}{27}{0}{5}
