@@ -627,9 +627,9 @@ The result is $k \times s$.\\
 \bigskip
 Key rules:
 \begin{itemize}
-\item Generally $\bm{AB}\neq \bm{BA}$.
+\item Generally $\bm{AB}\neq \bm{BA}$.\pause
 \item $\bm{A}(\bm{B}+\bm{C})=\bm{AB}+\bm{AC}$ \quad (distributive).
-\item $(\bm{AB})\bm{C}=\bm{A}(\bm{BC})$ \quad (associative).
+\item $(\bm{AB})\bm{C}=\bm{A}(\bm{BC})$ \quad (associative).\pause
 \item $(\bm{AB})'=\bm{B}'\bm{A}'$, where $'$ is the transpose.
 \end{itemize}
 \end{frame}
@@ -638,9 +638,9 @@ Key rules:
 \begin{frame}{Inner Product and Similarity}
 \begin{itemize}
 \item The inner product of two $k\times 1$ vectors:
-$$\bm{a}\cdot\bm{b}=\bm{a}'\bm{b}=\sum_{j=1}^k a_jb_j$$
+$$\bm{a}\cdot\bm{b}=\bm{a}'\bm{b}=\sum_{j=1}^k a_jb_j$$\pause
 \item Compare to the sample covariance for demeaned variables:
-$$\text{Cov}(\bm{x},\ \bm{y})=\frac{1}{n-1}\sum_{i=1}^n x_iy_i$$
+$$\text{Cov}(\bm{x},\ \bm{y})=\frac{1}{n-1}\sum_{i=1}^n x_iy_i$$\pause
 \item Two vectors are \textbf{orthogonal} if $\bm{a}'\bm{b}=0$.
 \item $||\bm{a}||=\sqrt{\bm{a}'\bm{a}}$ is the Euclidean norm (length) of $\bm{a}$.
 \end{itemize}
@@ -788,8 +788,8 @@ $$\bm{A}-\bm{B} \text{ is PD} \implies \bm{A} \text{ is ``larger'' than } \bm{B}
   \end{bmatrix}
   \end{align*}
 \begin{itemize}
-  \item $\bm{X}'\bm{X}$ is symmetric and positive semi-definite.
-  \item If we normalize columns so $||\bm{x}_j||=1$, then $(\bm{X}'\bm{X})_{ij}=\cos\theta_{ij}$: a measure of similarity.
+  \item $\bm{X}'\bm{X}$ is symmetric and positive semi-definite.\pause
+  \item If we normalize columns so $||\bm{x}_j||=1$, then $(\bm{X}'\bm{X})_{ij}=\cos\theta_{ij}$: a measure of similarity.\pause
   \item $\bm{X}'\bm{X}$ encodes all the second-moment information about the regressors.
 \end{itemize}
 \end{frame}
@@ -812,13 +812,13 @@ c_1 \bm{x}_1 + \cdots + c_k \bm{x}_k.
 \textbf{Example in $\mathbb{R}^2$:}
 
 \begin{itemize}
-    \item One vector: all multiples lie on a line.
+    \item One vector: all multiples lie on a line.\pause
     \item Two non-collinear vectors: combinations fill the plane.
 \end{itemize}
 
 \vspace{0.4cm}
 
-Linear combinations describe what vectors you can “build.”
+Linear combinations describe what vectors you can ``build.''
 
 \end{frame}
 
@@ -843,7 +843,7 @@ It is the set of *all* vectors you can build from them.
 \textbf{Geometric intuition:}
 
 \begin{itemize}
-    \item One independent vector $\Rightarrow$ a line.
+    \item One independent vector $\Rightarrow$ a line.\pause
     \item Two independent vectors $\Rightarrow$ a plane.
     \item Three independent vectors in $\mathbb{R}^3$ $\Rightarrow$ all of $\mathbb{R}^3$.
 \end{itemize}
@@ -872,7 +872,7 @@ Intuition:
     \item No redundancy.
 \end{itemize}
 
-\vspace{0.4cm}
+\vspace{0.4cm}\pause
 
 If independent vectors span a space $\mathcal{V}$,
 they form a \textbf{basis}.
@@ -934,11 +934,11 @@ The dimension of a space is the number of vectors in any basis.
 
 \vspace{0.4cm}
 
-\textbf{In Regression}
+\textbf{In Regression}\pause
 
 \begin{itemize}
     \item The columns of $\bm{X}$ are your regressors.
-    \item Their span is the \textbf{column space}.
+    \item Their span is the \textbf{column space}.\pause
     \item OLS projects $\bm{y}$ onto this space.
     \item Linear dependence $\Rightarrow$ no unique solution.
 \end{itemize}
@@ -965,14 +965,14 @@ Full column rank = regressors are linearly independent.
 \begin{frame}{Orthogonality of Residuals}
 The error $\bm{e}=\bm{y}-\hat{\bm{y}}$ is orthogonal to every column of $\bm{X}$:
     \begin{align*}
-      \bm{X}'(\bm{y}-\hat{\bm{y}}) &= \bm{X}'(\bm{y}-\bm{P}\bm{y})\\
-      &= \bm{X}'\bm{y} - \bm{X}'\bm{X}(\bm{X}'\bm{X})^{-1}\bm{X}'\bm{y} \\
+      \bm{X}'(\bm{y}-\hat{\bm{y}}) &= \bm{X}'(\bm{y}-\bm{P}\bm{y})\\\pause
+      &= \bm{X}'\bm{y} - \underbrace{\bm{X}'\bm{X}(\bm{X}'\bm{X})^{-1}}_{\bm{I}}\bm{X}'\bm{y} \\\pause
       &= \bm{X}'\bm{y} - \bm{X}'\bm{y} \\
       &= \bm{0}
-    \end{align*}
+    \end{align*}\pause
 \begin{itemize}
 \item This is the matrix form of the OLS first-order conditions.
-\item Geometrically: the residual vector is perpendicular to the column space of $\bm{X}$.
+\item Geometrically: the residual vector is perpendicular to the column space of $\bm{X}$.\pause
 \item This is why $\sum_i \hat{e}_i = 0$ when there is an intercept (residuals are orthogonal to the column of ones).
 \end{itemize}
 \end{frame}
@@ -992,8 +992,8 @@ There are several useful summaries of a matrix $\bm{A}$:
     \item \textbf{Trace:}
     \[
     \tr(\bm{A})=\sum_{i=1}^n A_{ii}
-    \]
-    \item \textbf{Determinant:} $\det(\bm{A})$ measures (signed) volume scaling; $\det(\bm{A})=0$ iff $\bm{A}$ is singular.
+    \]\pause
+    \item \textbf{Determinant:} $\det(\bm{A})$ measures (signed) volume scaling; $\det(\bm{A})=0$ iff $\bm{A}$ is singular.\pause
     \item \textbf{Rank:} $\rank(\bm{A})$ is the dimension of the column space.
     \item \textbf{Eigenvalues:} $\lambda_1,\ldots,\lambda_n$ summarize stretching along special directions.
 \end{itemize}
@@ -1011,14 +1011,14 @@ The trace has several properties that we will use repeatedly:
 \item $\tr(c\bm{A})=c\,\tr(\bm{A})$ \hfill (linearity)
 \item $\tr(\bm{A}'\!)=\tr(\bm{A})$ \hfill (transpose invariance)
 \item $\tr(\bm{A}\bm{B})=\tr(\bm{B}\bm{A})$ \hfill (cyclic property)
-\end{enumerate}
+\end{enumerate}\pause
 \bigskip
 \textbf{Proof of (4):}
 $\displaystyle\tr(\bm{A}\bm{B})=\sum_i(\bm{A}\bm{B})_{ii}=\sum_i\sum_j a_{ij}b_{ji}=\sum_j\sum_i b_{ji}a_{ij}=\sum_j(\bm{B}\bm{A})_{jj}=\tr(\bm{B}\bm{A})$
-\bigskip
+\bigskip\pause
 
 \textbf{Where this matters:} When we prove that $s^2=\frac{\bm{e}'\bm{e}}{n-k}$ is unbiased for $\sigma^2$, the key step uses
-$$\mathbb{E}[\bm{e}'\bm{e}|\bm{X}]=\mathbb{E}[\tr(\bm{M}\bm{e}\bm{e}')|\bm{X}]=\tr(\bm{M}\,\mathbb{E}[\bm{e}\bm{e}'|\bm{X}])=\sigma^2\tr(\bm{M})=\sigma^2(n-k)$$
+$$\mathbb{E}[\bm{e}'\bm{e}|\bm{X}]=\mathbb{E}[\underbrace{\tr(\bm{M}\bm{e}\bm{e}')}_{\text{scalar}=\text{its own trace}}|\bm{X}]=\tr(\bm{M}\,\mathbb{E}[\bm{e}\bm{e}'|\bm{X}])=\sigma^2\tr(\bm{M})=\sigma^2(n-k)$$
 \end{frame}
 
 
@@ -1268,10 +1268,10 @@ The \textbf{gradient} is:
 
 \vspace{0.4cm}
 
-\textbf{Key idea:}
+\textbf{Key idea:}\pause
 
 \begin{itemize}
-    \item Derivative of a scalar w.r.t. a vector is a vector.
+    \item Derivative of a scalar w.r.t.\ a vector is a vector.\pause
     \item First-order condition for a minimum:
     \[
     \nabla_{\bm{a}} f(\bm{a}) = \bm{0}.
@@ -1294,13 +1294,13 @@ f(\bm{a}) = \sum_{j=1}^k z_j a_j.
 
 \vspace{0.3cm}
 
-Taking derivatives componentwise:
+Taking derivatives componentwise:\pause
 
 \[
 \nabla_{\bm{a}} (\bm{z}'\bm{a}) = \bm{z}.
 \]
 
-\vspace{0.5cm}
+\vspace{0.5cm}\pause
 
 More generally, if $f(\bm{a}) = \bm{Z}\bm{a}$,
 
@@ -1322,11 +1322,11 @@ f(\bm{a}) = \bm{a}'\bm{Z}\bm{a}.
 Write it out:
 \[
 f(\bm{a}) = \sum_{i,j} a_i Z_{ij} a_j.
-\]
+\]\pause
 
 \vspace{0.4cm}
 
-Taking derivatives:
+Taking derivatives (each $a_\ell$ appears as both $a_i$ and $a_j$, giving two terms):\pause
 
 \[
 \nabla_{\bm{a}} (\bm{a}'\bm{Z}\bm{a})
@@ -1334,7 +1334,7 @@ Taking derivatives:
 (\bm{Z} + \bm{Z}')\bm{a}.
 \]
 
-\vspace{0.3cm}
+\vspace{0.3cm}\pause
 
 If $\bm{Z}$ is symmetric, so $\bm{Z}=\bm{Z}'$ :
 
@@ -1354,31 +1354,32 @@ Least squares solves:
 \min_{\bm{\beta}}
 (\bm{y} - \bm{X}\bm{\beta})'
 (\bm{y} - \bm{X}\bm{\beta}).
-\]
+\]\pause
 
 \vspace{0.3cm}
 
-Expand:
+Expand (the cross terms $-\bm{y}'\bm{X}\bm{\beta}$ and $-\bm{\beta}'\bm{X}'\bm{y}$ are both $1\times 1$ scalars, so they equal their own transpose and combine):
 
 \[
 =
 \bm{y}'\bm{y}
 - 2\bm{\beta}'\bm{X}'\bm{y}
 + \bm{\beta}'\bm{X}'\bm{X}\bm{\beta}.
-\]
+\]\pause
 
 \vspace{0.3cm}
 
-Take gradient and set equal to zero:
+Take gradient using our linear and quadratic form rules, set equal to zero:
 
 \[
 -2\bm{X}'\bm{y}
 + 2\bm{X}'\bm{X}\bm{\beta}
 = \bm{0}.
-\]
+\]\pause
 
 \vspace{0.2cm}
 
+Pre-multiply both sides by $(\bm{X}'\bm{X})^{-1}$:
 \[
 \Rightarrow
 \hat{\bm{\beta}} =
@@ -1388,15 +1389,15 @@ Take gradient and set equal to zero:
 \end{frame}
 
 \begin{frame}{Second-Order Condition: Verifying a Minimum}
-The FOC gave us a critical point.  Is it a minimum?
+The FOC gave us a critical point.  Is it a minimum?\pause
 \bigskip
 
 The \textbf{Hessian} (matrix of second derivatives) of $(\bm{y}-\bm{X}\bm{\beta})'(\bm{y}-\bm{X}\bm{\beta})$ is:
-$$\frac{\partial^2}{\partial \bm{\beta}\,\partial \bm{\beta}'}\left[\bm{y}'\bm{y}-2\bm{\beta}'\bm{X}'\bm{y}+\bm{\beta}'\bm{X}'\bm{X}\bm{\beta}\right]=2\bm{X}'\bm{X}$$
+$$\frac{\partial^2}{\partial \bm{\beta}\,\partial \bm{\beta}'}\left[\bm{y}'\bm{y}-2\bm{\beta}'\bm{X}'\bm{y}+\bm{\beta}'\bm{X}'\bm{X}\bm{\beta}\right]=2\bm{X}'\bm{X}$$\pause
 
 \begin{itemize}
-\item If $\bm{X}$ has full column rank, then $\bm{X}'\bm{X}$ is positive definite (from our earlier result).
-\item A positive definite Hessian means the objective is strictly convex --- the critical point is a unique global minimum.
+\item If $\bm{X}$ has full column rank, then $\bm{X}'\bm{X}$ is positive definite (from our earlier result).\pause
+\item A positive definite Hessian means the objective is strictly convex --- the critical point is a unique global minimum.\pause
 \item This connects two sections: positive definiteness guarantees both that $(\bm{X}'\bm{X})^{-1}$ exists \emph{and} that the solution is a minimum.
 \end{itemize}
 \end{frame}
@@ -1408,10 +1409,10 @@ $$\frac{\partial^2}{\partial \bm{\beta}\,\partial \bm{\beta}'}\left[\bm{y}'\bm{y
 
 \begin{frame}{Summary and Roadmap}
 \begin{itemize}
-\item The \textbf{CEF} $\mathbb{E}[Y|\bm{X}=\bm{x}]$ is the target of regression---the best MSE predictor.
-\item \textbf{OLS} is the linear approximation: a projection of $\bm{y}$ onto the column space of $\bm{X}$.
+\item The \textbf{CEF} $\mathbb{E}[Y|\bm{X}=\bm{x}]$ is the target of regression---the best MSE predictor.\pause
+\item \textbf{OLS} is the linear approximation: a projection of $\bm{y}$ onto the column space of $\bm{X}$.\pause
 \item The OLS residual is orthogonal to $\bm{X}$ (first-order conditions).
-\item Positive definiteness of $\bm{X}'\bm{X}$ guarantees existence and uniqueness.
+\item Positive definiteness of $\bm{X}'\bm{X}$ guarantees existence and uniqueness.\pause
 \item Degrees of freedom ($n-k$) come from the rank-nullity theorem.
 \bigskip
 \item \textbf{Next:} the CEF vs Best Linear Predictor
