@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.5.1)  26 FEB 2026 15:32
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.5.1)  6 MAR 2026 08:21
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1448,7 +1448,7 @@ Package rerunfilecheck Info: File `ILMLecture16_handout.out' has not changed.
  ) 
 Here is how much of TeX's memory you used:
  41940 strings out of 476025
- 992335 string characters out of 5790018
+ 992329 string characters out of 5790018
  2007388 words of memory out of 5000000
  61554 multiletter control sequences out of 15000+600000
  540850 words of font info for 124 fonts, out of 8000000 for 9000
@@ -1477,7 +1477,7 @@ ve/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive
 23/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb></usr/local/texlive/2023
 /texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/
 2023/texmf-dist/fonts/type1/public/cm-super/sfss1440.pfb>
-Output written on ILMLecture16_handout.pdf (30 pages, 345375 bytes).
+Output written on ILMLecture16_handout.pdf (30 pages, 345166 bytes).
 PDF statistics:
  1497 PDF objects out of 1728 (max. 8388607)
  1325 compressed objects within 14 object streams

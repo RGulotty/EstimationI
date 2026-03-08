@@ -191,6 +191,54 @@ GLS & $\bar X_i\Sigma^{-1}(Y_i - \bar X_i'\beta)$ & $\hat\beta_{GLS}$ \\
 
 \end{frame}
 
+%--- Slide: Where Do Moment Conditions Come From? ---
+\begin{frame}{Where Do Moment Conditions Come From?}
+
+The table on the last slide shows that every estimator \emph{solves} moment conditions. But where do those conditions \emph{come from}?
+
+\medskip\pause
+They are the end point of theoretical reasoning, not the starting point:
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50, title=The Theory-to-Moment Workflow]
+\begin{enumerate}
+\item \textbf{Mechanism:} What political or economic process links the variables?
+\item \textbf{Exogenous feature:} What institutional rule, optimization condition, or information structure creates a restriction?
+\item \textbf{Observable implication:} What pattern must hold in the data?
+\item \textbf{Moment condition:} $\mathbb{E}[g(W_i,\theta)]=0$
+\item \textbf{Estimator:} Find $\hat\theta$ that satisfies the sample analog.
+\end{enumerate}
+\end{tcolorbox}
+
+\medskip
+\alert{Common mistake:}  Treating moment conditions as arising from algebra. They arise from \textbf{substantive claims about the world}.
+
+\end{frame}
+
+%--- Slide: Dube-Vargas Example ---
+\begin{frame}{Example: Commodity Prices and Violence (Dube \& Vargas)}
+
+\begin{enumerate}
+\item \textbf{Mechanism:} Higher commodity prices raise legal wages, increasing the opportunity cost of joining armed groups. Violence falls.
+
+\medskip
+\item \textbf{Exogenous feature:} World commodity prices are determined in global markets---plausibly exogenous to violence in any single Colombian municipality.
+
+\medskip
+\item \textbf{Observable implication:} Municipalities more exposed to a commodity experience larger violence changes when that commodity's world price moves.
+
+\medskip
+\item \textbf{Moment condition:} After controlling for municipality and time fixed effects,
+$$\mathbb{E}[(E_i \times P_t)\,\varepsilon_{it}]=0$$
+where $E_i$ is local commodity exposure and $P_t$ is the world price.
+
+\medskip
+\item \textbf{Estimator:} Fixed-effects IV, which solves this moment condition in the sample.
+\end{enumerate}
+
+\medskip
+This moment comes from a \textbf{political economy mechanism} plus an \textbf{exogenous shock}---not from arbitrary statistical assumptions.
+\end{frame}
+
 %========================================================
 % SECTION 2: THE GMM ESTIMATOR
 %========================================================

@@ -556,6 +556,25 @@ $$\hat{\beta}_{2SLS} = \arg\min_\beta \left[\frac{1}{n}\sum Z_i(Y_i-X_i'\beta)\r
 \end{frame}
 
 
+\begin{frame}{IV Through the Theory-to-Moment Workflow}
+Recall the workflow from Lecture 6:
+
+\medskip
+\begin{enumerate}
+\item \textbf{Mechanism:} $X$ causes $Y$, but $X$ is endogenous ($\mathbb{E}[X_i e_i]\neq 0$).
+\item \textbf{Exogenous feature:} An instrument $Z$ is independent of $e$ by institutional design, randomization, or natural experiment.
+\item \textbf{Observable implication:} $Z$ predicts $X$ but is uncorrelated with the structural error.
+\item \textbf{Moment condition:} $\mathbb{E}[Z_i(Y_i - X_i'\beta)]=0$\quad (replacing $X_i$ with $Z_i$).
+\item \textbf{Estimator:} $\hat{\beta}_{IV}=(Z'X)^{-1}Z'Y$.
+\end{enumerate}
+
+\medskip\pause
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50]
+\textbf{The key move:}  When the OLS moment condition $\mathbb{E}[X_i e_i]=0$ fails, IV does not abandon the moment-condition framework---it \alert{substitutes a different, credible moment condition}.  The question remains: \emph{why should this moment hold?}
+\end{tcolorbox}
+\end{frame}
+
+
 \begin{frame}{Foreshadowing GMM}
 \begin{itemize}
 \item 2SLS uses the weighting matrix $\hat{W}=(Z'Z/n)^{-1}$.

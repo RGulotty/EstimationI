@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.5.1)  26 FEB 2026 15:38
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.5.1)  6 MAR 2026 08:21
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1291,9 +1291,16 @@ File: ts1cmss.fd 2022/07/10 v2.5l Standard LaTeX font definitions
 {/usr/local/texlive/2023/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
  [5
 
-] [6
+]
+Overfull \vbox (21.35037pt too high) detected at line 215
+ []
+
+[6
 
 ]
+Overfull \vbox (1.58292pt too high) detected at line 240
+ []
+
 [7
 
 ] [8
@@ -1322,32 +1329,22 @@ File: ts1cmss.fd 2022/07/10 v2.5l Standard LaTeX font definitions
 
 ] [20
 
+] [21
+
+]
+[22
+
 ]
 \openout4 = `ILMLecture15_handout.vrb'.
 
-
-(./ILMLecture15_handout.vrb
+ (./ILMLecture15_handout.vrb
 LaTeX Font Info:    Trying to load font information for TS1+cmtt on input line 
 11.
 
 (/usr/local/texlive/2023/texmf-dist/tex/latex/base/ts1cmtt.fd
 File: ts1cmtt.fd 2022/07/10 v2.5l Standard LaTeX font definitions
 ))
-Overfull \vbox (3.59117pt too high) detected at line 575
- []
-
-[21
-
-]
-\openout4 = `ILMLecture15_handout.vrb'.
-
- (./ILMLecture15_handout.vrb) [22
-
-]
-\openout4 = `ILMLecture15_handout.vrb'.
-
- (./ILMLecture15_handout.vrb)
-Overfull \vbox (9.0537pt too high) detected at line 627
+Overfull \vbox (3.59117pt too high) detected at line 623
  []
 
 [23
@@ -1357,9 +1354,19 @@ Overfull \vbox (9.0537pt too high) detected at line 627
 
  (./ILMLecture15_handout.vrb) [24
 
-] [25
+]
+\openout4 = `ILMLecture15_handout.vrb'.
 
-] [26
+ (./ILMLecture15_handout.vrb)
+Overfull \vbox (9.0537pt too high) detected at line 675
+ []
+
+[25
+
+]
+\openout4 = `ILMLecture15_handout.vrb'.
+
+ (./ILMLecture15_handout.vrb) [26
 
 ] [27
 
@@ -1368,6 +1375,10 @@ Overfull \vbox (9.0537pt too high) detected at line 627
 ] [29
 
 ] [30
+
+] [31
+
+] [32
 
 ]
 \tf@nav=\write6
@@ -1388,10 +1399,10 @@ Package rerunfilecheck Info: File `ILMLecture15_handout.out' has not changed.
 (rerunfilecheck)             Checksum: 1CD4051037D2D23C8ACAECAEC57D1F22;740.
  ) 
 Here is how much of TeX's memory you used:
- 41518 strings out of 476025
- 980826 string characters out of 5790018
- 2159388 words of memory out of 5000000
- 61122 multiletter control sequences out of 15000+600000
+ 41527 strings out of 476025
+ 980905 string characters out of 5790018
+ 2160388 words of memory out of 5000000
+ 61127 multiletter control sequences out of 15000+600000
  541503 words of font info for 126 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  128i,19n,122p,741b,2117s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -1419,10 +1430,10 @@ e/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/
 texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb></usr/local/texlive/2023/te
 xmf-dist/fonts/type1/public/cm-super/sfss1440.pfb></usr/local/texlive/2023/texm
 f-dist/fonts/type1/public/cm-super/sftt0900.pfb>
-Output written on ILMLecture15_handout.pdf (30 pages, 373002 bytes).
+Output written on ILMLecture15_handout.pdf (32 pages, 381469 bytes).
 PDF statistics:
- 1585 PDF objects out of 1728 (max. 8388607)
- 1386 compressed objects within 14 object streams
- 66 named destinations out of 1000 (max. 500000)
+ 1737 PDF objects out of 2073 (max. 8388607)
+ 1532 compressed objects within 16 object streams
+ 70 named destinations out of 1000 (max. 500000)
  449 words of extra memory for PDF output out of 10000 (max. 10000000)
 
